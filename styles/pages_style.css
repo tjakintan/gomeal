@@ -1,0 +1,33 @@
+@import "tailwindcss";
+p {
+    font-family: Arial, Helvetica, sans-serif;
+}
+/* styles/gradient.css */
+
+/* styles/gradient.css */fa
+
+/* styles/gradient.css */
+
+.smooth-gradient {
+  /* Horizontal black → white smooth gradient at 30% max black */
+  background: linear-gradient(
+    to right,
+    rgba(0,0,0,0.4) 0%,       /* solid black reduced to 30% */
+    rgba(0,0,0,0.4) 33%,      /* still 30% for the first third */
+    rgba(0,0,0,0.27) 38%,
+    rgba(0,0,0,0.24) 43%,
+    rgba(0,0,0,0.21) 48%,
+    rgba(0,0,0,0.18) 50%,
+    rgba(0,0,0,0.15) 52%,
+    rgba(0,0,0,0.12) 54%,
+    rgba(0,0,0,0.09) 56%,
+    rgba(0,0,0,0.06) 57%,
+    rgba(0,0,0,0.03) 58%,
+    white 60%                 /* fade ends here */
+  );
+  
+  /* Ensure content sits on top */
+  position: relative;
+  z-index: 0;
+}
+
