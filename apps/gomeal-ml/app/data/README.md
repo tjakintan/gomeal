@@ -1,0 +1,1 @@
+### raw - folder for dataset, processed - folder for loading datasets and normalization, generated - folder for tagging and tokenization

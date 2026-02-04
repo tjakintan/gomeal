@@ -1,0 +1,133 @@
+{
+    "more_60k": {
+        "13k-recipes": [
+            "Unnamed: 0",
+            "Title",
+            "Ingredients",
+            "Instructions",
+            "Image_Name",
+            "Cleaned_Ingredients"
+        ]
+    },
+    "movieLens_32m": {
+        "links": [
+            "movieId",
+            "imdbId",
+            "tmdbId"
+        ],
+        "tags": [
+            "userId",
+            "movieId",
+            "tag",
+            "timestamp"
+        ],
+        "ratings": [
+            "userId",
+            "movieId",
+            "rating",
+            "timestamp"
+        ],
+        "movies": [
+            "movieId",
+            "title",
+            "genres"
+        ]
+    },
+    "culinary_50k": {
+        "dataset": [
+            "Name",
+            "Author",
+            "Date",
+            "Rating Value",
+            "Rating Count",
+            "Preparation Time",
+            "Cooking Time",
+            "Category",
+            "Cuisine",
+            "Ingredients",
+            "Ingredients_Raw",
+            "Instructions",
+            "Cooking Methods",
+            "Implements",
+            "Number of steps",
+            "Servings",
+            "Nutrition",
+            "URL"
+        ]
+    },
+    "recipe_13k": {
+        "recipes": [
+            "Dish_Title;Recipe_author;Recipe_category;Recipe_subcategory;Recipe_ingredients;Recipe;Source"
+        ]
+    },
+    "foodCom_170k": {
+        "interactions_train": [
+            "user_id",
+            "recipe_id",
+            "date",
+            "rating",
+            "u",
+            "i"
+        ],
+        "interactions_test": [
+            "user_id",
+            "recipe_id",
+            "date",
+            "rating",
+            "u",
+            "i"
+        ],
+        "interactions_validation": [
+            "user_id",
+            "recipe_id",
+            "date",
+            "rating",
+            "u",
+            "i"
+        ],
+        "PP_recipes": [
+            "id",
+            "i",
+            "name_tokens",
+            "ingredient_tokens",
+            "steps_tokens",
+            "techniques",
+            "calorie_level",
+            "ingredient_ids"
+        ],
+        "RAW_interactions": [
+            "user_id",
+            "recipe_id",
+            "date",
+            "rating",
+            "review"
+        ],
+        "RAW_recipes": [
+            "name",
+            "id",
+            "minutes",
+            "contributor_id",
+            "submitted",
+            "tags",
+            "nutrition",
+            "n_steps",
+            "steps",
+            "description",
+            "ingredients",
+            "n_ingredients"
+        ],
+        "PP_users": [
+            "u",
+            "techniques",
+            "items",
+            "n_items",
+            "ratings",
+            "n_ratings"
+        ]
+    },
+    "recipeNLG_2m": {
+        "full_dataset": [
+            ",title,ingredients,directions,link,source,NER"
+        ]
+    }
+}

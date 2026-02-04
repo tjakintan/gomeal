@@ -1,0 +1,297 @@
+{
+    "more_60k": {
+        "13k-recipes": {
+            "rows_loaded": 1,
+            "columns": [
+                "Unnamed: 0",
+                "Title",
+                "Ingredients",
+                "Instructions",
+                "Image_Name",
+                "Cleaned_Ingredients"
+            ],
+            "first_row": {
+                "Unnamed: 0": "0",
+                "Title": "Miso-Butter Roast Chicken With Acorn Squash Panzanella",
+                "Ingredients": "['1 (3\u00bd\u20134-lb.) whole chicken', '2\u00be tsp. kosher salt, divided, plus more', '2 small acorn squash (about 3 lb. total)', '2 Tbsp. finely chopped sage', '1 Tbsp. finely chopped rosemary', '6 Tbsp. unsalted butter, melted, plus 3 Tbsp. room temperature', '\u00bc tsp. ground allspice', 'Pinch of crushed red pepper flakes', 'Freshly ground black pepper', '\u2153 loaf good-quality sturdy white bread, torn into 1\" pieces (about 2\u00bd cups)', '2 medium apples (such as Gala or Pink Lady; about 14 oz. total), cored, cut into 1\" pieces', '2 Tbsp. extra-virgin olive oil', '\u00bd small red onion, thinly sliced', '3 Tbsp. apple cider vinegar', '1 Tbsp. white miso', '\u00bc cup all-purpose flour', '2 Tbsp. unsalted butter, room temperature', '\u00bc cup dry white wine', '2 cups unsalted chicken broth', '2 tsp. white miso', 'Kosher salt, freshly ground pepper']",
+                "Instructions": "Pat chicken dry with paper towels, season all over with 2 tsp. salt, and tie legs together with kitchen twine. Let sit at room temperature 1 hour.\nMeanwhile, halve squash and scoop out seeds. Run a vegetable peeler along ridges of squash halves to remove skin. Cut each half into \u00bd\"-thick wedges; arrange on a rimmed baking sheet.\nCombine sage, rosemary, and 6 Tbsp. melted butter in a large bowl; pour half of mixture over squash on baking sheet. Sprinkle squash with allspice, red pepper flakes, and \u00bd tsp. salt and season with black pepper; toss to coat.\nAdd bread, apples, oil, and \u00bc tsp. salt to remaining herb butter in bowl; season with black pepper and toss to combine. Set aside.\nPlace onion and vinegar in a small bowl; season with salt and toss to coat. Let sit, tossing occasionally, until ready to serve.\nPlace a rack in middle and lower third of oven; preheat to 425\u00b0F. Mix miso and 3 Tbsp. room-temperature butter in a small bowl until smooth. Pat chicken dry with paper towels, then rub or brush all over with miso butter. Place chicken in a large cast-iron skillet and roast on middle rack until an instant-read thermometer inserted into the thickest part of breast registers 155\u00b0F, 50\u201360 minutes. (Temperature will climb to 165\u00b0F while chicken rests.) Let chicken rest in skillet at least 5 minutes, then transfer to a plate; reserve skillet.\nMeanwhile, roast squash on lower rack until mostly tender, about 25 minutes. Remove from oven and scatter reserved bread mixture over, spreading into as even a layer as you can manage. Return to oven and roast until bread is golden brown and crisp and apples are tender, about 15 minutes. Remove from oven, drain pickled onions, and toss to combine. Transfer to a serving dish.\nUsing your fingers, mash flour and butter in a small bowl to combine.\nSet reserved skillet with chicken drippings over medium heat. You should have about \u00bc cup, but a little over or under is all good. (If you have significantly more, drain off and set excess aside.) Add wine and cook, stirring often and scraping up any browned bits with a wooden spoon, until bits are loosened and wine is reduced by about half (you should be able to smell the wine), about 2 minutes. Add butter mixture; cook, stirring often, until a smooth paste forms, about 2 minutes. Add broth and any reserved drippings and cook, stirring constantly, until combined and thickened, 6\u20138 minutes. Remove from heat and stir in miso. Taste and season with salt and black pepper.\nServe chicken with gravy and squash panzanella alongside.",
+                "Image_Name": "miso-butter-roast-chicken-acorn-squash-panzanella",
+                "Cleaned_Ingredients": "['1 (3\u00bd\u20134-lb.) whole chicken', '2\u00be tsp. kosher salt, divided, plus more', '2 small acorn squash (about 3 lb. total)', '2 Tbsp. finely chopped sage', '1 Tbsp. finely chopped rosemary', '6 Tbsp. unsalted butter, melted, plus 3 Tbsp. room temperature', '\u00bc tsp. ground allspice', 'Pinch of crushed red pepper flakes', 'Freshly ground black pepper', '\u2153 loaf good-quality sturdy white bread, torn into 1\" pieces (about 2\u00bd cups)', '2 medium apples (such as Gala or Pink Lady; about 14 oz. total), cored, cut into 1\" pieces', '2 Tbsp. extra-virgin olive oil', '\u00bd small red onion, thinly sliced', '3 Tbsp. apple cider vinegar', '1 Tbsp. white miso', '\u00bc cup all-purpose flour', '2 Tbsp. unsalted butter, room temperature', '\u00bc cup dry white wine', '2 cups unsalted chicken broth', '2 tsp. white miso', 'Kosher salt', 'freshly ground pepper']"
+            }
+        }
+    },
+    "movieLens_32m": {
+        "links": {
+            "rows_loaded": 1,
+            "columns": [
+                "movieId",
+                "imdbId",
+                "tmdbId"
+            ],
+            "first_row": {
+                "movieId": "1",
+                "imdbId": "0114709",
+                "tmdbId": "862"
+            }
+        },
+        "tags": {
+            "rows_loaded": 1,
+            "columns": [
+                "userId",
+                "movieId",
+                "tag",
+                "timestamp"
+            ],
+            "first_row": {
+                "userId": "22",
+                "movieId": "26479",
+                "tag": "Kevin Kline",
+                "timestamp": "1583038886"
+            }
+        },
+        "ratings": {
+            "rows_loaded": 1,
+            "columns": [
+                "userId",
+                "movieId",
+                "rating",
+                "timestamp"
+            ],
+            "first_row": {
+                "userId": "1",
+                "movieId": "17",
+                "rating": "4.0",
+                "timestamp": "944249077"
+            }
+        },
+        "movies": {
+            "rows_loaded": 1,
+            "columns": [
+                "movieId",
+                "title",
+                "genres"
+            ],
+            "first_row": {
+                "movieId": "1",
+                "title": "Toy Story (1995)",
+                "genres": "Adventure|Animation|Children|Comedy|Fantasy"
+            }
+        }
+    },
+    "culinary_50k": {
+        "dataset": {
+            "rows_loaded": 1,
+            "columns": [
+                "Name",
+                "Author",
+                "Date",
+                "Rating Value",
+                "Rating Count",
+                "Preparation Time",
+                "Cooking Time",
+                "Category",
+                "Cuisine",
+                "Ingredients",
+                "Ingredients_Raw",
+                "Instructions",
+                "Cooking Methods",
+                "Implements",
+                "Number of steps",
+                "Servings",
+                "Nutrition",
+                "URL"
+            ],
+            "first_row": {
+                "Name": "Pineapple Glaze for Ham",
+                "Author": "Jackie",
+                "Date": "01/04/2025",
+                "Rating Value": "4.5",
+                "Rating Count": "104.0",
+                "Preparation Time": "10",
+                "Cooking Time": "5",
+                "Category": "['Dinner']",
+                "Cuisine": "['American']",
+                "Ingredients": "[{'ingredient': 'pineapple', 'quantity': '1', 'unit': '', 'misc': 'drained with juice reserved 1525 ounce sliced'}, {'ingredient': 'maraschino cherries', 'quantity': '1', 'unit': 'jar', 'misc': 'drained 4 ounce'}, {'ingredient': 'brown sugar', 'quantity': '1', 'unit': 'cup', 'misc': ''}]",
+                "Ingredients_Raw": "['1 (15.25 ounce) can sliced pineapple, drained with juice reserved', '1 (4 ounce) jar maraschino cherries, drained', '1 cup brown sugar']",
+                "Instructions": "['Gather the ingredients.', 'Before baking ham, place pineapple slices on ham with toothpicks and place cherries in center of pineapple.', 'Combine brown sugar and reserved pineapple juice in a medium microwave-safe bowl. Mix and microwave for about 5 minutes, until mixture is thick.', 'Pour some of this glaze over the ham about every 15 minutes in the last hour of baking, until all is used.']",
+                "Cooking Methods": "['microwave']",
+                "Implements": "['microwave']",
+                "Number of steps": "4",
+                "Servings": "['14', '3 cups']",
+                "Nutrition": "{'Calories': '93 kcal', 'Carbohydrates': '24 g', 'Cholesterol': '', 'Fiber': '0 g', 'Protein': '', 'Saturated Fat': '', 'Sodium': '7 mg', 'Sugar': '21 g', 'Fat': '', 'Unsaturated Fat': '0 g'}",
+                "URL": "https://www.allrecipes.com/recipe/17116/pineapple-glaze-for-ham/"
+            }
+        }
+    },
+    "recipe_13k": {
+        "recipes": {
+            "rows_loaded": 1,
+            "columns": [
+                "Dish_Title;Recipe_author;Recipe_category;Recipe_subcategory;Recipe_ingredients;Recipe;Source"
+            ],
+            "first_row": {
+                "Dish_Title;Recipe_author;Recipe_category;Recipe_subcategory;Recipe_ingredients;Recipe;Source": " las aceitunas y los palitos de cangrejo. Las cantidades ser\u00e1n a nuestro gusto.Si lo prefieres puedes ver con m\u00e1s detalle esta receta de ensaladilla rusa casera.4- A\u00f1adimos 2-3 cucharadas de mayonesa y mezclamos todo muy bien.Mira esta receta de mayonesa casera si prefieres hacer t\u00fa mismo en vez de comprarla ya hecha.5- Ponemos sobre la encimera de la cocina los trozos de salm\u00f3n ahumado y encima iremos poniendo una cucharada de la pasta que hemos preparado.6- Enrollamos los trozos de salm\u00f3n ahumado rellenos de ensaladilla y los iremos poniendo en una fuente sobre una cama de lechuga picada. Reservaremos en la nevera hasta la hora de servir.7- Servir los rollitos de salm\u00f3n con ensaladilla rusa reci\u00e9n hechos y decorar con algunas olivas m\u00e1s.No os perd\u00e1is todas las receta de entrante navide\u00f1os que tengo en mi blog Cocinando con Montse.;https://www.recetasgratis.net/receta-de-rollitos-de-salmon-ahumado-rellenos-de-ensaladilla-71632.html"
+            }
+        }
+    },
+    "foodCom_170k": {
+        "interactions_train": {
+            "rows_loaded": 1,
+            "columns": [
+                "user_id",
+                "recipe_id",
+                "date",
+                "rating",
+                "u",
+                "i"
+            ],
+            "first_row": {
+                "user_id": "2046",
+                "recipe_id": "4684",
+                "date": "2000-02-25",
+                "rating": "5.0",
+                "u": "22095",
+                "i": "44367"
+            }
+        },
+        "interactions_test": {
+            "rows_loaded": 1,
+            "columns": [
+                "user_id",
+                "recipe_id",
+                "date",
+                "rating",
+                "u",
+                "i"
+            ],
+            "first_row": {
+                "user_id": "8937",
+                "recipe_id": "44551",
+                "date": "2005-12-23",
+                "rating": "4.0",
+                "u": "2",
+                "i": "173538"
+            }
+        },
+        "interactions_validation": {
+            "rows_loaded": 1,
+            "columns": [
+                "user_id",
+                "recipe_id",
+                "date",
+                "rating",
+                "u",
+                "i"
+            ],
+            "first_row": {
+                "user_id": "76535",
+                "recipe_id": "33627",
+                "date": "2005-02-15",
+                "rating": "4.0",
+                "u": "5",
+                "i": "177317"
+            }
+        },
+        "PP_recipes": {
+            "rows_loaded": 1,
+            "columns": [
+                "id",
+                "i",
+                "name_tokens",
+                "ingredient_tokens",
+                "steps_tokens",
+                "techniques",
+                "calorie_level",
+                "ingredient_ids"
+            ],
+            "first_row": {
+                "id": "424415",
+                "i": "23",
+                "name_tokens": "[40480, 37229, 2911, 1019, 249, 6878, 6878, 2839, 1781, 40481]",
+                "ingredient_tokens": "[[2911, 1019, 249, 6878], [1353], [6953], [15341, 3261], [2056, 857, 643, 1631, 20480]]",
+                "steps_tokens": "[40480, 40482, 21662, 481, 6878, 500, 246, 1614, 1911, 10757, 240, 674, 9933, 8400, 40478, 40482, 1082, 589, 16126, 500, 481, 6878, 2839, 1781, 5024, 240, 488, 13770, 485, 23667, 40478, 40482, 1233, 481, 4165, 562, 481, 5186, 1454, 6878, 7213, 40478, 40482, 669, 481, 4165, 10230, 485, 256, 1178, 2107, 256, 240, 1233, 246, 17764, 562, 7648, 1571, 40478, 40482, 861, 7648, 1571, 240, 25690, 6878, 556, 481, 4438, 17080, 522, 246, 3602, 9082, 40478, 40482, 4103, 597, 240, 522, 1357, 504, 256, 1178, 2107, 256, 562, 609, 485, 282, 1808, 40478, 40481]",
+                "techniques": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]",
+                "calorie_level": "0",
+                "ingredient_ids": "[389, 7655, 6270, 1527, 3406]"
+            }
+        },
+        "RAW_interactions": {
+            "rows_loaded": 1,
+            "columns": [
+                "user_id",
+                "recipe_id",
+                "date",
+                "rating",
+                "review"
+            ],
+            "first_row": {
+                "user_id": "38094",
+                "recipe_id": "40893",
+                "date": "2003-02-17",
+                "rating": "4",
+                "review": "Great with a salad. Cooked on top of stove for 15 minutes.Added a shake of cayenne and a pinch of salt.  Used low fat sour cream.  Thanks."
+            }
+        },
+        "RAW_recipes": {
+            "rows_loaded": 1,
+            "columns": [
+                "name",
+                "id",
+                "minutes",
+                "contributor_id",
+                "submitted",
+                "tags",
+                "nutrition",
+                "n_steps",
+                "steps",
+                "description",
+                "ingredients",
+                "n_ingredients"
+            ],
+            "first_row": {
+                "name": "arriba   baked winter squash mexican style",
+                "id": "137739",
+                "minutes": "55",
+                "contributor_id": "47892",
+                "submitted": "2005-09-16",
+                "tags": "['60-minutes-or-less', 'time-to-make', 'course', 'main-ingredient', 'cuisine', 'preparation', 'occasion', 'north-american', 'side-dishes', 'vegetables', 'mexican', 'easy', 'fall', 'holiday-event', 'vegetarian', 'winter', 'dietary', 'christmas', 'seasonal', 'squash']",
+                "nutrition": "[51.5, 0.0, 13.0, 0.0, 2.0, 0.0, 4.0]",
+                "n_steps": "11",
+                "steps": "['make a choice and proceed with recipe', 'depending on size of squash , cut into half or fourths', 'remove seeds', 'for spicy squash , drizzle olive oil or melted butter over each cut squash piece', 'season with mexican seasoning mix ii', 'for sweet squash , drizzle melted honey , butter , grated piloncillo over each cut squash piece', 'season with sweet mexican spice mix', 'bake at 350 degrees , again depending on size , for 40 minutes up to an hour , until a fork can easily pierce the skin', 'be careful not to burn the squash especially if you opt to use sugar or butter', 'if you feel more comfortable , cover the squash with aluminum foil the first half hour , give or take , of baking', 'if desired , season with salt']",
+                "description": "autumn is my favorite time of year to cook! this recipe \r\ncan be prepared either spicy or sweet, your choice!\r\ntwo of my posted mexican-inspired seasoning mix recipes are offered as suggestions.",
+                "ingredients": "['winter squash', 'mexican seasoning', 'mixed spice', 'honey', 'butter', 'olive oil', 'salt']",
+                "n_ingredients": "7"
+            }
+        },
+        "PP_users": {
+            "rows_loaded": 1,
+            "columns": [
+                "u",
+                "techniques",
+                "items",
+                "n_items",
+                "ratings",
+                "n_ratings"
+            ],
+            "first_row": {
+                "u": "0",
+                "techniques": "[8, 0, 0, 5, 6, 0, 0, 1, 0, 9, 1, 0, 0, 0, 1, 0, 5, 0, 0, 0, 3, 1, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 8, 0, 0, 8, 2, 2, 0, 0, 0, 3, 3, 1, 0, 5, 0, 0, 2, 1, 1, 0, 3, 1, 7, 2, 2]",
+                "items": "[1118, 27680, 32541, 137353, 16428, 28815, 65803, 148743, 129939, 99377, 33025, 173660, 46706, 100515, 101276, 93176, 70383, 24204, 0, 172222, 19472, 90038, 84063, 71578, 11190, 58387, 27749, 101225, 85204, 89385, 161655]",
+                "n_items": "31",
+                "ratings": "[5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 4.0, 4.0, 5.0, 5.0, 4.0, 5.0, 5.0, 5.0, 5.0, 4.0, 4.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]",
+                "n_ratings": "31"
+            }
+        }
+    },
+    "recipeNLG_2m": {
+        "full_dataset": {
+            "rows_loaded": 1,
+            "columns": [
+                ",title,ingredients,directions,link,source,NER"
+            ],
+            "first_row": {
+                ",title,ingredients,directions,link,source,NER": " mix well.\"\", \"\"Using 2 teaspoons, drop and shape into 30 clusters on wax paper.\"\", \"\"Let stand until firm, about 30 minutes.\"\"]\",www.cookbooks.com/Recipe-Details.aspx?id=44874,Gathered,\"[\"\"brown sugar\"\", \"\"milk\"\", \"\"vanilla\"\", \"\"nuts\"\", \"\"butter\"\", \"\"bite size shredded rice biscuits\"\"]\""
+            }
+        }
+    }
+}
