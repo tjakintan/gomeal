@@ -1,26 +1,16 @@
-"use client";
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import "@/styles/globals.css";
 
-import React from "react";
-import { GoogleOAuthProvider } from "@react-oauth/google";
-import { UserProvider } from "../utils/user";
-import AppLayout from "./AppLayout";
+export const metadata: Metadata = {
+  title: "goMeal",
+  description: "A recipe, cooking, and food community app.",
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <GoogleOAuthProvider clientId={clientId}>
-          <React.StrictMode>
-            <UserProvider>
-              <AppLayout>
-                {children}
-              </AppLayout>
-            </UserProvider>
-          </React.StrictMode>
-        </GoogleOAuthProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

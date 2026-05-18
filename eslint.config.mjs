@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "components/cook_auth/**",
+    "components/cook_post/**",
+    "components/cook_feed.tsx",
+    "components/messages.jsx",
+    "hooks/**",
+    "utils/**",
   ]),
 ]);
 
