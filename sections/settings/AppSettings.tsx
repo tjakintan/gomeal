@@ -1,110 +1,87 @@
-import { View, Text, Pressable, useColorScheme } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useSettingsStore } from "@/stores/useSettings";
 import { useTheme } from "@/provider/ThemeProvider";
-import { NAV_COLORS } from "@/types";
+import { ACCENT_COLORS } from "@/types";
+import { ToggleButton, SelectionPickerButton, Button } from "@/components/ButtonComponent";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { SectionHeader } from "@/components/SectionComponent";
+
 const AppSettings:React.FC = () => {
 
     const { colors, textStyles } = useTheme();
     const updateApp = useSettingsStore((state) => state.updateApp);
     const theme = useSettingsStore((state) => state.settings.app.theme);
-    const navCirclePosition = useSettingsStore((state) => state.settings.app.navCirclePosition);
-    const navCircleColor = useSettingsStore((state) => state.settings.app.navCircleColor);
+    const accentColor = useSettingsStore((state) => state.settings.app.accentColor);
     const hapticsEnabled = useSettingsStore((state) => state.settings.app.hapticsEnabled);
+    const themeOptions: ("light" | "dark" | "system")[] = ["light", "dark", "system"];
     
     return (
-        <View style={{flex:1, width: "100%", backgroundColor:colors.secondaryCard}} className="rounded-[30px] gap-1 p-1 overflow-hidden">
+        <View style={{flex:1, width: "100%"}} className="rounded-[30px] gap-1 p-1 overflow-hidden">
 
             {/* edit theme */}
             <View className="flex-1 p-5 gap-2 overflow-hidden">
-                <Text className={`${textStyles.section}`}>Theme</Text>
+
+                <SectionHeader
+                    title="Theme"
+                    showDivider
+                    titleClassName={textStyles.section}
+                /> 
+
                 <View className="flex-row gap-2">
-
-                    {["light", "dark", "system"].map((mode) => {
-
-                        const isActive = theme === mode;
-                        return (
-                            <Pressable
-                                key={mode}
-                                onPress={() =>
-                                    updateApp({
-                                        theme: mode as "light" | "dark" | "system",
-                                    })
-                                }
-                                className={`p-3 rounded-full ${
-                                    isActive ? "bg-blue-500" : "bg-gray-300"
-                                }`}
-                            >
-                                <Text className="text-white">{mode}</Text>
-                            </Pressable>
-                        )
-                    })}
-
+                    <SelectionPickerButton
+                        value={themeOptions.indexOf(theme)} 
+                        onChange={(idx) => updateApp({ theme: themeOptions[idx] })}
+                    >
+                        <MaterialIcons name="light-mode" size={24} color="orange" />
+                        <MaterialIcons name="dark-mode" size={24} color="black" />
+                        <MaterialIcons name="settings-suggest" size={24} color="black" />
+                    </SelectionPickerButton>
                 </View>
+
                 <Text className={textStyles.small}>
                     Choose how the app appears: light, dark, or automatically match your system settings.
                 </Text>
             </View>
 
-            {/* edit navigation circle color */}
+            {/* edit accent color */}
             <View className="flex-1 p-5 gap-2 overflow-hidden">
-                <Text className={textStyles.section}>Navigation Circle Color</Text>
+
+                <SectionHeader
+                    title="Accent Color"
+                    showDivider
+                    titleClassName={textStyles.section}
+                /> 
+
                 <View className="flex-row flex-wrap gap-3 mt-3">
-
-                    {Object.entries(NAV_COLORS).map(([name, value]) => {
-
-                        const isActive = navCircleColor === name;
-
+                    {Object.entries(ACCENT_COLORS).map(([name, value]) => {
+                        const isActive = accentColor === name;
+                        const isNone = name === "none";
                         return (
-                            <Pressable
-                            key={name}
-                            onPress={() =>
-                                updateApp({
-                                navCircleColor: name as keyof typeof NAV_COLORS,
-                                })
-                            }
-                            style={{
-                                backgroundColor: value,
-                                width: 40,
-                                height: 40,
-                                borderRadius: 999,
-                                borderWidth: isActive ? 3 : 0,
-                                borderColor: colors.text,
-                            }}
-                            />
-                        );
-                    })}
-
-                </View>
-                <Text className={textStyles.small}>
-                    Choose where the floating navigation circle appears on the screen.
-                </Text>
-            </View>
-
-            {/* edit navigation circle position */}
-            <View className={`flex-1 p-5 gap-2 overflow-hidden`}>
-                <Text className={textStyles.section}>Navigation Circle Position</Text>
-                <View className="flex-row gap-2">
-
-                    {["TL", "TR", "BL", "BR"].map((pos) => {
-
-                        const isActive = navCirclePosition === pos;
-                        return (
-                            <Pressable
-                                key={pos}
+                            <Button
+                                key={name}
                                 onPress={() =>
                                     updateApp({
-                                        navCirclePosition: pos as "TL" | "TR" | "BL" | "BR",
+                                    accentColor: name as keyof typeof ACCENT_COLORS,
                                     })
                                 }
-                                className={`p-3 rounded-full ${
-                                    isActive ? "bg-blue-500" : "bg-gray-300"
-                                }`}
+                                style={{
+                                    backgroundColor:  value,
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 999,
+                                    borderWidth: isActive ? 3 : 0,
+                                    borderColor: "white",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
                             >
-                                <Text className="text-white">{pos}</Text>
-                        </Pressable>
-                        )
+                                {isNone && (
+                                    <FontAwesome name="ban" size={25} color={colors.text} />
+                                )}
+                            </Button>
+                        );
                     })}
-                    
                 </View>
                 <Text className={textStyles.small}>
                     Customize the color of the navigation circle to match your style.
@@ -113,34 +90,24 @@ const AppSettings:React.FC = () => {
 
             {/* edit haptics */}
             <View className="flex-1 p-5 gap-2 overflow-hidden">
-                <Text className={textStyles.section}>Haptics</Text>
-                <View className="flex-row gap-2 mt-3">
 
-                    {[
-                        { label: "On", value: true },
-                        { label: "Off", value: false },
-                    ].map((option) => {
+                <SectionHeader
+                    title="Haptics"
+                    showDivider
+                    titleClassName={textStyles.section}
+                />
 
-                        const isActive = hapticsEnabled === option.value;
-
-                        return (
-                            <Pressable
-                                key={option.label}
-                                onPress={() =>
-                                    updateApp({
-                                    hapticsEnabled: option.value,
-                                    })
-                                }
-                                className={`px-4 py-3 rounded-full ${
-                                    isActive ? "bg-blue-500" : "bg-gray-300"
-                                }`}
-                            >
-                                <Text className="text-white">{option.label}</Text>
-                            </Pressable>
-                        );
-                    })}
-
+                <View className="flex-row items-center mt-3">
+                    <ToggleButton
+                        value={hapticsEnabled}
+                        onChange={(v) =>
+                            updateApp({
+                            hapticsEnabled: v,
+                            })
+                        }
+                    />
                 </View>
+                
                 <Text className={textStyles.small}>
                     Enable subtle vibration feedback when interacting with buttons and controls.
                 </Text>

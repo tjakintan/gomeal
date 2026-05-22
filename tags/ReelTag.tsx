@@ -1,0 +1,474 @@
+import { Media } from "../media/media";
+import { formatCount } from "@/utils/time";
+import { useTheme } from "@/provider/ThemeProvider";
+import { ReelFeedCard} from "@/types/feed.types";
+import { useReel } from "@/stores/useReel";
+import { FeedActionCountsTypes, FeedActionType } from "@/types/feed.types";
+import React, { JSX, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Dimensions, Image, PanResponder, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+import { FeedLoveIcon, FeedStarIcon } from "@/icons/feed_icon";
+import { Button } from "@/components/ButtonComponent";
+import { AddIcon, FatIcon, ShareIcon } from "@/icons/Icon";
+import { AvatarRender } from "@/dashboard/Avatar";
+import { useAvatarMood } from "@/dashboard/store/useAvatar";
+import { useFeed } from "@/stores/useFeed";
+import { LinearGradient } from "expo-linear-gradient";
+
+type Props = {
+    card?: ReelFeedCard;
+    onSwipeUp: () => void;
+    onSwipeDown: () => void;
+    onSetActiveProfile: (post_id: number) => void;
+    onOpenCook: (post_id: number) => void;
+    onSetSharePost: (post_id: number) => void;
+    style?: StyleProp<ViewStyle>;
+};
+
+export const REEL_TAG_HEIGHT = Dimensions.get("window").height - 350;
+export const REEL_TAG_WIDTH = Dimensions.get("window").width ;
+export const REEL_TAG_RADIUS = 0;
+const SWIPE_THRESHOLD = REEL_TAG_HEIGHT / 2;
+
+const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetActiveProfile, onSetSharePost, onOpenCook }) => {
+
+    const { post_id, info, avatar, profile_name, level } = card ?? {};
+    const { colors, textStyles } = useTheme("dark");
+
+    const onSwipeUpRef = useRef(onSwipeUp);
+    const onSwipeDownRef = useRef(onSwipeDown);
+
+    const [hide, setHide] = useState(false);
+
+    const panResponder = useRef(
+        PanResponder.create({
+
+            onStartShouldSetPanResponder: () => true,
+
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                return Math.abs(gestureState.dy) > Math.abs(gestureState.dx); 
+            },
+
+            onPanResponderRelease: (_, gestureState) => {
+                const { dy } = gestureState;
+
+                // swipe up
+                if (dy < -SWIPE_THRESHOLD) {
+                    onSwipeUpRef.current();
+                }
+                // swipe down
+                else if (dy > SWIPE_THRESHOLD) {
+                    onSwipeDownRef.current();
+                }
+
+                setHide(false);
+            },
+
+            onPanResponderTerminate: () => {
+                setHide(false);
+            },
+
+        })
+    ).current;
+
+    useEffect(() => {
+        onSwipeUpRef.current = onSwipeUp;
+        onSwipeDownRef.current = onSwipeDown;
+    }, [onSwipeUp, onSwipeDown]);
+
+    return (
+        <View
+            style={{height: REEL_TAG_HEIGHT, width: REEL_TAG_WIDTH,}}
+            {...panResponder.panHandlers}
+        >
+            <View
+                style={{
+                    height: REEL_TAG_HEIGHT,
+                    width: REEL_TAG_WIDTH,
+                    borderRadius: REEL_TAG_RADIUS,
+                    backgroundColor: colors.background,
+                    overflow: "hidden",
+                }}
+            >
+                <View
+                    style={{...StyleSheet.absoluteFillObject}}
+                    onTouchStart={() => setHide(true)}
+                    onTouchEnd={() => setHide(false)}
+                    onTouchCancel={() => setHide(false)}
+                >
+
+                    <Media
+                        uri={info?.dish_media_url ?? ""}
+                        mediaType={info?.dish_media_type ?? "image"}
+                        style={{height: info?.dish_media_type === "image" ? "80%":"100%", width: "100%"}}
+                        iconSize={55}
+                        //disableInteraction={true}
+                        muteControl="center"
+                        imageContentFit="contain"
+                        videoContentFit="cover"
+                    />
+
+                </View>
+
+                <View
+                    style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        gap: 5,
+                        paddingHorizontal: 10,
+                        paddingBottom: 15,
+                        alignItems: "flex-start",
+                        opacity: hide ? 0.1 : 1,
+                    }}
+                >
+                    <LinearGradient
+                        pointerEvents="none"
+                        colors={[
+                            "rgba(0, 0, 0, 0.85)",
+                            "rgba(0, 0, 0, 0.45)",
+                            "rgba(0, 0, 0, 0)",
+                        ]}
+                        locations={[0, 0.55, 1]}
+                        start={{ x: 0.5, y: 1 }}
+                        end={{ x: 0.5, y: 0.1 }}
+                        style={{
+                            ...StyleSheet.absoluteFillObject,
+                            shadowColor: "#000",
+                            shadowOpacity: 0.35,
+                            shadowRadius: 18,
+                            shadowOffset: { width: 0, height: 6 },
+                            elevation: 10,
+                        }}
+                    />
+
+                    <View 
+                        style={{
+                            height: 50,
+                            gap: 5,
+                            flexDirection: "row",  
+                        }}
+                    >
+                        <Button 
+                            style={{
+                                height: 40,
+                                width: 40, 
+                                borderWidth: 1,
+                                borderRadius: 999,
+                                borderColor: colors.text,
+                                overflow: "hidden" ,                   
+                            }}
+                            onPress={() => onSetActiveProfile(post_id ?? 0)}
+                            className="items-center justify-center"
+                        >
+                            <AvatarRender avatar={avatar} size={30} />
+                        </Button>
+
+                        <Button 
+                            style={{
+                                height: 50,
+                                gap: 3,
+                                width: 300, 
+                                flexDirection: "column",   
+                                alignItems: "flex-start",    
+                                paddingHorizontal: 10,
+                                paddingVertical: 2,
+                            }}
+                            onPress={() => onOpenCook(post_id ?? 0)}
+                            className="w-full"
+                        >
+                            <Text
+                                style={{ opacity: 0.95, color: colors.text }}
+                                className={textStyles.body}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                            >
+                                {info?.dish_name ?? "Name"}
+                            </Text>
+
+                            <Text
+                                style={{ opacity: 0.75, color: colors.text }}
+                                className={textStyles.small}
+                                numberOfLines={2}
+                                ellipsizeMode="tail"
+                            >
+                                {info?.dish_description ?? "desc"}
+                            </Text>
+
+                        </Button>
+
+                    </View>
+
+                </View>
+
+                <View
+                    style={{
+                        position: "absolute",
+                        bottom: REEL_TAG_HEIGHT / 3,
+                        right: 5,
+                        gap: 5,
+                        padding: 5,
+                        maxWidth: REEL_TAG_WIDTH - 25,
+                        alignItems: "flex-start",
+                        opacity: hide ? 0.1 : 1,
+                    }}
+                >
+                    <FunctionRow 
+                        post_id={post_id ?? 0} 
+                        onSetSharePost={onSetSharePost}
+                    />
+                </View>
+                
+            </View>
+
+        </View>
+    )
+};
+
+export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: number) => void}> = ({ post_id, onSetSharePost }) => {
+
+    const setMood = useAvatarMood((s) => s.setMood);
+    const { toggleUserReelAction, updateCounts } = useReel();
+    const updatePostEverywhere = useFeed((s) => s.updatePostEverywhere);
+    const { colors, textStyles } = useTheme("dark");
+
+    const reel = useReel((state) => state.reels.find((r) => r.post_id === post_id));
+    const counts = reel?.action_counts;
+
+    const userActions = reel?.user_actions ?? [];
+
+    const [animateLove, setAnimateLove] = useState(0);
+
+    const handleAction = (action: keyof FeedActionCountsTypes) => {
+
+        const alreadyDone = userActions.includes(action as FeedActionType);
+        const delta = alreadyDone ? -1 : 1;
+
+        if (action === "post_share") {
+            onSetSharePost(post_id);
+            return;
+        }
+
+        if (action === "post_star") {
+            setMood("focused", 3000);
+        }
+        
+        if (action === "post_love" && !alreadyDone) {
+            setAnimateLove((prev) => prev + 1);
+            setMood("excited", 3000);
+        }
+
+        toggleUserReelAction(post_id, action as FeedActionType);
+        updateCounts(post_id, action, delta);
+
+        updatePostEverywhere(post_id, (post) => {
+            const currentActions = post.user_actions ?? [];
+
+            const nextActions = alreadyDone
+                ? currentActions.filter((item: FeedActionType) => item !== action)
+                : currentActions.includes(action as FeedActionType)
+                    ? currentActions
+                    : [...currentActions, action as FeedActionType];
+
+            return {
+                ...post,
+                user_actions: nextActions,
+                action_counts: {
+                    ...post.action_counts,
+                    [action]: Math.max((post.action_counts?.[action] ?? 0) + delta, 0),
+                },
+            };
+        });
+    };
+
+    type ReelActionKey = keyof Pick<
+        FeedActionCountsTypes,
+        "post_star" | "post_share" | "post_love"
+    >;
+
+    const actionIcons: Record<ReelActionKey, JSX.Element> = useMemo(() => ({
+        post_star: (
+            <FeedStarIcon
+                size={40}
+                color={colors.text}
+                fillColor="yellow"
+                starred={userActions.includes("post_star")}
+            />
+        ),
+        post_share: (
+            <ShareIcon color={colors.text} size={30} />
+        ),
+        post_love: (
+            <FeedLoveIcon
+                color={colors.text}
+                fillColor="red"
+                liked={userActions.includes("post_love")}
+                animationKey={animateLove}
+                size={30}
+            />
+        ),
+    }), [userActions, colors.text, animateLove]);
+
+    return (
+        <View 
+            style={{
+                gap: 20,
+                paddingVertical: 5,
+                flexDirection: "column",
+                justifyContent: "space-between",
+                alignItems: "center",
+            }} 
+        >
+            {Object.entries(actionIcons).map(([key, Icon]) => {
+                const action = key as ReelActionKey;
+                return (
+                    <View key={action} className="flex-col items-center justify-between">
+                        <Button 
+                            onPress={() => handleAction(action)} 
+                            onLongPress={() => {}}
+                        >
+                            {Icon}
+                        </Button>
+                        <Text className={textStyles.caption}>
+                            {formatCount(counts?.[action] ?? 0)}
+                        </Text>
+                    </View>
+                );
+            })}
+        </View>
+    );
+};
+
+export const EmptyReelTag: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
+    const { colors } = useTheme("dark");
+    const opacity = useRef(new Animated.Value(0.45)).current;
+
+    useEffect(() => {
+        const anim = Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacity, {
+                    toValue: 0.9,
+                    duration: 700,
+                    delay,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacity, {
+                    toValue: 0.45,
+                    duration: 700,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+
+        anim.start();
+
+        return () => anim.stop();
+    }, [delay, opacity]);
+
+    const bone = (
+        width: number | `${number}%`,
+        height: number,
+        radius = 8,
+        style?: StyleProp<ViewStyle>
+    ) => (
+        <Animated.View
+            style={[
+                {
+                    width,
+                    height,
+                    borderRadius: radius,
+                    backgroundColor: colors.card,
+                    opacity,
+                },
+                style,
+            ]}
+        />
+    );
+
+    return (
+        <View
+            style={{
+                width: REEL_TAG_WIDTH,
+                height: REEL_TAG_HEIGHT,
+                borderRadius: REEL_TAG_RADIUS,
+                overflow: "hidden",
+                backgroundColor: colors.background,
+            }}
+        >
+            {bone("100%", REEL_TAG_HEIGHT, REEL_TAG_RADIUS)}
+
+            <View
+                pointerEvents="none"
+                style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: "rgba(0, 0, 0, 0.55)",
+                }}
+            />
+
+            <View
+                style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    paddingHorizontal: 10,
+                    paddingBottom: 15,
+                }}
+            >
+                <View
+                    style={{
+                        height: 50,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 8,
+                    }}
+                >
+                    {bone(40, 40, 999)}
+
+                    <View
+                        style={{
+                            height: 50,
+                            justifyContent: "center",
+                            gap: 6,
+                            flex: 1,
+                            paddingRight: 45,
+                        }}
+                    >
+                        {bone("72%", 15, 6)}
+                        {bone("92%", 11, 5)}
+                        {bone("55%", 11, 5)}
+                    </View>
+                </View>
+            </View>
+
+            <View
+                style={{
+                    position: "absolute",
+                    bottom: REEL_TAG_HEIGHT / 3,
+                    right: 10,
+                    gap: 18,
+                    alignItems: "center",
+                }}
+            >
+                {[1, 2, 3].map((item) => (
+                    <View
+                        key={item}
+                        style={{
+                            alignItems: "center",
+                            gap: 5,
+                        }}
+                    >
+                        {bone(38, 38, 999)}
+                        {bone(24, 10, 5)}
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+};
+
+
+export default ReelTag;

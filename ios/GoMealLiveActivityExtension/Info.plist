@@ -6,12 +6,12 @@
 	<dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
+		<key>UIAppFonts</key>
+		<array>
+			<string>LuckiestGuy-Regular.ttf</string>
+		</array>
 	</dict>
 	<key>RCTNewArchEnabled</key>
 	<true/>
-	<key>UIAppFonts</key>
-	<array>
-		<string>LuckiestGuy-Regular.ttf</string>
-	</array>
 </dict>
 </plist>

@@ -1,0 +1,235 @@
+import { useState, useRef, useEffect } from "react";
+import { useTheme } from "@/provider/ThemeProvider";
+import Svg, { Path, Line } from "react-native-svg";
+import { Button } from "@/components/ButtonComponent";
+import { View, Text, FlatList, Image, Pressable, StyleSheet } from "react-native";
+import { MediaType, PostSectionInfoProps } from "@/types";
+import * as ImagePicker from "expo-image-picker";
+import { usePost } from "@/stores/usePost";
+import GomealGlassView from "@/components/GlassComponent";
+import { _DEFAULT_ICON_WIDTH, _DEFAULT_ICON_HEIGHT } from "@/types/layout.types";
+import { CameraIcon, GalleryIcon, XIcon } from "@/icons/Icon";
+import DishEnhanceMedia from "@/sections/post/DishMedia/EnhanceMedia";
+import * as MediaLibrary from "expo-media-library";
+import { AddIcon } from '@/icons/Icon';
+import { SectionHeader } from "@/components/SectionComponent";
+import { Media,} from "@/media/media";
+
+const DishMedia: React.FC<PostSectionInfoProps> = ({
+  isFocused,
+  onMediaSelected,
+  mediaSource,
+  stepIndex,
+  onEnhanceMediaOpen,
+  onCompleteChange,
+}) => {
+
+    const { colors } = useTheme("dark");
+    const { info, setMedia, } = usePost();
+    const [uri, setUri] = useState<{ uri: string; type: MediaType } | null>(null);
+
+    type AssetWithLocalUri = MediaLibrary.Asset & { localUri: string };
+    const [cameraRollMedia, setCameraRollMedia] = useState<AssetWithLocalUri[]>([]);
+
+    const openCamera = async () => {
+
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: mediaSource === "step_image" ? ["images"] : ["images", "videos"],
+            allowsEditing: mediaSource === "step_image",
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setUri({ 
+                uri: result.assets[0].uri, 
+                type: result.assets[0].type === "video" ? "video" : "image" 
+            });
+        }
+    };
+
+    const openGallery = async () => {
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: mediaSource === "step_image" ? ["images"] : ["images", "videos"],
+            allowsEditing: mediaSource === "step_image",
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setUri({ 
+                uri: result.assets[0].uri, 
+                type: result.assets[0].type === "video" ? "video" : "image" 
+            });
+        }
+    };
+
+    useEffect(() => {
+
+        const fetchLastThree = async () => {
+
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            if (status !== "granted") return;
+
+            try {
+
+                const mediaResult = await MediaLibrary.getAssetsAsync({
+                    first: 3,
+                    sortBy: [MediaLibrary.SortBy.creationTime],
+                    mediaType: ["photo", "video"],
+                });
+
+                const assetsWithLocalUri = await Promise.all(
+                    mediaResult.assets.reverse().map(async (asset) => {
+                        const info = await MediaLibrary.getAssetInfoAsync(asset);
+                        return { 
+                            ...asset, 
+                            localUri: info.localUri || asset.uri,  
+                        };
+                    })
+                );
+
+                setCameraRollMedia(assetsWithLocalUri);
+
+            } catch (err) {
+                console.log("Error fetching media:", err);
+            }
+
+        };
+
+        fetchLastThree();
+    }, []);
+
+    useEffect(() => {
+        if (uri) {
+            onEnhanceMediaOpen?.(true);
+        } else {
+            onEnhanceMediaOpen?.(false);
+        }
+    }, [uri, onEnhanceMediaOpen]);
+
+// advance to next section --DON'T TOUCH
+    useEffect(() => {
+        const hasStepImage = mediaSource === "step_image" && !!uri;
+        const hasMainImage = mediaSource === "post_main" && !!info.dish_media_url;
+
+        onCompleteChange?.(hasStepImage || hasMainImage);
+    }, [mediaSource, uri, info.dish_media_url, onCompleteChange]);
+
+    return (
+        <View style={{ backgroundColor: colors.background }} className="flex-1 p-3 flex-col">
+
+            {mediaSource === "step_image" && (stepIndex != null) && (
+                <SectionHeader
+                    title={`Step ${stepIndex + 1}`}
+                />
+            )}
+
+            <View style={{flex: 1, padding: 10}}>
+                {uri ? (
+                    <DishEnhanceMedia 
+                        uri={uri.uri} 
+                        onClose={() => {setUri(null)}}
+                        mediaType={uri.type}
+                        onEnhanceDone={(e_uri) => {
+                            if (mediaSource === "step_image" && stepIndex != null) {
+                                onMediaSelected?.(e_uri, mediaSource ?? "post_main", stepIndex);
+                            }
+                            if (mediaSource === "post_main") {
+                                setMedia(e_uri, uri.type);
+                                console.log("Selected media URI:", e_uri);
+                            }
+                        }}
+                    />
+                ) : (
+                    <View style={{flex: 1}} className="w-full flex-col justify-center p-1 gap-1">
+
+                        <Button 
+                            style={{
+                                height: 250, 
+                                borderRadius: 0, 
+                                padding: 5, 
+                                borderColor: colors.text, 
+                                borderStyle: "dashed", 
+                                borderWidth: 1, 
+                                justifyContent:"center"
+                            }} 
+                            onPress={openCamera}
+                        >
+                            {info.dish_media_url && (
+                                <Media
+                                    uri={info.dish_media_url}
+                                    mediaType={info.dish_media_type ?? "image"}
+                                    style={{flex: 1,  width: "100%", height: 200}}
+                                    disableInteraction
+                                    muteControl="row"
+                                />
+                            )}
+
+                            <View
+                                style={{
+                                    position: "absolute",
+                                    height: 60,
+                                    width: 60,
+                                    borderRadius: 999,
+                                    overflow: "hidden",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <View
+                                    style={{
+                                    ...StyleSheet.absoluteFillObject,
+                                    backgroundColor: colors.background,
+                                    opacity: 0.25,
+                                    }}
+                                />
+
+                                <CameraIcon color={colors.text} size={35} />
+                            </View>   
+
+                        </Button>
+
+                        <View style={{height: 100}} className="w-full p-1 gap-1 flex-row items-center justify-center">
+                            {cameraRollMedia.map((pic) => (
+                                <Pressable
+                                    key={pic.id}
+                                    style={{    
+                                        width: 90,
+                                        height: 90,
+                                        aspectRatio: 1, 
+                                    }}
+                                    onPress={() => {
+                                        setUri({ 
+                                            uri: pic.localUri,
+                                            type: pic.mediaType === "video" ? "video" : "image" 
+                                        })
+                                    }}
+                                >
+                                    <View pointerEvents="none" style={{ flex: 1 }}>
+                                        <Media
+                                            uri={pic.uri}
+                                            mediaType={pic.mediaType === "video" ? "video" : "image"}
+                                            style={{ width: "100%", height: "100%", borderRadius: 10 }}
+                                            disableInteraction
+                                            muteControl="none"
+                                        />
+                                    </View>
+                                </Pressable>
+                            ))}
+                            <Button onPress={openGallery} style={{height: 90, width: 90, borderRadius: 0, paddingLeft: 5}}>
+                                <GalleryIcon color={colors.text} size={35}/>
+                            </Button>
+                        </View>
+
+                    </View>
+                )}
+
+
+            </View>
+
+        </View>
+    )
+}
+
+
+export default DishMedia;
