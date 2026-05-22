@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -11,17 +11,38 @@
 		368027A2E3B84C50233FF0AC /* libPods-GoMeal.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 64691C7AA790614615867B83 /* libPods-GoMeal.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		40451EA345519C11E039C823 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 764585DB7A57F26BB79F69FB /* PrivacyInfo.xcprivacy */; };
-		64C25EF22FC0F22D000B8B64 /* GoMealLiveActivityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C25EEE2FC0F22D000B8B64 /* GoMealLiveActivityModule.swift */; };
-		64C25EF32FC0F22D000B8B64 /* GoMealLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C25EEC2FC0F22D000B8B64 /* GoMealLiveActivityAttributes.swift */; };
-		64C25EF42FC0F22D000B8B64 /* GoMealLiveActivityExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C25EED2FC0F22D000B8B64 /* GoMealLiveActivityExtension.swift */; };
-		64C25EF52FC0F22D000B8B64 /* AppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C25EEA2FC0F22D000B8B64 /* AppIntent.swift */; };
-		64C25EF62FC0F22D000B8B64 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 64C25EEB2FC0F22D000B8B64 /* Assets.xcassets */; };
-		64C25EF72FC0F22D000B8B64 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 64C25EEF2FC0F22D000B8B64 /* Info.plist */; };
-		64C25EF82FC0F22D000B8B64 /* LuckiestGuy-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 64C25EF02FC0F22D000B8B64 /* LuckiestGuy-Regular.ttf */; };
+		64DF7F952FC0F54B00FFCCDA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 64DF7F942FC0F54B00FFCCDA /* WidgetKit.framework */; };
+		64DF7F972FC0F54B00FFCCDA /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 64DF7F962FC0F54B00FFCCDA /* SwiftUI.framework */; };
+		64DF7FA82FC0F54C00FFCCDA /* GoMealLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 64DF7F932FC0F54B00FFCCDA /* GoMealLiveActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		64E51FFC2FC0FE5F0040B4E4 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		DBD5F0F626BAFDDE8EF85617 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82E4A58031DA45DA27FA165D /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		64DF7FA62FC0F54C00FFCCDA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 64DF7F922FC0F54B00FFCCDA;
+			remoteInfo = GoMealLiveActivityExtensionExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		64DF7FAD2FC0F54C00FFCCDA /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				64DF7FA82FC0F54C00FFCCDA /* GoMealLiveActivityExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0F66F83166EB16A18A1D4C7C /* Pods-GoMeal.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GoMeal.release.xcconfig"; path = "Target Support Files/Pods-GoMeal/Pods-GoMeal.release.xcconfig"; sourceTree = "<group>"; };
@@ -29,13 +50,9 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = GoMeal/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = GoMeal/Info.plist; sourceTree = "<group>"; };
 		64691C7AA790614615867B83 /* libPods-GoMeal.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GoMeal.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		64C25EEA2FC0F22D000B8B64 /* AppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntent.swift; sourceTree = "<group>"; };
-		64C25EEB2FC0F22D000B8B64 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		64C25EEC2FC0F22D000B8B64 /* GoMealLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoMealLiveActivityAttributes.swift; sourceTree = "<group>"; };
-		64C25EED2FC0F22D000B8B64 /* GoMealLiveActivityExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoMealLiveActivityExtension.swift; sourceTree = "<group>"; };
-		64C25EEE2FC0F22D000B8B64 /* GoMealLiveActivityModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoMealLiveActivityModule.swift; sourceTree = "<group>"; };
-		64C25EEF2FC0F22D000B8B64 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		64C25EF02FC0F22D000B8B64 /* LuckiestGuy-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "LuckiestGuy-Regular.ttf"; sourceTree = "<group>"; };
+		64DF7F932FC0F54B00FFCCDA /* GoMealLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GoMealLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		64DF7F942FC0F54B00FFCCDA /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		64DF7F962FC0F54B00FFCCDA /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		764585DB7A57F26BB79F69FB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = GoMeal/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		82E4A58031DA45DA27FA165D /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-GoMeal/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = GoMeal/SplashScreen.storyboard; sourceTree = "<group>"; };
@@ -46,12 +63,44 @@
 		F28F032EC72F3EB882676202 /* Pods-GoMeal.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GoMeal.debug.xcconfig"; path = "Target Support Files/Pods-GoMeal/Pods-GoMeal.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		649811702FC122490027BB86 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				GoMealLiveActivityExtension.swift,
+				GoMealLiveActivityModule.swift,
+			);
+			target = 13B07F861A680F5B00A75B9A /* GoMeal */;
+		};
+		64DF7FA92FC0F54C00FFCCDA /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				GoMealLiveActivityModule.swift,
+				Info.plist,
+			);
+			target = 64DF7F922FC0F54B00FFCCDA /* GoMealLiveActivityExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		64DF7F982FC0F54B00FFCCDA /* GoMealLiveActivityExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (649811702FC122490027BB86 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 64DF7FA92FC0F54C00FFCCDA /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = GoMealLiveActivityExtension; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				368027A2E3B84C50233FF0AC /* libPods-GoMeal.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		64DF7F902FC0F54B00FFCCDA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				64DF7F972FC0F54B00FFCCDA /* SwiftUI.framework in Frameworks */,
+				64DF7F952FC0F54B00FFCCDA /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,22 +134,10 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				64691C7AA790614615867B83 /* libPods-GoMeal.a */,
+				64DF7F942FC0F54B00FFCCDA /* WidgetKit.framework */,
+				64DF7F962FC0F54B00FFCCDA /* SwiftUI.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		64C25EF12FC0F22D000B8B64 /* GoMealLiveActivityExtension */ = {
-			isa = PBXGroup;
-			children = (
-				64C25EEA2FC0F22D000B8B64 /* AppIntent.swift */,
-				64C25EEB2FC0F22D000B8B64 /* Assets.xcassets */,
-				64C25EEC2FC0F22D000B8B64 /* GoMealLiveActivityAttributes.swift */,
-				64C25EED2FC0F22D000B8B64 /* GoMealLiveActivityExtension.swift */,
-				64C25EEE2FC0F22D000B8B64 /* GoMealLiveActivityModule.swift */,
-				64C25EEF2FC0F22D000B8B64 /* Info.plist */,
-				64C25EF02FC0F22D000B8B64 /* LuckiestGuy-Regular.ttf */,
-			);
-			path = GoMealLiveActivityExtension;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -113,9 +150,9 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				64C25EF12FC0F22D000B8B64 /* GoMealLiveActivityExtension */,
 				13B07FAE1A68108700A75B9A /* GoMeal */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
+				64DF7F982FC0F54B00FFCCDA /* GoMealLiveActivityExtension */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				E655DE25202963FC0DC5B050 /* Pods */,
@@ -130,6 +167,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* GoMeal.app */,
+				64DF7F932FC0F54B00FFCCDA /* GoMealLiveActivityExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -175,15 +213,37 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				E1CCE15E34DD79D6050D9A92 /* [CP] Embed Pods Frameworks */,
+				64DF7FAD2FC0F54C00FFCCDA /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				64DF7FA72FC0F54C00FFCCDA /* PBXTargetDependency */,
 			);
 			name = GoMeal;
 			productName = GoMeal;
 			productReference = 13B07F961A680F5B00A75B9A /* GoMeal.app */;
 			productType = "com.apple.product-type.application";
+		};
+		64DF7F922FC0F54B00FFCCDA /* GoMealLiveActivityExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 64DF7FAA2FC0F54C00FFCCDA /* Build configuration list for PBXNativeTarget "GoMealLiveActivityExtension" */;
+			buildPhases = (
+				64DF7F8F2FC0F54B00FFCCDA /* Sources */,
+				64DF7F902FC0F54B00FFCCDA /* Frameworks */,
+				64DF7F912FC0F54B00FFCCDA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				64DF7F982FC0F54B00FFCCDA /* GoMealLiveActivityExtension */,
+			);
+			name = GoMealLiveActivityExtension;
+			productName = GoMealLiveActivityExtensionExtension;
+			productReference = 64DF7F932FC0F54B00FFCCDA /* GoMealLiveActivityExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -191,11 +251,18 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1130;
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						DevelopmentTeam = UGQD4SYSL4;
 						LastSwiftMigration = 1250;
+						ProvisioningStyle = Automatic;
+					};
+					64DF7F922FC0F54B00FFCCDA = {
+						CreatedOnToolsVersion = 26.2;
+						DevelopmentTeam = UGQD4SYSL4;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -214,6 +281,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* GoMeal */,
+				64DF7F922FC0F54B00FFCCDA /* GoMealLiveActivityExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -226,10 +294,15 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				64C25EF62FC0F22D000B8B64 /* Assets.xcassets in Resources */,
-				64C25EF72FC0F22D000B8B64 /* Info.plist in Resources */,
-				64C25EF82FC0F22D000B8B64 /* LuckiestGuy-Regular.ttf in Resources */,
 				40451EA345519C11E039C823 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		64DF7F912FC0F54B00FFCCDA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				64E51FFC2FC0FE5F0040B4E4 /* Images.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,15 +458,26 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				64C25EF22FC0F22D000B8B64 /* GoMealLiveActivityModule.swift in Sources */,
-				64C25EF32FC0F22D000B8B64 /* GoMealLiveActivityAttributes.swift in Sources */,
-				64C25EF42FC0F22D000B8B64 /* GoMealLiveActivityExtension.swift in Sources */,
-				64C25EF52FC0F22D000B8B64 /* AppIntent.swift in Sources */,
 				DBD5F0F626BAFDDE8EF85617 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		64DF7F8F2FC0F54B00FFCCDA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		64DF7FA72FC0F54C00FFCCDA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 64DF7F922FC0F54B00FFCCDA /* GoMealLiveActivityExtension */;
+			targetProxy = 64DF7FA62FC0F54C00FFCCDA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -468,10 +552,108 @@
 			};
 			name = Release;
 		};
+		64DF7FAB2FC0F54C00FFCCDA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = UGQD4SYSL4;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GoMealLiveActivityExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = GoMealLiveActivityExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
+				PRODUCT_BUNDLE_IDENTIFIER = com.gomeal.mobile.GoMealLiveActivityExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		64DF7FAC2FC0F54C00FFCCDA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = UGQD4SYSL4;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GoMealLiveActivityExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = GoMealLiveActivityExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				PRODUCT_BUNDLE_IDENTIFIER = com.gomeal.mobile.GoMealLiveActivityExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		83CBBA201A601CBA00E9B192 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -491,6 +673,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -498,6 +681,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -527,6 +711,7 @@
 				OTHER_CPLUSPLUSFLAGS = "$(inherited)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
@@ -537,6 +722,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -556,6 +742,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -563,6 +750,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
+				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -584,6 +772,8 @@
 				OTHER_CPLUSPLUSFLAGS = "$(inherited)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
@@ -598,6 +788,15 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		64DF7FAA2FC0F54C00FFCCDA /* Build configuration list for PBXNativeTarget "GoMealLiveActivityExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				64DF7FAB2FC0F54C00FFCCDA /* Debug */,
+				64DF7FAC2FC0F54C00FFCCDA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

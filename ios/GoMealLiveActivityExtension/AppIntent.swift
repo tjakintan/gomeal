@@ -11,6 +11,7 @@ import ActivityKit
 
 // Defines the App Intent that stops a GoMeal Live Activity from the Lock Screen widget.
 // LiveActivityIntent allows this to run in the background without opening the app.
+@available(iOS 16.2, *)
 struct StopCookingIntent: LiveActivityIntent {
 
     static var title: LocalizedStringResource = "Stop Cooking"

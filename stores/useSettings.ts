@@ -12,31 +12,86 @@ type SettingsStore = {
 }
 
 const defaultSettings: Settings = {
-  food: { diets: defaultDietaryData, maxCookTime: null, calorieRange: { min: null, max: null }, units: "metric"},
-  feed: { compactMode: false, autoPlayVideos: true },
-  notifications: { likes: true, saves: true, cookingReminderTime: null },
+  food: {
+    diets: defaultDietaryData,
+    calorieRange: {
+      min: null,
+      max: null,
+    },
+  },
+
+  feed: {
+    autoPlayVideos: true,
+  },
+
+  notifications: {
+    likes: false,
+    messages: false,
+    cookingReminderTime: null,
+  },
+
   privacy: {},
-  app: { theme: "system", navCirclePosition: "BR", hapticsEnabled: true, navCircleColor: "none" },
+
+  app: {
+    theme: "system",
+    hapticsEnabled: true,
+    accentColor: "none",
+  },
 }
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set) => ({
       settings: defaultSettings,
+
       updateFood: (updates) =>
-        set((state) => ({ settings: { ...state.settings, food: { ...state.settings.food, ...updates } } })),
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            food: {
+              ...state.settings.food,
+              ...updates,
+            },
+          },
+        })),
+
       updateFeed: (updates) =>
-        set((state) => ({ settings: { ...state.settings, feed: { ...state.settings.feed, ...updates } } })),
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            feed: {
+              ...state.settings.feed,
+              ...updates,
+            },
+          },
+        })),
+
       updateNotifications: (updates) =>
         set((state) => ({
-          settings: { ...state.settings, notifications: { ...state.settings.notifications, ...updates } },
+          settings: {
+            ...state.settings,
+            notifications: {
+              ...state.settings.notifications,
+              ...updates,
+            },
+          },
         })),
+
       updateApp: (updates) =>
-        set((state) => ({ settings: { ...state.settings, app: { ...state.settings.app, ...updates } } })),
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            app: {
+              ...state.settings.app,
+              ...updates,
+            },
+          },
+        })),
+
       resetSettings: () => set({ settings: defaultSettings }),
     }),
     {
-      name: "gomeal-settings",
+      name: "settings",
       storage: createJSONStorage(() => {
         return require("@react-native-async-storage/async-storage").default
       }),
