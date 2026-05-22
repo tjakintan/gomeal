@@ -120,7 +120,7 @@ export default function HowToUsePage() {
             {postSteps.map((step) => (
               <div
                 key={step.index}
-                className={`flex items-center justify-between gap-4 p-4 rounded-[20px] border ${c.border} ${c.card}`}
+                className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 rounded-[20px] border ${c.border} ${c.card}`}
               >
                 {/* TEXT */}
                 <div className="flex-1 min-w-0">
@@ -131,14 +131,14 @@ export default function HowToUsePage() {
                 {step.src && (
                   <button
                     onClick={() => setSelectedImage(step.src)}
-                    className="shrink-0"
+                    className="shrink-0 self-center md:self-auto"
                   >
                     <Image
                       src={step.src}
                       alt={`GoMeal post step ${step.index}`}
-                      width={120}
-                      height={200}
-                      className="h-[200px] w-[120px] object-cover rounded-[18px] shadow-md"
+                      width={140}
+                      height={220}
+                      className="h-[220px] w-[140px] md:h-[200px] md:w-[120px] object-cover rounded-[18px] shadow-md"
                     />
                   </button>
                 )}
