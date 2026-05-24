@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useProfile } from "@/stores/useProfile";
-import { CameraIcon, EditIcon, GalleryIcon, GroceryIcon,  MessageIcon, PersonIcon, PersonSettingIcon } from "@/icons/Icon";
+import { CameraIcon, EditIcon, GalleryIcon, GroceryIcon, MessageIcon, PersonIcon, PersonSettingIcon } from "@/icons/Icon";
 import { Button } from "@/components/ButtonComponent";
 import { Media } from "@/media/media";
 import { useEffect, useRef } from "react";
@@ -95,9 +95,9 @@ export default function UserScreen() {
 
   return (
     <>
-      <View className="flex-1 flex-col items-center justify-start">
+      <View style={{ paddingBottom: 125 }} className="flex-1 flex-col items-center justify-start">
 
-        <View style={{ gap: 10, padding: 10 }} className="w-full">
+        <View style={{ gap: 10, paddingHorizontal: 10 }} className="w-full">
 
           <View style={{ height: 145 }} className="w-full">
             <Button
@@ -178,16 +178,25 @@ export default function UserScreen() {
               }}
             >
 
-              <Button onPress={() => openOverlay("inbox")} >
-                <MessageIcon color={colors.text} size={25} />
+              <Button onPress={() => openOverlay("inbox")}>
+                <View className="items-center gap-1">
+                  <MessageIcon color={colors.text} size={25} />
+                  <Text className={textStyles.small} style={{ color: colors.secondaryText }}>Inbox</Text>
+                </View>
               </Button>
 
-              <Button onPress={() => openOverlay("grocery")} >
-                <GroceryIcon color={colors.text} size={25} />
+              <Button onPress={() => openOverlay("grocery")}>
+                <View className="items-center gap-1">
+                  <GroceryIcon color={colors.text} size={25} />
+                  <Text className={textStyles.small} style={{ color: colors.secondaryText }}>Grocery</Text>
+                </View>
               </Button>
 
-              <Button onPress={() => openOverlay("info")} >
-                <PersonSettingIcon color={colors.text} size={22} />
+              <Button onPress={() => openOverlay("info")}>
+                <View className="items-center gap-1">
+                  <PersonSettingIcon color={colors.text} size={22} />
+                  <Text className={textStyles.small} style={{ color: colors.secondaryText }}>Account</Text>
+                </View>
               </Button>
 
             </View>
@@ -201,11 +210,11 @@ export default function UserScreen() {
         <BottomSheet
           ref={mediaSheetRef}
           index={-1}
-          snapPoints={[110]}
+          bottomInset={125}
           enablePanDownToClose
           backgroundStyle={{ 
             backgroundColor: colors.background,
-            borderRadius: 35,
+            borderRadius: 25,
             shadowColor: colors.text,
             shadowOpacity: 0.15,
             shadowRadius: 3,
@@ -218,7 +227,8 @@ export default function UserScreen() {
             style={{ 
               padding: 15, 
               gap: 12, 
-              flexDirection: "row", 
+              flexDirection: "row",
+              justifyContent: "center", 
               alignItems: "center", 
             }}
           >
@@ -228,6 +238,7 @@ export default function UserScreen() {
               style={{
                 flex: 1,
                 height: 60,
+                width: 100,
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
@@ -242,6 +253,7 @@ export default function UserScreen() {
               style={{
                 flex: 1,
                 height: 60,
+                width: 100,
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,

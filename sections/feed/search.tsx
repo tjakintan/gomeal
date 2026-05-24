@@ -69,7 +69,7 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
     return (
 
-        <View style={{...StyleSheet.absoluteFillObject, backgroundColor: colors.background}}>
+        <View style={{...StyleSheet.absoluteFillObject, backgroundColor: colors.background, paddingBottom: 125}}>
 
             <View 
                 style={{

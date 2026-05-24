@@ -306,6 +306,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
             <BottomSheet
                 ref={sectionSheetRef}
                 index={0}
+                bottomInset={125}
                 style={{ zIndex: 3 }}
                 snapPoints={snapPoints}
                 enableDynamicSizing={false}
@@ -554,6 +555,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
             <BottomSheet
                 ref={messageSheetRef}
                 index={-1}
+                bottomInset={125}
                 snapPoints={[525]}
                 enablePanDownToClose
                 backgroundStyle={{ backgroundColor: "transparent", borderRadius: 40 }}

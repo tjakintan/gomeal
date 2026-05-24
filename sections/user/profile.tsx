@@ -7,7 +7,7 @@ import { SectionHeader } from "@/components/SectionComponent";
 import { BadgeRender } from "@/dashboard/Avatar";
 import { MinTag } from "@/tags/MinTag";
 import { MinimumFeedCard, UserActionedPostsType } from "@/types/feed.types";
-import { EggsIcon, LikeIcon, TagIcon, CookIcon, ShareIcon, GridIcon, LikeOutlineIcon, StarOutlineIcon, ShareOutlineIcon, InfoIcon, DeleteIcon } from "@/icons/Icon";
+import { EggsIcon, LikeIcon, TagIcon, CookIcon, ShareIcon, GridIcon, LikeOutlineIcon, StarIcon, ShareOutlineIcon, InfoIcon, DeleteIcon } from "@/icons/Icon";
 import { FeedLoveIcon, FeedStarIcon } from "@/icons/feed_icon";
 import { Button } from "@/components/ButtonComponent";
 import { formatCount } from "@/utils/time";
@@ -31,7 +31,7 @@ const PROFILE_POST_FILTERS: ProfilePostFilterMeta[] = [
     { icon: GridIcon, label: "post", filter: "post_made" },
     { icon: LikeOutlineIcon, label: "like", filter: "post_love" },
     { icon: CookIcon, label: "cook", filter: "post_cook" },
-    { icon: StarOutlineIcon, label: "star", filter: "post_star" },
+    { icon: StarIcon, label: "star", filter: "post_star" },
     { icon: ShareOutlineIcon, label: "share", filter: "post_share" },
 ];
 
@@ -91,7 +91,7 @@ export function Profile() {
 
     return (
         <ScrollView
-            style={{ flex: 1, width: "100%", backgroundColor: colors.secondaryCard }}
+            style={{ flex: 1, width: "100%" }}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ gap: 20, paddingVertical: 10 }}
         >
@@ -107,7 +107,7 @@ export function Profile() {
                     title="Stats" 
                     titleClassName={textStyles.h3}
                     showBackground
-                    leftIcon={<InfoIcon size={25} color={colors.button} />}
+                    leftIcon={<InfoIcon size={25} color={colors.text} />}
                 />
 
                 <View className="flex-row gap-5">
@@ -151,7 +151,7 @@ function ProfilePostSection() {
                 minHeight: 200,
                 margin: 5,
                 borderTopWidth: 2,
-                borderColor: colors.background,
+                borderColor: colors.secondaryCard,
             }}
         >
             <View
@@ -180,15 +180,23 @@ function ProfilePostSection() {
                                 onPress={() => setActive(meta.filter)}
                                 style={{
                                     height: 50,
-                                    width: 50,
+                                    width: 65,
                                     alignItems: "center",
                                     justifyContent: "center",
                                 }}
                             >
-                                <Icon
-                                    color={isActive ? colors.button : colors.text}
-                                    size={23}
-                                />
+                                <View className="items-center gap-1">
+                                    <Icon
+                                        color={isActive ? colors.button : colors.text}
+                                        size={23}
+                                    />
+                                    <Text
+                                        className={textStyles.small}
+                                        style={{ color: isActive ? colors.button : colors.secondaryText, textTransform: "capitalize" }}
+                                    >
+                                        {meta.label}
+                                    </Text>
+                                </View>
                             </Button>
 
                             {index < array.length - 1 && (
@@ -199,7 +207,7 @@ function ProfilePostSection() {
                                         right: 0,
                                         height: 29,
                                         width: 2,
-                                        backgroundColor: colors.background,
+                                        backgroundColor: colors.secondaryCard,
                                         opacity: 0.75,
                                     }}
                                 />

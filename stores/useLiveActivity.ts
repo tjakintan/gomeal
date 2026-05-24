@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import { create } from "zustand";
 import goMealLiveActivity from "@/modules/go-meal-live-activity";
 import { FullPost } from "@/types/feed.types";
+import { StepData } from "@/types";
 
 type LiveActivityTimer = {
     timerEndsAt?: number;
@@ -33,6 +34,10 @@ export const useLiveActivity = create<LiveActivityState>((set) => ({
 
             const firstStep = post.steps?.[0] as any;
 
+            const stepsJson = JSON.stringify(
+                post.steps?.map((s: StepData) => s.description) ?? []
+            )
+
             await goMealLiveActivity.start(
                 post.info?.dish_name ?? "",
                 String(post.post_id),
@@ -42,6 +47,7 @@ export const useLiveActivity = create<LiveActivityState>((set) => ({
                     firstStep?.description ??
                     firstStep?.desc ??
                     "",
+                stepsJson,
                 timer?.timerEndsAt,
                 timer?.timerLabel
             );

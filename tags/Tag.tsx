@@ -45,7 +45,7 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
     const { info, dietary, nutrition, num_ingredients, profile_name, level, avatar, action_counts } = card;
 
     // zustand
-    const { colors, textStyles } = useTheme();
+    const { colors, textStyles } = useTheme("dark");
     const { getPercents, servings } = usePostNutrition();
 
     // refs
@@ -87,37 +87,6 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
     return (
         <View style={{ width: 195}} className="flex-col items-center justify-center">
 
-            <Button 
-                onPress={onPressProfile} 
-                style={{
-                    height: 40, 
-                    paddingVertical: 0,
-                    alignItems: "flex-end", 
-                    paddingHorizontal: 10
-                }} className="w-full flex-row gap-2">
-
-                {avatar && (
-                    <View 
-                        style={{
-                            height: 40,
-                            width: 40, 
-                            borderColor: colors.text,
-                            overflow: "hidden" ,                   
-                        }}
-                        className="items-center justify-end"
-                    >
-                        <AvatarRender avatar={avatar} size={30} />
-                    </View>
-                )}
-
-                {profile_name && (
-                    <Text style={{ maxWidth: 100 }} className={textStyles.caption} numberOfLines={1} ellipsizeMode="tail">
-                        {profile_name}
-                    </Text>
-                )}
-
-            </Button>
-
             <View style={{ height: 285}} className="w-full">
 
                 <FlipCard 
@@ -146,7 +115,6 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
                             mediaType={info.dish_media_type ?? "image"}
                             style={StyleSheet.absoluteFillObject}
                             onPress={onPressMedia}
-                            disableInteraction
                             onLongPress={() => { if (flipEnabled) setIsFlipped(prev => !prev) }}
                             //useSettingsAutoPlay={false}
                             iconSize={30}
@@ -162,21 +130,42 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
                                 alignSelf: "center",
                             }}
                         >
+
+                                <Button 
+                                    onPress={onPressProfile} 
+                                    style={{
+                                        height: "auto",
+                                        width: "auto",
+                                        padding: 0,
+                                        flexDirection: "row",
+                                        alignItems: "flex-end",
+                                        justifyContent: "flex-start",
+                                        gap: 5,
+                                    }} className="w-full">
+
+                                    {avatar && (
+                                            <AvatarRender avatar={avatar} size={30} background />
+                                    )}
+
+                                    {profile_name && (
+                                        <Text style={{ maxWidth: 100 }} className={textStyles.caption} numberOfLines={1} ellipsizeMode="tail">
+                                            {profile_name}
+                                        </Text>
+                                    )}
+
+                                </Button>
+
                             <Pressable
                                 style={{
-                                    borderRadius:tagRadius,
-                                    height: 70,
-                                    paddingHorizontal: 10,
                                     alignSelf: "center",
-                                    backgroundColor: colors.background,
                                     overflow: "hidden",
                                 }}
                                 className="w-full"
                                 onPress={onPressInfo}
                                 onLongPress={()=>{if (flipEnabled) setIsFlipped(prev => !prev)}}
                             >
-
-                                <View style={{height: 30}} className="flex-row gap-2">
+                        
+                                <View style={{ paddingLeft: 15 }} className="flex-row gap-2">
 
                                     {/* dif */}
                                     <View className="justify-center">
@@ -208,9 +197,9 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
                                         )}
 
                                     </View>
-                                    
+                                   
                                     {/* name */}
-                                    <View className="flex-1 p-1 justify-center">
+                                    <View className="flex-1 justify-center">
                                         {info.dish_name ? (
                                             <Text className={textStyles.caption} numberOfLines={1} ellipsizeMode="tail">
                                                 {info.dish_name}
@@ -226,12 +215,11 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
                                 </View>
 
                                 <View 
-                                    className="flex-1 flex-row justify-start items-center gap-1 p-1"
-                                    style={{height: 40}} 
+                                    style={{ paddingLeft: 7}}
+                                    className="flex-1 gap-2 flex-row justify-start items-center"
                                 >    
 
                                     {/* Active dietary icons */}
-
                                     {activeDiets.length > 0 && (
                                         <View
                                             onStartShouldSetResponder={() => true}
@@ -283,10 +271,9 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
                                             </Button>
                                         </View>
                                     )}
-                                    
 
                                     {/* ingredient count */}
-                                    <View className="p-2 flex-row gap-1 items-end">
+                                    <View className="flex-row gap-1 items-end">
                                         <Text className={textStyles.h3} style={{ color: colors.text }}>
                                             {num_ingredients} 
                                         </Text>
@@ -298,6 +285,7 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
                                 </View>
 
                             </Pressable>
+
                         </View>
 
                     </Button>

@@ -80,6 +80,7 @@ const FeedScreen: React.FC<{isFocused?: boolean; setASectionOpen?: (section: Sec
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
+        bottomInset={125}
         snapPoints={[535]}
         detached={false}
         onClose={() => {

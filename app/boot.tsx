@@ -16,7 +16,7 @@ const BootScreen: React.FC<BootScreenProps> = ({
   error = null,
   onRefresh,
 }) => {
-  const { colors, textStyles } = useTheme();
+  const { colors, textStyles } = useTheme("dark");
 
   return (
     <SafeAreaView

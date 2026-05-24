@@ -34,8 +34,12 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
     const openCamera = async () => {
 
         const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: mediaSource === "step_image" ? ["images"] : ["images", "videos"],
-            allowsEditing: mediaSource === "step_image",
+            mediaTypes: mediaSource === "step_image"
+                ? ["images"]
+                : ["images", "videos"],
+
+            allowsEditing: true,
+            videoMaxDuration: 30,
             quality: 1,
         });
 
@@ -50,8 +54,12 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
     const openGallery = async () => {
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: mediaSource === "step_image" ? ["images"] : ["images", "videos"],
-            allowsEditing: mediaSource === "step_image",
+            mediaTypes: mediaSource === "step_image"
+                ? ["images"]
+                : ["images", "videos"],
+
+            allowsEditing: true, 
+            videoMaxDuration: 30, 
             quality: 1,
         });
 
@@ -106,14 +114,6 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
             onEnhanceMediaOpen?.(false);
         }
     }, [uri, onEnhanceMediaOpen]);
-
-// advance to next section --DON'T TOUCH
-    useEffect(() => {
-        const hasStepImage = mediaSource === "step_image" && !!uri;
-        const hasMainImage = mediaSource === "post_main" && !!info.dish_media_url;
-
-        onCompleteChange?.(hasStepImage || hasMainImage);
-    }, [mediaSource, uri, info.dish_media_url, onCompleteChange]);
 
     return (
         <View style={{ backgroundColor: colors.background }} className="flex-1 p-3 flex-col">
@@ -198,11 +198,21 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
                                         height: 90,
                                         aspectRatio: 1, 
                                     }}
-                                    onPress={() => {
-                                        setUri({ 
+                                    onPress={async () => {
+
+                                        if (pic.mediaType === "video") {
+
+                                            const assetInfo = await MediaLibrary.getAssetInfoAsync(pic.id);
+
+                                            if (assetInfo.duration && assetInfo.duration > 30) {
+                                                return;
+                                            }
+                                        }
+
+                                        setUri({
                                             uri: pic.localUri,
-                                            type: pic.mediaType === "video" ? "video" : "image" 
-                                        })
+                                            type: pic.mediaType === "video" ? "video" : "image"
+                                        });
                                     }}
                                 >
                                     <View pointerEvents="none" style={{ flex: 1 }}>

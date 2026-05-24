@@ -333,7 +333,6 @@ export const IngredientQuantityButton: React.FC<{
                     onSubmitEditing={commitEdit}
                     keyboardType="decimal-pad"
                     autoFocus
-                    returnKeyType="done"
                     style={{ textAlign: "right" }}
                 />
             ) : (
@@ -382,28 +381,41 @@ export const IngredientUnitDropDownButton: React.FC<{
     selectedUnit: string;
     onSelectedUnit: (unit: string) => void;
 }> = ({ selectedUnit, onSelectedUnit }) => {
-    const { colors, textStyles } = useTheme();
-    const UNITS: Unit[] = ["", "g", "kg", "oz", "lb", "ml", "l"];
-    const lastTap = useRef<number>(0);
 
-    const currentIndex = Math.max(0, UNITS.indexOf(selectedUnit as Unit));
+    const { colors, textStyles } = useTheme();
+
+    const UNITS: Unit[] = ["", "g", "kg", "oz", "lb", "ml", "l"];
+
+    const currentIndex = Math.max(
+        0,
+        UNITS.indexOf(selectedUnit as Unit)
+    );
 
     const handlePress = () => {
-        const now = Date.now();
-        const isDoubleTap = now - lastTap.current < 300;
-        lastTap.current = now;
+        const next = (currentIndex + 1) % UNITS.length;
+        onSelectedUnit(UNITS[next]);
+    };
 
-        if (isDoubleTap) {
-            onSelectedUnit(UNITS[0]);
-        } else {
-            const next = (currentIndex + 1) % UNITS.length;
-            onSelectedUnit(UNITS[next]);
-        }
+    const handleLongPress = () => {
+        onSelectedUnit("");
     };
 
     return (
-        <Button onPress={handlePress} hitSlop={16} style={{ padding: 8, flex: 1, alignItems: "center" }}>
-            <Text className={textStyles.h3} style={{color: colors.button}}>
+        <Button
+            onPress={handlePress}
+            onLongPress={handleLongPress}
+            delayLongPress={250}
+            hitSlop={16}
+            style={{
+                padding: 8,
+                flex: 1,
+                alignItems: "center",
+            }}
+        >
+            <Text
+                className={textStyles.h3}
+                style={{ color: colors.button }}
+            >
                 {UNITS[currentIndex].trim() || "—"}
             </Text>
         </Button>

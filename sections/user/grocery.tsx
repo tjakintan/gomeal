@@ -143,6 +143,7 @@ export const GroceryMainScreen: React.FC<{
                 style={{
                     ...StyleSheet.absoluteFillObject,
                     backgroundColor: colors.background,
+                    
                 }}
             >
                 <View style={{ flex: 1 }}>
@@ -249,6 +250,7 @@ export const GroceryMainScreen: React.FC<{
                                 showsVerticalScrollIndicator={false}
                                 contentContainerStyle={{
                                     gap: 45,
+                                    paddingBottom: 125
                                 }}
                             >
                                 {activeCart.items.map((item) => {
@@ -478,6 +480,7 @@ export const GroceryMainScreen: React.FC<{
                                                         borderRadius: 999,
                                                         borderWidth: 1,
                                                         borderColor: colors.secondaryCard,
+                                                        backgroundColor: "white",
                                                         justifyContent: "center",
                                                         alignItems: "center",
                                                     }}
@@ -493,6 +496,7 @@ export const GroceryMainScreen: React.FC<{
                                                         borderRadius: 999,
                                                         borderWidth: 1,
                                                         borderColor: colors.secondaryCard,
+                                                        backgroundColor: "white",
                                                         justifyContent: "center",
                                                         alignItems: "center",
                                                     }}
@@ -508,6 +512,7 @@ export const GroceryMainScreen: React.FC<{
                                                         borderRadius: 999,
                                                         borderWidth: 1,
                                                         borderColor: colors.secondaryCard,
+                                                        backgroundColor: "white",
                                                         justifyContent: "center",
                                                         alignItems: "center",
                                                     }}
@@ -523,6 +528,7 @@ export const GroceryMainScreen: React.FC<{
                                                         borderRadius: 999,
                                                         borderWidth: 1,
                                                         borderColor: colors.secondaryCard,
+                                                        backgroundColor: "white",
                                                         justifyContent: "center",
                                                         alignItems: "center",
                                                     }}
@@ -538,6 +544,7 @@ export const GroceryMainScreen: React.FC<{
                                                         borderRadius: 999,
                                                         borderWidth: 1,
                                                         borderColor: colors.secondaryCard,
+                                                        backgroundColor: "white",
                                                         justifyContent: "center",
                                                         alignItems: "center",
                                                     }}
@@ -553,6 +560,7 @@ export const GroceryMainScreen: React.FC<{
                                                         borderRadius: 999,
                                                         borderWidth: 1,
                                                         borderColor: colors.secondaryCard,
+                                                        backgroundColor: "white",
                                                         justifyContent: "center",
                                                         alignItems: "center",
                                                     }}
@@ -568,6 +576,7 @@ export const GroceryMainScreen: React.FC<{
                                                         borderRadius: 999,
                                                         borderWidth: 1,
                                                         borderColor: colors.secondaryCard,
+                                                        backgroundColor: "white",
                                                         justifyContent: "center",
                                                         alignItems: "center",
                                                     }}

@@ -138,13 +138,13 @@ const AuthenticatedApp: React.FC = () => {
               }}
             />
           </View>
-          <View key="leaderboard"><Leaderboard /></View>
           <SafeAreaView key="post">
             <PostScreen
               isFocused={focusedSection === "post"}
               setMediaEnhanceOpen={setStopPageViewer}
             />
           </SafeAreaView>
+          <View key="leaderboard"><Leaderboard /></View>
           <SafeAreaView key="settings">
             <Settings isFocused={focusedSection === "settings"} />
           </SafeAreaView>
@@ -206,7 +206,6 @@ const AuthenticatedApp: React.FC = () => {
 
       </View>
       
-      <View style={{ height: 100, backgroundColor: colors.background }}>
         <Navigate
           openNavigateSection={navigateSectionOpen}
           setOpenNavigateSection={setNavigateSectionOpen}
@@ -219,7 +218,6 @@ const AuthenticatedApp: React.FC = () => {
           section={section}
           dark={feedReelSectionOpen}
         />
-      </View>
 
       <BugReportScreen
         visible={bugReportOpen}

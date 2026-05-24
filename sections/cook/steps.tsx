@@ -23,6 +23,8 @@ export const StepsScreen: React.FC<StepsScreenProps> = ({ dark, steps }) => {
     }));
   };
 
+  console.log(steps)
+
   return (
     <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: colors.background }}>
       <SectionHeader

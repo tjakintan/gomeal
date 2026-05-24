@@ -45,8 +45,7 @@ export const MinTag: React.FC<MinTagProps> = ({
     return (
 
         <Gesture>
-            <Pressable
-                onPress={onPress}
+            <View
                 style={[{ width: 155, height: 135 }, style]}
                 className="flex-col items-center justify-center"
             >
@@ -65,7 +64,6 @@ export const MinTag: React.FC<MinTagProps> = ({
                 >
 
                     <View
-                        pointerEvents="none"
                         style={[
                             StyleSheet.absoluteFillObject,
                             {
@@ -80,8 +78,8 @@ export const MinTag: React.FC<MinTagProps> = ({
                             uri={info.dish_media_url}
                             mediaType={info.dish_media_type}
                             style={{ width: "100%", height: "100%" }}
-                            disableInteraction={true}
                             iconSize={25}
+                            onPress={onPress}
                             muteControl="row"
                         />
 
@@ -137,7 +135,7 @@ export const MinTag: React.FC<MinTagProps> = ({
 
                 </View>
 
-            </Pressable>
+            </View>
         </Gesture>
     );
 

@@ -114,7 +114,7 @@ const FeedProfile: React.FC<{
                         style={{ height: 40, backgroundColor: colors.danger, width: 40 }}
                         background
                     >
-                        <XIcon color={colors.background} size={18} />
+                        <XIcon color={`white`} />
                     </Button>
                 </View>
 
@@ -179,7 +179,7 @@ const FeedProfile: React.FC<{
                                 borderRadius: 20,
                             }}
                         >
-                            <MoreIcon color={colors.background} size={15} rotate={90} />
+                            <MoreIcon color={`white`} size={15} rotate={90} />
                         </ExpandingButton>
                     )}
                 </View>

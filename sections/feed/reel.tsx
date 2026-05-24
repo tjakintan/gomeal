@@ -213,6 +213,7 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
             <BottomSheet
                 ref={profileSheetRef}
                 index={-1}
+                bottomInset={125}
                 snapPoints={[535]}
                 enableDynamicSizing={false}
                 enablePanDownToClose={false}
@@ -237,33 +238,35 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
             </BottomSheet>
 
             {/* Share Bottom Sheet */}
-                <BottomSheet
-                    ref={shareSheetRef}
-                    index={-1}
-                    enablePanDownToClose
-                    onClose={() => setSharePostId(null)}
-                    keyboardBehavior="interactive"
-                    keyboardBlurBehavior="restore"
-                    android_keyboardInputMode="adjustResize"
-                    backgroundStyle={{ 
-                        backgroundColor: colors.background, 
-                        borderRadius: 30,
-                        shadowColor: colors.text,
-                        shadowOpacity: 0.15,
-                        shadowRadius: 5,
-                        shadowOffset: { width: 0, height: 4 },
-                        elevation: 5,
-                    }}
-                    handleIndicatorStyle={{ backgroundColor: colors.secondaryCard, width: 45, height: 7 }}
-                >
-                    <BottomSheetView style={{ height: 210, overflow: "hidden" }}>
-                        {sharePostId && (
-                            <FeedShare
-                                post_id={sharePostId} 
-                            />
-                        )}
-                    </BottomSheetView>
-                </BottomSheet>
+            <BottomSheet
+                ref={shareSheetRef}
+                index={-1}
+                bottomInset={125}
+                enablePanDownToClose
+                onClose={() => setSharePostId(null)}
+                keyboardBehavior="interactive"
+                keyboardBlurBehavior="restore"
+                android_keyboardInputMode="adjustResize"
+                backgroundStyle={{ 
+                    backgroundColor: colors.background, 
+                    borderRadius: 30,
+                    shadowColor: colors.text,
+                    shadowOpacity: 0.15,
+                    shadowRadius: 5,
+                    shadowOffset: { width: 0, height: 4 },
+                    elevation: 5,
+                }}
+                handleIndicatorStyle={{ backgroundColor: colors.secondaryCard, width: 45, height: 7 }}
+            >
+                <BottomSheetView style={{ height: 210, overflow: "hidden" }}>
+                    {sharePostId && (
+                        <FeedShare
+                            post_id={sharePostId} 
+                        />
+                    )}
+                </BottomSheetView>
+            </BottomSheet>
+            
         </View>
     )
 };

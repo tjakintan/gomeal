@@ -106,7 +106,7 @@ export default function Leaderboard() {
 
             </View>
 
-            <View style={{ height: 325, gap: 1, flexDirection: "row", paddingHorizontal: 10 }} className="w-full justify-center">
+            <View style={{ height: 300, gap: 1, flexDirection: "row", paddingHorizontal: 10 }} className="w-full justify-center">
 
                 <View style={{ justifyContent: "flex-end" }} className="items-center gap-2">
                      
@@ -162,6 +162,7 @@ export default function Leaderboard() {
                 enablePanDownToClose={false}
                 enableOverDrag={false}
                 animateOnMount={false}
+                bottomInset={125}
                 enableDynamicSizing={false}
                 onChange={(index) => {
                     if (index < 0) sheetRef.current?.snapToIndex(0);
