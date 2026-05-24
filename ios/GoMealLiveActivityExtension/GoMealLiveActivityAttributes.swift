@@ -29,10 +29,12 @@ struct GoMealLiveActivityAttributes: ActivityAttributes {
     var post_id: String
     var dish_name: String
     var step_total: Int
+    var steps_json: String
 
-    public init(dish_name: String, step_total: Int, post_id: String) {
+    public init(dish_name: String, step_total: Int, post_id: String, steps_json: String = "[]") {
         self.dish_name = dish_name
         self.step_total = step_total
         self.post_id = post_id
+        self.steps_json = steps_json
     }
 }

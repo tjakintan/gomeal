@@ -247,6 +247,7 @@ export const EditAvatarScreen: React.FC<{
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
+                paddingBottom: 135
             }}
         >
             <View

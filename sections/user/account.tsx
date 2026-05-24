@@ -34,6 +34,7 @@ export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
+                paddingBottom: 125
             }}
         >
             <View
@@ -145,6 +146,7 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
+                paddingBottom: 125
             }}
         >
             <View
@@ -316,6 +318,7 @@ const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
+                paddingBottom: 125
             }}
         >
             

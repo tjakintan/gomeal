@@ -86,7 +86,6 @@ const FeedBar: React.FC<{onShowSection: (open: boolean) => void}> = ({ onShowSec
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 100,
                 transform: [{ translateY: feedBarY }],
             }}
             className="justify-center"
@@ -137,7 +136,6 @@ const FeedBar: React.FC<{onShowSection: (open: boolean) => void}> = ({ onShowSec
                                             borderRadius: 50,
                                             borderWidth: 1,
                                             borderColor: isActive ? colors.secondaryCard : colors.card,
-                                            backgroundColor: isActive ? colors.background : colors.card,
                                         }}
                                     >
                                         {item.icon}
@@ -178,7 +176,7 @@ const FeedBar: React.FC<{onShowSection: (open: boolean) => void}> = ({ onShowSec
                             onPress={handleSearchPress}
                             background
                         >
-                            <SearchIcon color={colors.background} />
+                            <SearchIcon color={`white`} />
                         </Button>
                     </View>
                 </View>

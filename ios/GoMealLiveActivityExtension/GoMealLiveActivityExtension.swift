@@ -9,12 +9,14 @@ struct GoMealLiveActivityExtensionLiveActivity: Widget {
     
     ActivityConfiguration(for: GoMealLiveActivityAttributes.self) { context in
       
+      let isLastStep = context.state.step_current >= context.attributes.step_total
+      
       VStack(alignment: .leading, spacing: 14) {
         
-        HStack(alignment: .center, spacing: 12) {
-          
+        HStack(alignment: .center, spacing: 8) {
           
           VStack(alignment: .leading, spacing: 2) {
+            
             Text(context.attributes.dish_name)
               .font(.custom("LuckiestGuy-Regular", size: 18))
               .foregroundStyle(.white)
@@ -28,6 +30,45 @@ struct GoMealLiveActivityExtensionLiveActivity: Widget {
           }
           
           Spacer()
+
+          if !isLastStep && context.state.step_current > 1 {
+            Button(
+              intent: PrevStepIntent(
+                activityId: context.attributes.post_id,
+                currentStep: context.state.step_current,
+                stepsJson: context.attributes.steps_json
+              )
+            ) {
+              Image(systemName: "chevron.left")
+                .foregroundStyle(Color(red: 0.0, green: 0.7, blue: 0.85))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 2)
+                .background(.white)
+                .clipShape(Capsule())
+            }
+          }
+          
+          Button(
+            intent: NextStepIntent(
+              activityId: context.attributes.post_id,
+              currentStep: context.state.step_current,
+              stepsJson: context.attributes.steps_json
+            )
+          ) {
+            HStack(spacing: 4){
+              if isLastStep {
+                Image(systemName: "checkmark")
+              } else {
+                Image(systemName: "chevron.right")
+              }
+            }
+            .foregroundStyle(Color(red: 0.0, green: 0.7, blue: 0.85))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 2)
+            .background(.white)
+            .clipShape(Capsule())
+          }
+          .disabled(isLastStep)
         }
         
         ProgressView(
@@ -54,99 +95,57 @@ struct GoMealLiveActivityExtensionLiveActivity: Widget {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
-        
         .overlay(
           RoundedRectangle(cornerRadius: 12)
             .strokeBorder(.white.opacity(0.2), lineWidth: 1)
         )
       }
-      
       .padding(16)
       .activityBackgroundTint(Color(red: 0.0, green: 0.7, blue: 0.85))
       .activitySystemActionForegroundColor(.white)
-      
+
     } dynamicIsland: { context in
-
-        DynamicIsland {
-
-            DynamicIslandExpandedRegion(.leading) {
-
-                Image("GoMealLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
-
-            DynamicIslandExpandedRegion(.trailing) {
-
-                Text("\(context.state.step_current)/\(context.attributes.step_total)")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-            }
-
-            DynamicIslandExpandedRegion(.center) {
-
-                Text(context.attributes.dish_name)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-            }
-
-            DynamicIslandExpandedRegion(.bottom) {
-
-                VStack(alignment: .leading, spacing: 4) {
-
-                    Text(context.state.step_desc)
-                        .font(.subheadline)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-
-                    if let timerEndsAt = context.state.timer_ends_at {
-
-                        HStack {
-
-                            if let label = context.state.timer_label {
-                                Text(label)
-                            }
-
-                            Text(timerEndsAt, style: .timer)
-                                .fontWeight(.bold)
-                        }
-                        .foregroundStyle(.white)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-        } compactLeading: {
-
+      
+      DynamicIsland {
+        
+        DynamicIslandExpandedRegion(.center) {
+          
+          HStack(spacing: 8) {
+            
             Image("GoMealLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 20, height: 20)
-
-        } compactTrailing: {
-
-            Text("\(context.state.step_current)")
-
-        } minimal: {
-
-            Image("GoMealLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 18, height: 18)
+              .resizable()
+              .scaledToFit()
+              .frame(width: 22, height: 22)
+            
+            Text(context.attributes.dish_name)
+              .font(.custom("LuckiestGuy-Regular", size: 16))
+              .foregroundStyle(.white)
+              .lineLimit(1)
+          }
+          .padding(.horizontal)
         }
-
+        
+      } compactLeading: {
+        Image("GoMealLogo")
+          .resizable()
+          .scaledToFit()
+          .frame(width: 18, height: 18)
+          
+      } compactTrailing: {
+        EmptyView()
+      } minimal: {
+        Image("GoMealLogo")
+          .resizable()
+          .scaledToFit()
+          .frame(width: 14, height: 14)
+      }
     }
-    
   }
-  
 }
+
 @main
 struct GoMealLiveActivityExtensionBundle: WidgetBundle {
   var body: some Widget {
     GoMealLiveActivityExtensionLiveActivity()
   }
 }
-

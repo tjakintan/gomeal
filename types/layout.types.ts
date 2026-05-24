@@ -25,8 +25,8 @@ export type ThemePalette = {
 export const SECTION_INDEX = {
     user: 0,
     feed: 1,
-    leaderboard: 2,
-    post: 3,
+    post: 2,
+    leaderboard: 3,
     settings: 4,
 } as const;
 

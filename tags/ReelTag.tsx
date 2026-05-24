@@ -24,7 +24,7 @@ type Props = {
     style?: StyleProp<ViewStyle>;
 };
 
-export const REEL_TAG_HEIGHT = Dimensions.get("window").height - 350;
+export const REEL_TAG_HEIGHT = Dimensions.get("window").height - 375;
 export const REEL_TAG_WIDTH = Dimensions.get("window").width ;
 export const REEL_TAG_RADIUS = 0;
 const SWIPE_THRESHOLD = REEL_TAG_HEIGHT / 2;
@@ -42,10 +42,10 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
     const panResponder = useRef(
         PanResponder.create({
 
-            onStartShouldSetPanResponder: () => true,
+            onStartShouldSetPanResponder: () => false,
 
             onMoveShouldSetPanResponder: (_, gestureState) => {
-                return Math.abs(gestureState.dy) > Math.abs(gestureState.dx); 
+                return Math.abs(gestureState.dy) > Math.abs(gestureState.dy)
             },
 
             onPanResponderRelease: (_, gestureState) => {
@@ -90,10 +90,8 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                 }}
             >
                 <View
-                    style={{...StyleSheet.absoluteFillObject}}
-                    onTouchStart={() => setHide(true)}
-                    onTouchEnd={() => setHide(false)}
-                    onTouchCancel={() => setHide(false)}
+                    style={{ ...StyleSheet.absoluteFillObject }}
+                    pointerEvents="box-none"
                 >
 
                     <Media
@@ -101,7 +99,8 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                         mediaType={info?.dish_media_type ?? "image"}
                         style={{height: info?.dish_media_type === "image" ? "80%":"100%", width: "100%"}}
                         iconSize={55}
-                        //disableInteraction={true}
+                        onLongPress={() => setHide(true)}
+                        onInteractionEnd={() => setHide(false)}
                         muteControl="center"
                         imageContentFit="contain"
                         videoContentFit="cover"
@@ -109,6 +108,30 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
 
                 </View>
 
+                <LinearGradient
+                    pointerEvents="none"
+                    colors={[
+                        "rgba(0, 0, 0, 0.85)",
+                        "rgba(0, 0, 0, 0.45)",
+                        "rgba(0, 0, 0, 0)",
+                    ]}
+                    locations={[0, 0.55, 1]}
+                    start={{ x: 0.5, y: 1 }}
+                    end={{ x: 0.5, y: 0.1 }}
+                    style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: 100,   // <-- controls how tall the gradient is
+                        shadowColor: "#000",
+                        shadowOpacity: 0.35,
+                        shadowRadius: 18,
+                        shadowOffset: { width: 0, height: 6 },
+                        elevation: 10,
+                    }}
+                />
+                
                 <View
                     style={{
                         position: "absolute",
@@ -119,86 +142,74 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                         paddingHorizontal: 10,
                         paddingBottom: 15,
                         alignItems: "flex-start",
-                        opacity: hide ? 0.1 : 1,
                     }}
+                    pointerEvents={hide ? "none" : "auto"}
                 >
-                    <LinearGradient
-                        pointerEvents="none"
-                        colors={[
-                            "rgba(0, 0, 0, 0.85)",
-                            "rgba(0, 0, 0, 0.45)",
-                            "rgba(0, 0, 0, 0)",
-                        ]}
-                        locations={[0, 0.55, 1]}
-                        start={{ x: 0.5, y: 1 }}
-                        end={{ x: 0.5, y: 0.1 }}
+                    <Animated.View
                         style={{
-                            ...StyleSheet.absoluteFillObject,
-                            shadowColor: "#000",
-                            shadowOpacity: 0.35,
-                            shadowRadius: 18,
-                            shadowOffset: { width: 0, height: 6 },
-                            elevation: 10,
-                        }}
-                    />
-
-                    <View 
-                        style={{
-                            height: 50,
-                            gap: 5,
-                            flexDirection: "row",  
+                            opacity: hide ? 0.1 : 1,
                         }}
                     >
-                        <Button 
-                            style={{
-                                height: 40,
-                                width: 40, 
-                                borderWidth: 1,
-                                borderRadius: 999,
-                                borderColor: colors.text,
-                                overflow: "hidden" ,                   
-                            }}
-                            onPress={() => onSetActiveProfile(post_id ?? 0)}
-                            className="items-center justify-center"
-                        >
-                            <AvatarRender avatar={avatar} size={30} />
-                        </Button>
 
-                        <Button 
+
+                        <View 
                             style={{
                                 height: 50,
-                                gap: 3,
-                                width: 300, 
-                                flexDirection: "column",   
-                                alignItems: "flex-start",    
-                                paddingHorizontal: 10,
-                                paddingVertical: 2,
+                                gap: 5,
+                                flexDirection: "row",  
                             }}
-                            onPress={() => onOpenCook(post_id ?? 0)}
-                            className="w-full"
                         >
-                            <Text
-                                style={{ opacity: 0.95, color: colors.text }}
-                                className={textStyles.body}
-                                numberOfLines={1}
-                                ellipsizeMode="tail"
+                            <Button 
+                                style={{
+                                    height: 40,
+                                    width: 40, 
+                                    borderWidth: 1,
+                                    borderRadius: 999,
+                                    borderColor: colors.text,
+                                    overflow: "hidden" ,                   
+                                }}
+                                onPress={() => onSetActiveProfile(post_id ?? 0)}
+                                className="items-center justify-center"
                             >
-                                {info?.dish_name ?? "Name"}
-                            </Text>
+                                <AvatarRender avatar={avatar} size={30} />
+                            </Button>
 
-                            <Text
-                                style={{ opacity: 0.75, color: colors.text }}
-                                className={textStyles.small}
-                                numberOfLines={2}
-                                ellipsizeMode="tail"
+                            <Button 
+                                style={{
+                                    height: 50,
+                                    gap: 3,
+                                    width: 300, 
+                                    flexDirection: "column",   
+                                    alignItems: "flex-start",    
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 2,
+                                }}
+                                onPress={() => onOpenCook(post_id ?? 0)}
+                                className="w-full"
                             >
-                                {info?.dish_description ?? "desc"}
-                            </Text>
+                                <Text
+                                    style={{ opacity: 0.95, color: colors.text }}
+                                    className={textStyles.body}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                >
+                                    {info?.dish_name ?? "Name"}
+                                </Text>
 
-                        </Button>
+                                <Text
+                                    style={{ opacity: 0.75, color: colors.text }}
+                                    className={textStyles.small}
+                                    numberOfLines={2}
+                                    ellipsizeMode="tail"
+                                >
+                                    {info?.dish_description ?? "desc"}
+                                </Text>
 
-                    </View>
+                            </Button>
 
+                        </View>
+                    
+                    </Animated.View>
                 </View>
 
                 <View
@@ -210,13 +221,20 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                         padding: 5,
                         maxWidth: REEL_TAG_WIDTH - 25,
                         alignItems: "flex-start",
-                        opacity: hide ? 0.1 : 1,
                     }}
+                    pointerEvents={hide ? "none" : "auto"}
                 >
-                    <FunctionRow 
-                        post_id={post_id ?? 0} 
-                        onSetSharePost={onSetSharePost}
-                    />
+                    <Animated.View
+                        style={{
+                            opacity: hide ? 0.1 : 1,
+                        }}
+                    >
+                        <FunctionRow 
+                            post_id={post_id ?? 0} 
+                            onSetSharePost={onSetSharePost}
+                        />
+                    </Animated.View>
+
                 </View>
                 
             </View>

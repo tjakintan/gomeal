@@ -27,6 +27,9 @@ interface FormatMediaProps {
     imageContentFit?: ImageContentFit;
     videoContentFit?: VideoContentFit;
     bottomControlOffset?: number;
+    onInteractionStart?: () => void;
+    onInteractionEnd?: () => void;
+    autoPlay?: boolean;
 }
 
 export const Media: React.FC<FormatMediaProps> = ({
@@ -43,6 +46,9 @@ export const Media: React.FC<FormatMediaProps> = ({
     imageContentFit = "cover",
     videoContentFit = "cover",
     bottomControlOffset = 10,
+    onInteractionStart,
+    onInteractionEnd,
+    autoPlay
 }) => {
 
     const { colors } = useTheme("dark");
@@ -71,7 +77,6 @@ export const Media: React.FC<FormatMediaProps> = ({
             player.play();
             setManuallyPaused(false);
         }
-        onPress?.()
     };
 
     const handleVideoMuteToggle = async () => {
@@ -89,39 +94,38 @@ export const Media: React.FC<FormatMediaProps> = ({
     };
 
     useEffect(() => {
-
-        if (mediaType !== "video") return; 
+        if (mediaType !== "video") return;
         if (!player) return;
 
+        // explicit autoPlay overrides everything
+        if (autoPlay === true) {
+            player.play();
+            return;
+        }
+        if (autoPlay === false) {
+            player.pause();
+            return;
+        }
+
+        // fall back to settings
         if (autoPlaySetting && useSettingsAutoPlay) {
             player.play();
         } else {
             player.pause();
         }
 
-    }, [mediaType, autoPlaySetting, useSettingsAutoPlay, player]);
+    }, [mediaType, autoPlaySetting, useSettingsAutoPlay, player, autoPlay]);
 
     if (mediaType === "video") {
+
         return (
-            <Pressable
+
+            <View
                 style={[style, { overflow: "hidden", backgroundColor: colors.background }]}
-                onPress={handleVideoTap}
-                onLongPress={onLongPress}
                 accessible={false}
-                accessibilityElementsHidden={false}
                 importantForAccessibility="no-hide-descendants"
+                pointerEvents='box-none'
             >
-                <View
-                    style={{
-                        position: "absolute",
-                        top: 0, left: 0, right: 0, bottom: 0,
-                    }}
-                    accessible={false}
-                    accessibilityElementsHidden={false}
-                    importantForAccessibility="yes"
-                    accessibilityLabel=""
-                    accessibilityRole="none"
-                />
 
                 <VideoView
                     player={player}
@@ -131,132 +135,182 @@ export const Media: React.FC<FormatMediaProps> = ({
                     allowsPictureInPicture={false}
                     accessible={false}
                     importantForAccessibility="no-hide-descendants"
-                    accessibilityElementsHidden={false}
+                    accessibilityElementsHidden={true}
                     showsTimecodes={false}
+                    focusable={false}
+                    allowsVideoFrameAnalysis={false}
                 />
 
-                {manuallyPaused && muteControl === "center" && (
-                    <>
-                        <Pressable
-                            onPress={handleVideoMuteToggle}
-                            style={{
-                                position: "absolute",
-                                top: "35%",
-                                left: "50%",
-                                transform: [
-                                    { translateX: -(iconSize / 4) },
-                                    { translateY: -(iconSize / 4) }
-                                ],
-                                height: iconSize / 2,
-                                width: iconSize / 2,
-                            }}
-                        >  
-                            {isMuted ? (
-                                <VideoUnMuteIcon color={colors.text} size={iconSize / 2} />
-                            ) : (
-                                <VideoMuteIcon color={colors.text} size={iconSize / 2} />
-                            )}
-                        </Pressable>
-                        <Pressable
-                            onPress={handleVideoTap}
-                            style={{
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                transform: [
-                                    { translateX: -(iconSize / 2) },
-                                    { translateY: -(iconSize / 2) }
-                                ],
-                                height: iconSize,
-                                width: iconSize,
-                            }}
-                        >
-                            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                                {isPlaying ? (
-                                    <VideoPlayIcon color={colors.text} size={iconSize} />
-                                ) : (
-                                    <VideoPauseIcon color={colors.text} size={iconSize} />
-                                )}
-                            </View>
-                        </Pressable>
-                    </>
-                )}
+                <View
+                    style={{ ...StyleSheet.absoluteFillObject, zIndex: 10 }}
+                    pointerEvents="box-none"
+                >
 
-                {muteControl === "row" && (
-                    <View 
-                        style={{
-                            position: "absolute",
-                            top: 1,
-                            height: 30,
-                            width: "100%",
-                        }}
-                        className='justify-center'
-                    >
+                    {muteControl === "center" && (
+                        <>
+                            {manuallyPaused && (
+                                <Pressable
+                                    onPress={handleVideoTap}
+                                    style={{
+                                        position: "absolute",
+                                        top: "50%",
+                                        left: "50%",
+                                        transform: [
+                                            { translateX: -(iconSize / 2) },
+                                            { translateY: -(iconSize / 2) },
+                                        ],
+                                        height: iconSize,
+                                        width: iconSize,
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <VideoPauseIcon color={colors.text} size={iconSize} />
+                                </Pressable>
+                            )}
+
                             <Pressable
                                 onPress={handleVideoMuteToggle}
                                 style={{
                                     position: "absolute",
-                                    right: 10,
+                                    top: 12,
+                                    right: 12,
+                                    height: iconSize,
+                                    width: iconSize,
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                 }}
-                            >  
+                            >
                                 {isMuted ? (
-                                    <VideoUnMuteIcon color={colors.text} size={20} />
+                                    <VideoUnMuteIcon color={colors.text} size={iconSize / 2} />
                                 ) : (
-                                    <VideoMuteIcon color={colors.text} size={20} />
+                                    <VideoMuteIcon color={colors.text} size={iconSize / 2} />
                                 )}
                             </Pressable>
-                    </View>
-                )}
+                        </>
+                    )}
 
-                {muteControl === "bottomRow" && (
-                    <View
-                        style={{
-                            position: "absolute",
-                            bottom: bottomControlOffset,
-                            left: 20,
-                            right: 20,
-                            height: iconSize,
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                        }}
-                        pointerEvents="box-none"
-                    >
-                        <Pressable
-                            onPress={handleVideoTap}
+                    {muteControl === "row" && (
+                        <View
                             style={{
-                                height: iconSize,
-                                width: iconSize,
+                                position: "absolute",
+                                top: 10,
+                                left: 10,
+                                right: 10,
+                                flexDirection: "row",
                                 alignItems: "center",
-                                justifyContent: "center",
+                                justifyContent: "space-between",
                             }}
                         >
-                            {isPlaying ? (
-                                <VideoPauseIcon color={colors.text} size={iconSize} />
-                            ) : (
-                                <VideoPlayIcon color={colors.text} size={iconSize} />
-                            )}
-                        </Pressable>
 
-                        <Pressable
-                            onPress={handleVideoMuteToggle}
+                            {/* PLAY / PAUSE */}
+                            <Pressable
+                                onPress={handleVideoTap}
+                                style={{
+                                    height: iconSize,
+                                    width: iconSize,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {isPlaying ? (
+                                    <VideoPauseIcon color={colors.text} size={iconSize} />
+                                ) : (
+                                    <VideoPlayIcon color={colors.text} size={iconSize} />
+                                )}
+                            </Pressable>
+
+                            {/* MUTE */}
+                            <Pressable
+                                onPress={handleVideoMuteToggle}
+                                style={{
+                                    height: iconSize,
+                                    width: iconSize,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {isMuted ? (
+                                    <VideoUnMuteIcon
+                                        color={colors.text}
+                                        size={iconSize}
+                                    />
+                                ) : (
+                                    <VideoMuteIcon
+                                        color={colors.text}
+                                        size={iconSize}
+                                    />
+                                )}
+                            </Pressable>
+
+                        </View>
+                    )}
+
+                    {muteControl === "bottomRow" && (
+                        <View
                             style={{
+                                position: "absolute",
+                                bottom: bottomControlOffset,
+                                left: 20,
+                                right: 20,
                                 height: iconSize,
-                                width: iconSize,
+                                flexDirection: "row",
                                 alignItems: "center",
-                                justifyContent: "center",
+                                justifyContent: "space-between",
                             }}
+                            pointerEvents="box-none"
                         >
-                            {isMuted ? (
-                                <VideoUnMuteIcon color={colors.text} size={iconSize} />
-                            ) : (
-                                <VideoMuteIcon color={colors.text} size={iconSize} />
-                            )}
-                        </Pressable>
-                    </View>
-                )}
+                            <Pressable
+                                onPress={handleVideoTap}
+                                style={{
+                                    height: iconSize,
+                                    width: iconSize,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {isPlaying ? (
+                                    <VideoPauseIcon color={colors.text} size={iconSize} />
+                                ) : (
+                                    <VideoPlayIcon color={colors.text} size={iconSize} />
+                                )}
+                            </Pressable>
 
-            </Pressable>
+                            <Pressable
+                                onPress={handleVideoMuteToggle}
+                                style={{
+                                    height: iconSize,
+                                    width: iconSize,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {isMuted ? (
+                                    <VideoUnMuteIcon color={colors.text} size={iconSize} />
+                                ) : (
+                                    <VideoMuteIcon color={colors.text} size={iconSize} />
+                                )}
+                            </Pressable>
+                        </View>
+                    )}
+
+                </View>
+
+
+                <Pressable
+                    style={StyleSheet.absoluteFillObject}
+                    onPress={() => {
+                        handleVideoTap();
+                        onPress?.();
+                    }}
+                    onLongPress={() => {
+                        onLongPress?.();
+                    }}
+                    onPressIn={onInteractionStart}
+                    onPressOut={onInteractionEnd}
+                />
+
+            </View>
         );
     }
 

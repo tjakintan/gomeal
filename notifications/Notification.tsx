@@ -257,7 +257,7 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
 
             </View>
 
-            <View style={{ flex: 1, backgroundColor: colors.background, padding: 10}}>
+            <View style={{ flex: 1, backgroundColor: colors.background, padding: 10, paddingBottom: 125}}>
 
                 {loadingNotifications ? (
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -312,6 +312,7 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
             <BottomSheet
                 ref={messageSheetRef}
                 index={-1}
+                bottomInset={125}
                 snapPoints={[535]}
                 enablePanDownToClose={false}
                 enableContentPanningGesture={false}

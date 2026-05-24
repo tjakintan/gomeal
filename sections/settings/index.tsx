@@ -161,7 +161,8 @@ const Settings: React.FC<{isFocused: boolean}> = ({ isFocused }) => {
       <BottomSheet
         ref={userSectionRef}
         index={0} 
-        snapPoints={["6%", 250]}
+        bottomInset={125}
+        snapPoints={["6%", 225]}
         enablePanDownToClose={false}
         backgroundStyle={{
           backgroundColor: colors.background, 

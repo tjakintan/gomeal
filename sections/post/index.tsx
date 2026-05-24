@@ -168,6 +168,7 @@ const PostScreen: React.FC<{
             <BottomSheet
                 ref={overlayRef}
                 snapPoints={[550]}
+                bottomInset={125}
                 index={-1}
                 enablePanDownToClose={false}
                 enableContentPanningGesture={false}

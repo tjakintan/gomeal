@@ -124,6 +124,10 @@ const Feed: React.FC<{
 
     return (
         <>
+
+            <View style={{height: 75}}>
+                <FeedBar onShowSection={setShowSearch}/>
+            </View>
         
             <View
                 style={{ 
@@ -132,9 +136,6 @@ const Feed: React.FC<{
                 }}
                 className="w-full flex-col"
             >
-                <View style={{height: 100}}>
-                    <FeedBar onShowSection={setShowSearch}/>
-                </View>
 
                 {(loadingFeed && !filteredPosts?.length) ? (
                     renderSkeletons()
@@ -169,7 +170,7 @@ const Feed: React.FC<{
                                 }
                                 renderItem={({ item }) => (
                                     <TouchableOpacity activeOpacity={1}>
-                                        <View style={{ paddingBottom: 40 }}>
+                                        <View style={{ paddingBottom: 75 }}>
                                             <Tag
                                                 card={item}
                                                 flipEnabled={true}
@@ -220,7 +221,7 @@ const Feed: React.FC<{
                                 }
                                 renderItem={({ item }) => (
                                     <TouchableOpacity activeOpacity={1}>
-                                        <View style={{ paddingBottom: 40 }}>
+                                        <View style={{ paddingBottom: 75 }}>
                                             <Tag
                                                 card={item}
                                                 flipEnabled={true}

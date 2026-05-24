@@ -8,6 +8,7 @@ import { useFeed } from "./useFeed";
 type CookState = {
     loading: boolean;
     isOpen: boolean;
+    opening: boolean;
     post_id: number | null;
     CookIngredients: Ingredient[];
     cookPost: FullPost | null;
@@ -43,7 +44,9 @@ const getTotalStepsTime = (cookPost: FullPost | null): string => {
     });
 };
 
-export const useCook = create<CookState>((set) => ({
+export const useCook = create<CookState>((set, get) => ({
+
+    opening: false,
     loading: false,
     isOpen: false,
     post_id: null,
@@ -58,25 +61,39 @@ export const useCook = create<CookState>((set) => ({
 
         set({ isOpen: true, post_id: postId, loading: true });
 
-        const post = await loadPost(postId);
+        const { opening, isOpen } = get();
+        set({ opening: true });
 
-        if (!post) {
-            set({ loading: false });
-            return;
+        if (opening) return;
+
+        try {
+            const post = await loadPost(postId);
+
+            if (!post) {
+                set({ loading: false });
+                return;
+            }
+
+            set({
+                cookPost: post,
+                CookIngredients: post.ingredients ?? [],
+                servings: post?.nutrition?.[0]?.servings ?? 1,
+                cookTime: getTotalStepsTime(post),
+                loading: false,
+                opening: false,
+            });
+
+            await startActivity(post);
+
+        } catch (err) {
+            set({ opening: false, loading: false});
+            throw err
         }
-
-        set({
-            cookPost: post,
-            CookIngredients: post.ingredients ?? [],
-            servings: post?.nutrition?.[0]?.servings ?? 1,
-            cookTime: getTotalStepsTime(post),
-            loading: false,
-        });
-
-        await startActivity(post);
     },
 
     closeCook: async () => {
+        set({ opening: false })
+        
         const postId = useCook.getState().post_id;
 
         const stopActivity = useLiveActivity.getState().stopActivity;

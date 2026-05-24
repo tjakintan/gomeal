@@ -19,6 +19,7 @@ public class GoMealLiveActivityModule: Module {
       stepTotal: Int,
       stepCurrent: Int,
       stepDesc: String,
+      stepsJson: String,
       timerEndsAt: Double?,
       timerLabel: String?
     ) in
@@ -29,7 +30,8 @@ public class GoMealLiveActivityModule: Module {
       let attributes = GoMealLiveActivityAttributes(
         dish_name: dishName,
         step_total: stepTotal,
-        post_id: postId
+        post_id: postId,
+        steps_json: stepsJson
       )
 
       let contentState = GoMealLiveActivityAttributes.ContentState(

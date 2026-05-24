@@ -71,6 +71,7 @@ export const InboxMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) 
                 style={{
                     ...StyleSheet.absoluteFillObject,
                     backgroundColor: colors.background,
+                    paddingBottom: 125
                 }}
             >
                 {showMenu && (

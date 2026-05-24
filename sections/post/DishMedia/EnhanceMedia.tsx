@@ -131,8 +131,7 @@ const DishEnhanceMedia: React.FC<{ uri: string | null, mediaType: MediaType, onC
                                 mediaType={mediaType}
                                 style={{flex: 1, width: "100%"}}
                                 disableInteraction
-                                iconSize={25}
-                                muteControl="row"
+                                autoPlay
                             />
                         )}
 
