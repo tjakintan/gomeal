@@ -1,5 +1,5 @@
 import { Button } from "@/components/ButtonComponent";
-import { BackIcon, ServingsIcon, SmsIcon, TimerIcon, XIcon, CookIcon } from "@/icons/Icon";
+import { BackIcon, ServingsIcon, SmsIcon, TimerIcon, XIcon, CookIcon, CookingIcon, CookedIcon } from "@/icons/Icon";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
 import { Dimensions, StyleSheet, Text, View, ScrollView, Pressable, useWindowDimensions } from "react-native";
@@ -27,6 +27,7 @@ import { FeedLoveIcon, FeedStarIcon } from "@/icons/feed_icon";
 import { useAvatarMood } from "@/dashboard/store/useAvatar";
 import { setFeedActionCount } from "@/api/feed.api";
 import { FeedActionType } from "@/types/feed.types";
+import { useReward } from "@/dashboard/store/useReward";
 
 type CookMainScreenProps = {
   post_id: number;
@@ -42,6 +43,8 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
 
     const { user } = useUser();
     const { width, height } = useWindowDimensions();
+
+    const { reward } = useReward();
 
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
     const { selectedPost, loadingPost, clearSelectedPost, updatePostEverywhere } = useFeed();
@@ -141,6 +144,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
 
         try {
             await setFeedActionCount(post_id, "post_cook");
+            await reward("COOK_POST"); 
         } catch (err) {
             // rollback
             updatePostEverywhere(post_id, (post) => {
@@ -195,6 +199,11 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
             sectionSheetRef.current?.snapToIndex(0);
         }
     }, [descriptionSectionHeight]);
+
+    useEffect(() => {
+        if (!selectedPost || loadingPost) return;
+        reward("VIEW_POST");
+    }, [selectedPost?.post_id]);
 
     // ── render loading ───────────────────────────────────────────────────────────────
     if (loadingPost || !selectedPost) {
@@ -280,7 +289,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                     />
                 </View>
 
-                {/* Like */}
+                {/* star */}
                 <Button
                     style={{
                         width: 50,
@@ -314,10 +323,8 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                 enableHandlePanningGesture
                 animatedPosition={animatedSheetPosition}
                 backgroundStyle={{
-                    backgroundColor: colors.background,
+                    backgroundColor: colors.background, 
                     borderRadius: 30,
-                    borderBottomLeftRadius: 0,
-                    borderBottomRightRadius: 0,
                 }}
                 handleComponent={() => null}
             >
@@ -325,6 +332,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                     nestedScrollEnabled={true}
                     style={{
                         flex: 1,
+                        margin: 5,
                         borderRadius: 30,
                         borderBottomLeftRadius: 0,
                         borderBottomRightRadius: 0,
@@ -332,6 +340,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                         paddingHorizontal: 5,
                         overflow: "hidden",
                     }}
+                    showsVerticalScrollIndicator={false}
                 >
                     <View
                         onLayout={(event) => {
@@ -401,11 +410,8 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                                         height: 60,
                                         width: 115,
                                         borderRadius: 15,
-                                        borderWidth: 2,
-                                        borderColor: colors.card,
                                         flexDirection: "row",
                                         overflow: "hidden",
-                                        backgroundColor: colors.secondaryCard,
                                     }}
                                 >
                                     <View
@@ -429,10 +435,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                                     style={{
                                         height: 60,
                                         width: 115,
-                                        backgroundColor: colors.secondaryCard,
                                         borderRadius: 15,
-                                        borderWidth: 2,
-                                        borderColor: colors.card,
                                         flexDirection: "row",
                                         overflow: "hidden",
                                     }}
@@ -472,14 +475,11 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                                             height: 65,
                                             width: "100%",
                                             borderRadius: 15,
-                                            borderWidth: 2,
                                             gap: 10,
                                             paddingHorizontal: 20,
                                             flexDirection: "row",
                                             justifyContent: "space-between",
                                             alignItems: "center",
-                                            borderColor: colors.card,
-                                            backgroundColor: colors.secondaryCard,
                                         }}
                                     >
                                         <AvatarRender avatar={selectedPost?.avatar} size={32} dark={dark} background showBadge />
@@ -504,7 +504,8 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
 
                     <View
                         style={{
-                            height: 350,
+                            minHeight: 210,
+                            maxHeight: 350,
                             borderBottomWidth: 2,
                             borderColor: colors.secondaryCard,
                         }}
@@ -521,7 +522,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                             borderColor: colors.secondaryCard,
                         }}
                     >
-                        <StepsScreen dark={dark} steps={selectedPost.steps ?? []} />
+                        <StepsScreen dark={dark} dishName={selectedPost.info.dish_name} steps={selectedPost.steps ?? []} />
                     </View>
 
                     {/* ── Done button ── */}
@@ -529,24 +530,45 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                         onPress={handleDone}
                         style={{
                             height: 60,
+                            width: 150,
+                            gap: 10,
                             marginHorizontal: 15,
                             marginVertical: 20,
                             borderRadius: 25,
                             backgroundColor: hasCooked ? colors.card : colors.button,
                             justifyContent: "center",
                             alignItems: "center",
+                            alignSelf: "center",
+                            flexDirection: "row-reverse",
                             opacity: hasCooked ? 0.6 : 1,
                         }}
                     >
-                        <Text
-                            className={textStyles.bodyMedium}
-                            style={{
-                                color: hasCooked ? colors.secondaryText : "#1a1a1a",
-                                fontWeight: "700",
-                            }}
-                        >
-                            {hasCooked ? "✓ Cooked!" : "Done Cooking"}
-                        </Text>
+                        {hasCooked ? (
+                            <>
+                                <Text
+                                    className={textStyles.bodyMedium}
+                                    style={{
+                                        fontWeight: "700",
+                                    }}
+                                >
+                                    Done
+                                </Text>
+                                <CookedIcon color={colors.text} size={20} />
+                            </>
+                        ) : (
+                            <>
+                                <Text
+                                    className={textStyles.bodyMedium}
+                                    style={{
+                                        color: "white",
+                                        fontWeight: "700",
+                                    }}
+                                >
+                                    Cooking
+                                </Text>
+                                <CookingIcon color={colors.text} size={20} />
+                            </>
+                        )}
                     </Button>
 
                 </BottomSheetScrollView>

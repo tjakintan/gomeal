@@ -169,12 +169,10 @@ export default function UserScreen() {
                 flex: 1,
                 gap: 10,
                 flexDirection: "row",
-                alignItems: "center",
+                alignItems: "flex-end",
                 justifyContent: "flex-start",
                 paddingVertical: 5,
                 paddingHorizontal: 5,
-                paddingBottom: 4,
-                borderRadius: 5,
               }}
             >
 
@@ -212,14 +210,14 @@ export default function UserScreen() {
           index={-1}
           bottomInset={125}
           enablePanDownToClose
-          backgroundStyle={{ 
+          backgroundStyle={{
             backgroundColor: colors.background,
-            borderRadius: 25,
+            borderRadius: 35,
             shadowColor: colors.text,
-            shadowOpacity: 0.15,
+            shadowOpacity: 0.10,
             shadowRadius: 3,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 5,            
+            shadowOffset: { width: 0, height: -4 },
+            elevation: 5,
           }}
           handleIndicatorStyle={{ backgroundColor: colors.secondaryCard, width: 45, height: 7 }}
         >

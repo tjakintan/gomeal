@@ -1,5 +1,7 @@
 import { API_BASE } from '../config';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { resetSocket } from './socket';
+import { clearAppState } from '@/sections/settings/UserSettings';
 
 export const apiFetch = async (url: string, options: RequestInit = {}) => {
 
@@ -35,6 +37,11 @@ export const apiFetch = async (url: string, options: RequestInit = {}) => {
                     Authorization: `Bearer ${data.accessToken}`,
                 },
             });
+
+        } else {
+
+            resetSocket();
+            await clearAppState();
         }
     }
         

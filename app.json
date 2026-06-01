@@ -8,7 +8,6 @@
     "scheme": "gomeal",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "buildNumber": "4",
       "supportsTablet": true,
       "bundleIdentifier": "com.gomeal.mobile",
       "associatedDomains": [
@@ -75,7 +74,12 @@
     },
     "plugins": [
       "expo-router",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "mode": "production"
+        }
+      ],
       "expo-font",
       [
         "expo-splash-screen",

@@ -5,13 +5,9 @@
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.widgetkit-extension</string>
+		<string>com.apple.usernotifications.service</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>$(PRODUCT_MODULE_NAME).NotificationService</string>
 	</dict>
-	<key>RCTNewArchEnabled</key>
-	<true/>
-	<key>UIAppFonts</key>
-	<array>
-		<string>LuckiestGuy-Regular.ttf</string>
-	</array>
 </dict>
 </plist>

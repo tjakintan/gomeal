@@ -31,9 +31,6 @@ export type FeedControls = {
 // Notificatioations boolean controls (off | on)
 export type NotificationSettings = NotificationSettingsType;
 
-// Privacy information (references ./web)
-export type PrivacySettings = {}
-
 // Application Settings
 export type AppSettings = {
     theme: "light" | "dark" | "system"
@@ -46,6 +43,5 @@ export type Settings = {
     food: FoodPreferences
     feed: FeedControls
     notifications: NotificationSettings
-    privacy: PrivacySettings
     app: AppSettings
 }

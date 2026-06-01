@@ -13,6 +13,7 @@ import { Button } from "@/components/ButtonComponent";
 import { formatCount } from "@/utils/time";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { useCook } from "@/stores/useCook";
+import { useReward } from "@/dashboard/store/useReward";
 
 type ProfileItem = {
     label: string;
@@ -134,7 +135,8 @@ export function Profile() {
 function ProfilePostSection() {
     
     const { data, deletePost } = useProfile();
-    const { openCook } = useCook();
+    
+    const { reward } = useReward();
     const { colors, textStyles } = useTheme();
 
     const [active, setActive] = useState<keyof UserActionedPostsType>("post_made");
@@ -265,6 +267,8 @@ function ProfilePostSection() {
                                                             next.add(postId);
                                                             return next;
                                                         });
+
+                                                        await reward("DELETE_POST");
 
                                                     } finally {
                                                         setDeletingPostId(null);

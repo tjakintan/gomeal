@@ -59,7 +59,7 @@ export const useReel = create<ReelState>((set, get) => ({
 
         setTimeout(() => {
             useFeed.getState()
-                .loadReel(200, undefined, false, false)
+                .loadReel(undefined, null, true, true)
                 .then((freshReels) => {
                     const currentReels = get().reels;
 
@@ -84,6 +84,7 @@ export const useReel = create<ReelState>((set, get) => ({
                             ...mergedReels.filter((r) => r.post_id !== initialPost.post_id),
                         ],
                     });
+                    
                 })
                 .catch((err) => {
                     console.error("Failed to hydrate reels:", err);

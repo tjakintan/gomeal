@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { API_BASE } from "../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearAppState } from "@/sections/settings/UserSettings";
 
 let socket: Socket | null = null;
 
@@ -8,6 +9,21 @@ export function resetSocket() {
     if (socket) {
         socket.disconnect();
         socket = null;
+    }
+}
+
+export function pauseSocket() {
+    if (socket?.connected) {
+        socket.disconnect();
+    }
+}
+
+export async function resumeSocket() {
+    if (!socket) return;
+    if (!socket.connected) {
+        const accessToken = await AsyncStorage.getItem("accessToken");
+        socket.auth = { token: accessToken };
+        socket.connect();
     }
 }
 
@@ -26,10 +42,11 @@ export async function getSocket(): Promise<Socket> {
             reconnection: true,
         });
 
-
+        {/**
         socket.on("connect", () => {
             console.log(`socket_connected_on_${socket?.id}`);
         });
+        */}
 
         socket.on("connect_error", async (err) => {
 
@@ -50,6 +67,12 @@ export async function getSocket(): Promise<Socket> {
                     await AsyncStorage.setItem("accessToken", data.accessToken);
                     socket!.auth = { token: data.accessToken };
                     socket!.connect();
+
+                } else {
+
+                    resetSocket();
+                    await clearAppState();
+
                 }
             }
         });

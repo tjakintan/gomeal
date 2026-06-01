@@ -1,5 +1,5 @@
 import FeedBar from "./feedBar";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Dimensions,
   Modal,
   ScrollView,
+  ListRenderItem,
 } from "react-native";
 import Reel from "./reel";
 import { useTheme } from "@/provider/ThemeProvider";
@@ -22,6 +23,7 @@ import { DietaryData, dietaryDescriptions, dietaryIcons } from "@/types";
 import { filterFeedByFoodPreferences } from "../../utils/feedFilter";
 import { useSettingsStore } from "@/stores/useSettings";
 import { SpinningLogoImage } from "@/utils/Logo";
+import { FeedCard, MinimumFeedCard } from "@/types/feed.types";
 
 const { width, height } = Dimensions.get("window");
 
@@ -68,23 +70,132 @@ const Feed: React.FC<{
 
     const { colors } = useTheme();
 
-    const {
-        posts,
-        loadFeed,
-        loadNextFeed,
-        loadingFeed,
-        loadingMoreFeed,
-        hasMoreFeed,
-        activeReelPost,
-        setActiveProfile,
-        setSelectedScope,
-    } = useFeed();
+    const posts = useFeed((s) => s.posts);
+
+    const loadFeed = useFeed((s) => s.loadFeed);
+
+    const loadNextFeed = useFeed(
+    (s) => s.loadNextFeed
+    );
+
+    const loadingFeed = useFeed(
+    (s) => s.loadingFeed
+    );
+
+    const loadingMoreFeed = useFeed(
+    (s) => s.loadingMoreFeed
+    );
+
+    const hasMoreFeed = useFeed(
+    (s) => s.hasMoreFeed
+    );
+
+    const activeReelPost = useFeed(
+    (s) => s.activeReelPost
+    );
+
+    const setActiveProfile = useFeed(
+    (s) => s.setActiveProfile
+    );
+
+    const setSelectedScope = useFeed(
+    (s) => s.setSelectedScope
+    );
 
     const { isVisible, open, close } = useReel();  
     
     const foodPreferences = useSettingsStore((state) => state.settings.food);
-    const filteredPosts = filterFeedByFoodPreferences(posts, foodPreferences);
+    const filteredPosts = useMemo(() => {
+        return filterFeedByFoodPreferences(
+            posts,
+            foodPreferences
+        );
+    }, [posts, foodPreferences]);
+
+    const leftPosts = useMemo(
+        () =>
+            filteredPosts.filter(
+            (_, i) => i % 2 === 0
+            ),
+        [filteredPosts]
+    );
+
+    const renderLeftItem: ListRenderItem<FeedCard> =
+        useCallback(
+            ({ item }) => (
+            <View style={{ paddingBottom: 100 }}>
+                <Tag
+                card={item}
+                flipEnabled
+                onPressInfo={() =>
+                    setShowCook?.(item.post_id)
+                }
+                onPressProfile={() => {
+                    setActiveProfile(item.post_id);
+                    setShowProfile?.(true);
+                }}
+                onPressMedia={() => {
+                    open(item, () =>
+                    setReelOpen?.(true)
+                    );
+                }}
+                onDietaryPress={(info) => {
+                    setDietaryOverlay({
+                    ...info,
+                    column: "left",
+                    });
+                }}
+                />
+            </View>
+            ),
+            []
+        );
+
+    const rightPosts = useMemo(
+        () =>
+            filteredPosts.filter(
+            (_, i) => i % 2 !== 0
+            ),
+        [filteredPosts]
+    );
     
+    const renderRightItem: ListRenderItem<FeedCard> =
+        useCallback(
+            ({ item }) => (
+            <View style={{ paddingBottom: 100 }}>
+                <Tag
+                card={item}
+                flipEnabled
+                onPressInfo={() =>
+                    setShowCook?.(item.post_id)
+                }
+                onPressProfile={() => {
+                    setActiveProfile(item.post_id);
+                    setShowProfile?.(true);
+                }}
+                onPressMedia={() => {
+                    open(item, () =>
+                    setReelOpen?.(true)
+                    );
+                }}
+                onDietaryPress={(info) => {
+                    setDietaryOverlay({
+                    ...info,
+                    column: "right",
+                    });
+                }}
+                />
+            </View>
+            ),
+            [
+            open,
+            setReelOpen,
+            setShowCook,
+            setActiveProfile,
+            setShowProfile,
+            ]
+        );
+
     const [dietaryOverlay, setDietaryOverlay] = useState<null | {
         x: number;
         y: number;
@@ -152,7 +263,7 @@ const Feed: React.FC<{
                             )}
 
                             <FlatList
-                                data={filteredPosts.filter((_, i) => i % 2 === 0)}
+                                data={leftPosts}
                                 showsVerticalScrollIndicator={false}
                                 contentContainerStyle={{ alignItems: "center" }}
                                 onEndReached={handleLoadMore}
@@ -168,27 +279,7 @@ const Feed: React.FC<{
                                 ListFooterComponent={
                                     loadingMoreFeed ? <SpinningLogoImage size={30} /> : null
                                 }
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity activeOpacity={1}>
-                                        <View style={{ paddingBottom: 75 }}>
-                                            <Tag
-                                                card={item}
-                                                flipEnabled={true}
-                                                onPressInfo={() => setShowCook?.(item.post_id)}
-                                                onPressProfile={() => {
-                                                    setActiveProfile(item.post_id);
-                                                    setShowProfile?.(true);
-                                                }}
-                                                onPressMedia={() => {
-                                                    open(item, () => setReelOpen?.(true));
-                                                }}
-                                                onDietaryPress={(info) => {
-                                                    setDietaryOverlay({ ...info, column: "left" });
-                                                }}
-                                            />
-                                        </View>
-                                    </TouchableOpacity>
-                                )}
+                                renderItem={renderLeftItem}
                             />
 
                         </View>
@@ -203,7 +294,7 @@ const Feed: React.FC<{
                             )}
 
                             <FlatList
-                                data={filteredPosts.filter((_, i) => i % 2 !== 0)}
+                                data={rightPosts}
                                 showsVerticalScrollIndicator={false}
                                 contentContainerStyle={{ alignItems: "center" }}
                                 onEndReached={handleLoadMore}
@@ -219,27 +310,7 @@ const Feed: React.FC<{
                                 ListFooterComponent={
                                     loadingMoreFeed ? <SpinningLogoImage size={30} /> : null
                                 }
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity activeOpacity={1}>
-                                        <View style={{ paddingBottom: 75 }}>
-                                            <Tag
-                                                card={item}
-                                                flipEnabled={true}
-                                                onPressInfo={() => setShowCook?.(item.post_id)}
-                                                onPressProfile={() => {
-                                                    setActiveProfile(item.post_id);
-                                                    setShowProfile?.(true);
-                                                }}
-                                                onPressMedia={() => {
-                                                    open(item, () => setReelOpen?.(true));
-                                                }}
-                                                onDietaryPress={(info) => {
-                                                    setDietaryOverlay({ ...info, column: "right" });
-                                                }}
-                                            />
-                                        </View>
-                                    </TouchableOpacity>
-                                )}
+                                renderItem={renderRightItem}
                             />
 
                         </View>

@@ -475,14 +475,22 @@ const Personal: React.FC<onBoardUserSectionProps> = ({ onNext, draft }) => {
             return;
         }
 
-        setDobError("");
+        // --- age verification (> 13 years) --------------
+        const today = new Date();
+        const birthDate = new Date(Number(dobYear), Number(dobMonth) - 1, Number(dobDay));
+        const age = today.getFullYear() - birthDate.getFullYear();
+        const hasHadBirthdayThisYear =
+            today.getMonth() > birthDate.getMonth() ||
+            (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+        const exactAge = hasHadBirthdayThisYear ? age : age - 1;
 
-        onNext?.({
-            firstName,
-            lastName,
-            profile_name,
-            dob,
-        });
+        if (exactAge < 13) {
+            setDobError("You must be at least 13");
+            return;
+        }
+
+        setDobError("");
+        onNext?.({ firstName, lastName, profile_name, dob });
     };
 
     useEffect(() => {

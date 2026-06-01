@@ -1,3 +1,5 @@
+import { StepData } from "@/types";
+
 export const formatCount = (num: number): string => {
     if (num < 1000) return `${num}`;
 
@@ -13,6 +15,19 @@ export const formatCount = (num: number): string => {
 
     const value = num / 1_000_000_000;
     return value < 10 ? `${Math.floor(value * 10) / 10}B`: `${Math.floor(value)}B`;
+};
+
+export const getTotalSeconds = (timer: StepData["timer"]): number => {
+    if (!timer) return 0;
+    return (timer.hours ?? 0) * 3600 + (timer.minutes ?? 0) * 60 + (timer.seconds ?? 0);
+};
+
+export const formatTimerDisplay = (seconds: number): string => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
 export const formatTime = (

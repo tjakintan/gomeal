@@ -80,7 +80,6 @@ export const useCook = create<CookState>((set, get) => ({
                 servings: post?.nutrition?.[0]?.servings ?? 1,
                 cookTime: getTotalStepsTime(post),
                 loading: false,
-                opening: false,
             });
 
             await startActivity(post);
@@ -88,6 +87,8 @@ export const useCook = create<CookState>((set, get) => ({
         } catch (err) {
             set({ opening: false, loading: false});
             throw err
+        } finally {
+            set({ opening: false })
         }
     },
 

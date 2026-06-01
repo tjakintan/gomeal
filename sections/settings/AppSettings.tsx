@@ -6,6 +6,7 @@ import { ToggleButton, SelectionPickerButton, Button } from "@/components/Button
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { SectionHeader } from "@/components/SectionComponent";
+import { EmptyIcon } from "@/icons/Icon";
 
 const AppSettings:React.FC = () => {
 
@@ -77,7 +78,7 @@ const AppSettings:React.FC = () => {
                                 }}
                             >
                                 {isNone && (
-                                    <FontAwesome name="ban" size={25} color={colors.text} />
+                                    <EmptyIcon size={25} color={colors.text} />
                                 )}
                             </Button>
                         );
