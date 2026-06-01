@@ -26,23 +26,17 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
     const { colors, textStyles } = useTheme("dark");
     const { openCook } = useCook();
     const { reportTarget, loadingReport } = useReport();
-    const { loadReel, removePost, setActiveProfile, clearActiveProfile } = useFeed();
+    
+    const { loadReel, loadNextReel, hasMoreReels, loadingMoreReels, removePost, setActiveProfile, clearActiveProfile } = useFeed();
     const { reels, setReels, init, nextReel, prevReel, loading } = useReel();
+    const activePost = reels[0] ?? initialPost;
 
-    const [currentIndex, setCurrentIndex] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
     const [showMenuRow, setShowMenuRow] = useState(false);
     const [sharePostId, setSharePostId] = useState<number | null>(null);
 
-    const [stopBottomSheet, setStopBottomSheet] = useState(false);
     const profileSheetRef = useRef<BottomSheet>(null);
     const shareSheetRef = useRef<BottomSheet>(null);
-
-    const handleBack = () => { onBack(); };
-    const handleNext = () => { nextReel(); setCurrentIndex((prev) => Math.min(prev + 1, reels.length - 1)); };
-    const handlePrev = () => { prevReel(); setCurrentIndex((prev) => Math.max(prev - 1, 0)); };
-
-    const activePost = (reels.length ? reels : [initialPost])[currentIndex] ?? initialPost;
 
     const handleOpenShare = (post_id: number) => {
         setSharePostId(post_id);
@@ -51,12 +45,10 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
     const closeProfileSheet = () => {
         profileSheetRef.current?.close();
         clearActiveProfile();
-        setStopBottomSheet(false);
     };
 
     const handleReport = async () => {
         if (!activePost?.post_id || loadingReport) return;
-        //console.log(activePost.post_id)
         await reportTarget(activePost.post_id, "post");
         removePost(activePost.post_id);
         setShowMenuRow(false);
@@ -68,7 +60,6 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
         try {
             const freshReels = await loadReel(undefined, undefined, true, true);
             setReels(freshReels);
-            setCurrentIndex(0);
         } finally {
             setRefreshing(false);
         }
@@ -84,7 +75,6 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
 
     useEffect(() => {
         init(initialPost);
-        setCurrentIndex(0);
     }, [initialPost.post_id]);
 
     return (
@@ -126,7 +116,7 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                 ) : (
                     <>
                         <View style={{ position: 'absolute', left: 20, top: 0, bottom: 0, justifyContent: 'center' }}>
-                            <Button onPress={handleBack} background><BackIcon color={colors.text} /></Button>
+                            <Button onPress={() => onBack()} background><BackIcon color={colors.text} /></Button>
                         </View>
                         <Text style={{ alignSelf: "center" }} className={textStyles.h3}>
                             {refreshing ? "Refreshing..." : ""}
@@ -161,18 +151,34 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                         data={reels.length ? reels : [initialPost]}
                         keyExtractor={(item) => item.post_id.toString()}
                         showsVerticalScrollIndicator={false}
-                        pagingEnabled
-                        snapToInterval={REEL_TAG_HEIGHT}
                         decelerationRate="fast"
-                        scrollEnabled={currentIndex === 0}
-                        onScrollEndDrag={async (event) => {
-                            const offsetY = event.nativeEvent.contentOffset.y;
-
-                            if (currentIndex === 0 && offsetY < -80 && !refreshing) {
-                                await handleOnRefresh();
-                            }
-                        }}
+                        pagingEnabled
+                        scrollEnabled
+                        onEndReachedThreshold={0.5}
                         scrollEventThrottle={16}
+                        getItemLayout={(_, index) => ({
+                            length: REEL_TAG_HEIGHT,
+                            offset: REEL_TAG_HEIGHT * index,
+                            index,
+                        })}
+                        onEndReached={() => {
+                            if (loadingMoreReels || !hasMoreReels) return;
+                            loadNextReel().then((freshReels) => {
+                                if (!freshReels.length) return;
+                                useReel.setState((state) => {
+                                    const existingIds = new Set(state.reels.map((r) => r.post_id));
+                                    const newOnes = freshReels.filter((r) => !existingIds.has(r.post_id));
+                                    return { reels: [...state.reels, ...newOnes] };
+                                });
+                            });
+                        }}
+                        ListFooterComponent={
+                            loadingMoreReels ? (
+                                <View style={{ height: REEL_TAG_HEIGHT, alignItems: "center", justifyContent: "center" }}>
+                                    <SpinningLogoImage size={30} />
+                                </View>
+                            ) : null
+                        }
                         renderItem={({ item }) => (
                             <>
                                 {showMenuRow && (
@@ -192,8 +198,8 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                                 )}
                                 <ReelTag
                                     card={item}
-                                    onSwipeUp={handleNext}
-                                    onSwipeDown={handlePrev}
+                                    onSwipeUp={nextReel}
+                                    onSwipeDown={prevReel}
                                     onSetActiveProfile={(post_id) => {
                                         setActiveProfile(post_id);
                                         profileSheetRef.current?.expand();
@@ -230,7 +236,6 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                     <BottomSheetView style={{ height: 500, marginTop: 10, marginHorizontal: 10, overflow: "hidden", alignSelf: "center", backgroundColor: colors.background, borderRadius: FEED_CARD_PROFILE_RADIUS }}>
                         <FeedProfile
                             dark
-                            sectionOpen={(open) => setStopBottomSheet(open)}
                             onClose={closeProfileSheet}
                         />
                     </BottomSheetView>

@@ -26,6 +26,10 @@ type FeedState = {
     hasMoreFeed: boolean;
     loadingMoreFeed: boolean;
 
+    reelCursor: number;
+    hasMoreReels: boolean;
+    loadingMoreReels: boolean;
+
     setSelectedScope: (scope: FeedScopeType | null) => void;
 
     loadFeed: (
@@ -45,6 +49,11 @@ type FeedState = {
         scope?: FeedScopeType | null,
         markSeen?: boolean,
         forceRefresh?: boolean,
+    ) => Promise<ReelFeedCard[]>;
+
+    loadNextReel: (
+        limit?: number, 
+        scope?: FeedScopeType | null
     ) => Promise<ReelFeedCard[]>;
 
     updatePostEverywhere: (
@@ -75,6 +84,10 @@ export const useFeed = create<FeedState>((set, get) => ({
     feedCursor: 0,
     hasMoreFeed: true,
     loadingMoreFeed: false,
+
+    reelCursor: 0,
+    hasMoreReels: true,
+    loadingMoreReels: false,
 
     selectedPost: null,
     activeReelPost: null,
@@ -216,16 +229,19 @@ export const useFeed = create<FeedState>((set, get) => ({
         const cached = get().reelCache[cacheKey];
 
         if (!forceRefresh && !markSeen && cached && Date.now() - cached.createdAt < REEL_CACHE_TTL_MS) {
-            set({ reels: cached.data });
+            set({
+                reels: cached.data,  
+                hasMoreReels: true,
+            });
             return cached.data;
         }
 
         const feedCached = get().feedCache[cacheKey];
         if (!forceRefresh && !markSeen && feedCached && Date.now() - feedCached.createdAt < FEED_CACHE_TTL_MS) {
             const reels = feedToReels(feedCached.data);
-
             set({
-                reels,
+                reels,    
+                hasMoreReels: true,
                 reelCache: {
                     ...get().reelCache,
                     [cacheKey]: {
@@ -234,7 +250,6 @@ export const useFeed = create<FeedState>((set, get) => ({
                     },
                 },
             });
-
             return reels;
         }
 
@@ -266,6 +281,8 @@ export const useFeed = create<FeedState>((set, get) => ({
 
             set({
                 reels: data,
+                reelCursor: response.nextCursor,  
+                hasMoreReels: response.hasMore, 
                 reelCache: {
                     ...get().reelCache,
                     [cacheKey]: {
@@ -281,11 +298,67 @@ export const useFeed = create<FeedState>((set, get) => ({
             return [];
         } finally {
             const { [cacheKey]: _, ...remainingRequests } = get().reelRequests;
-
             set({
                 loadingReel: false,
                 reelRequests: remainingRequests,
             });
+        }
+    },
+
+    loadNextReel: async (limit = 20, scope) => {
+        const {
+            selectedScope,
+            reelCursor,
+            hasMoreReels,
+            loadingReel,
+            loadingMoreReels,
+            reels,
+        } = get();
+
+        if (loadingReel || loadingMoreReels || !hasMoreReels) return [];
+
+        const activeScope = scope ?? selectedScope;
+
+        set({ loadingMoreReels: true });
+
+        try {
+            const response = await fetchReelPosts(
+                limit,
+                activeScope ?? undefined,
+                false,
+                reelCursor
+            );
+
+            const next = response.reels ?? [];
+
+            const existingIds = new Set((reels ?? []).map(r => r.post_id));
+
+            const filteredNext = next.filter(r => !existingIds.has(r.post_id));
+
+            const isSamePage =
+                filteredNext.length === 0 ||
+                (reels?.length ?? 0) + filteredNext.length === (reels?.length ?? 0);
+
+            if (isSamePage) {
+                set({
+                    hasMoreReels: false,
+                    loadingMoreReels: false,
+                });
+                return [];
+            }
+
+            set({
+                reels: [...(reels ?? []), ...filteredNext],
+                reelCursor: response.nextCursor ?? reelCursor + filteredNext.length,
+                hasMoreReels: response.hasMore && filteredNext.length > 0,
+            });
+
+            return filteredNext;
+        } catch (err) {
+            console.error("Error loading more reels:", err);
+            return [];
+        } finally {
+            set({ loadingMoreReels: false });
         }
     },
 

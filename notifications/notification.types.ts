@@ -6,12 +6,14 @@ export type NotificationSettings = {
     likes: boolean;
     messages: boolean;
     cookingReminderTime: string | null;
+    timezone: string;
 };
 
 export const defaultNotificationSettings: NotificationSettings = {
     likes: true,
     messages: true,
     cookingReminderTime: null,
+    timezone: "UTC",
 };
 
 export type NotificationActionType =
@@ -23,6 +25,7 @@ export type NotificationActionType =
 export type NotificationCard = {
     like: LikeNotificationCard[],
     message: MessageNotificationCard[],
+    cook: CookNotificationCard[];
 };
 
 export type LikeNotificationCard = {
@@ -43,5 +46,16 @@ export type MessageNotificationCard = {
     actor_avatar: Avatar;
     actor_profile_name: string;
     content: string;
+};
+
+export type CookNotificationCard = {
+    post_id: number;
+    created_at: Date;
+    is_read: boolean;
+    actor_avatar: Avatar;
+    actor_profile_name: string;
+    dish_name: string;
+    dish_media_url: string;
+    dish_media_type: MediaType;
 };
 

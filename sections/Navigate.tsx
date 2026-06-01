@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/provider/ThemeProvider";
@@ -35,10 +35,10 @@ const sectionIcons: SectionIconProps[] = [
     key: "feed",
     name: "feed",
     icon: (color) => (
-      <Svg height={ICON_HEIGHT} width={ICON_WIDTH} viewBox="0 0 24 24">
+      <Svg height={ICON_HEIGHT - 2} width={ICON_WIDTH - 2} viewBox="0 0 12 12">
         <Path
           fill={color}
-          d="M18.178 11.373a.7.7 0 0 1 .7.7v5.874c.027.812-.071 1.345-.434 1.68c-.338.311-.828.4-1.463.366H3.144C2.5 19.961 2 19.7 1.768 19.173c-.154-.347-.226-.757-.226-1.228v-5.873a.7.7 0 0 1 1.4 0v5.873c0 .232.026.42.07.562l.036.098l-.003-.01c.001-.013.03-.008.132-.002h13.84c.245.014.401 0 .456-.001l.004-.001c-.013-.053.012-.27 0-.622v-5.897a.7.7 0 0 1 .701-.7ZM10.434 0c.264 0 .5.104.722.297l8.625 8.139a.7.7 0 1 1-.962 1.017l-8.417-7.944l-9.244 7.965a.7.7 0 0 1-.915-1.06L9.689.277l.086-.064c.214-.134.428-.212.66-.212Z"
+          d="M5.37 1.222a1 1 0 0 1 1.26 0l3.814 3.09A1.5 1.5 0 0 1 11 5.476V10a1 1 0 0 1-1 1H8.5a1 1 0 0 1-1-1V7.5A.5.5 0 0 0 7 7H5a.5.5 0 0 0-.5.5V10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5.477a1.5 1.5 0 0 1 .556-1.166l3.815-3.089Z"
         />
       </Svg>
     ),
@@ -71,39 +71,39 @@ const sectionIcons: SectionIconProps[] = [
     key: "settings",
     name: "setting",
     icon: (color) => (
-      <Svg height={ICON_HEIGHT} width={ICON_WIDTH} viewBox="0 0 32 32">
+      <Svg height={ICON_HEIGHT - 2} width={ICON_WIDTH - 2} viewBox="0 0 28 28">
         <Path
           fill={color}
-          d="M27 16.76v-1.53l1.92-1.68A2 2 0 0 0 29.3 11l-2.36-4a2 2 0 0 0-1.73-1a2 2 0 0 0-.64.1l-2.43.82a11.35 11.35 0 0 0-1.31-.75l-.51-2.52a2 2 0 0 0-2-1.61h-4.68a2 2 0 0 0-2 1.61l-.51 2.52a11.48 11.48 0 0 0-1.32.75l-2.38-.86A2 2 0 0 0 6.79 6a2 2 0 0 0-1.73 1L2.7 11a2 2 0 0 0 .41 2.51L5 15.24v1.53l-1.89 1.68A2 2 0 0 0 2.7 21l2.36 4a2 2 0 0 0 1.73 1a2 2 0 0 0 .64-.1l2.43-.82a11.35 11.35 0 0 0 1.31.75l.51 2.52a2 2 0 0 0 2 1.61h4.72a2 2 0 0 0 2-1.61l.51-2.52a11.48 11.48 0 0 0 1.32-.75l2.42.82a2 2 0 0 0 .64.1a2 2 0 0 0 1.73-1l2.28-4a2 2 0 0 0-.41-2.51ZM25.21 24l-3.43-1.16a8.86 8.86 0 0 1-2.71 1.57L18.36 28h-4.72l-.71-3.55a9.36 9.36 0 0 1-2.7-1.57L6.79 24l-2.36-4l2.72-2.4a8.9 8.9 0 0 1 0-3.13L4.43 12l2.36-4l3.43 1.16a8.86 8.86 0 0 1 2.71-1.57L13.64 4h4.72l.71 3.55a9.36 9.36 0 0 1 2.7 1.57L25.21 8l2.36 4l-2.72 2.4a8.9 8.9 0 0 1 0 3.13L27.57 20Z"
-        />
-        <Path
-          fill={color}
-          d="M16 22a6 6 0 1 1 6-6a5.94 5.94 0 0 1-6 6Zm0-10a3.91 3.91 0 0 0-4 4a3.91 3.91 0 0 0 4 4a3.91 3.91 0 0 0 4-4a3.91 3.91 0 0 0-4-4Z"
+          d="M16.693 2.311A12.974 12.974 0 0 0 14.013 2c-.924.01-1.823.115-2.704.311a.923.923 0 0 0-.716.8l-.209 1.877a1.707 1.707 0 0 1-2.371 1.376l-1.72-.757a.92.92 0 0 0-1.043.214a12.059 12.059 0 0 0-2.709 4.667a.924.924 0 0 0 .334 1.017l1.527 1.125a1.701 1.701 0 0 1 0 2.74l-1.527 1.128a.924.924 0 0 0-.334 1.016a12.064 12.064 0 0 0 2.707 4.672a.92.92 0 0 0 1.043.215l1.728-.759a1.694 1.694 0 0 1 1.526.086c.466.27.777.745.838 1.281l.208 1.877a.923.923 0 0 0 .702.796a11.67 11.67 0 0 0 5.413 0a.923.923 0 0 0 .702-.796l.208-1.88a1.693 1.693 0 0 1 2.366-1.37l1.727.759a.92.92 0 0 0 1.043-.215a12.065 12.065 0 0 0 2.707-4.667a.924.924 0 0 0-.334-1.017L23.6 15.37a1.701 1.701 0 0 1-.001-2.74l1.525-1.127a.924.924 0 0 0 .333-1.016a12.057 12.057 0 0 0-2.708-4.667a.92.92 0 0 0-1.043-.214l-1.72.757a1.666 1.666 0 0 1-.68.144a1.701 1.701 0 0 1-1.688-1.518l-.21-1.879a.922.922 0 0 0-.714-.799ZM14 18a4 4 0 1 1 0-8a4 4 0 0 1 0 8Z"
         />
       </Svg>
     ),
-  },
+  }
 ];
 
 // Only the FAB keeps its color; all nav icons use a single neutral token
-const ICON_INACTIVE = "rgba(120, 120, 128, 0.6)";
-const ICON_ACTIVE   = "rgba(255, 255, 255, 0.9)";
+
 
 const FAB_SIZE = 64;
 
-const Navigate: React.FC<NavigateProps> = ({ section, goToSection }) => {
+const Navigate: React.FC<NavigateProps> = ({ section, goToSection, dark }) => {
+
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors } = useTheme(dark ? "dark": undefined);
 
   const items = sectionIcons.filter((i) => i.key !== "post");
   const leftItems  = items.slice(0, 2);
   const rightItems = items.slice(2);
+
+  const ICON_INACTIVE = "rgba(120, 120, 128, 0.6)";
+  const ICON_ACTIVE   = colors.text;
 
   const renderItem = (item: SectionIconProps) => {
     const active = section === item.key;
     const iconColor = active ? ICON_ACTIVE : ICON_INACTIVE;
 
     return (
+
       <Button
         key={item.key}
         onPress={() => goToSection(item.key as Sections)}
@@ -114,6 +114,7 @@ const Navigate: React.FC<NavigateProps> = ({ section, goToSection }) => {
           justifyContent: "center",
         }}
       >
+
         <View
           style={{
             alignItems: "center",
@@ -131,19 +132,12 @@ const Navigate: React.FC<NavigateProps> = ({ section, goToSection }) => {
             {item.icon?.(iconColor)}
           </View>
 
-          <Text
-            style={{
-              fontSize: 9,
-              fontWeight: "700",
-              marginTop: 2,
-              color: iconColor,
-            }}
-          >
-            {item.name}
-          </Text>
         </View>
+
       </Button>
+
     );
+
   };
 
   return (
@@ -153,12 +147,12 @@ const Navigate: React.FC<NavigateProps> = ({ section, goToSection }) => {
         position: "absolute",
         left: BAR_HORIZONTAL_MARGIN,
         right: BAR_HORIZONTAL_MARGIN,
-        bottom: insets.bottom,
+        bottom: insets.bottom - 5,
         zIndex: 100,
         alignItems: "center",
       }}
     >
-      {/* ===== FAB — keeps brand color ===== */}
+
       <View style={{ position: "absolute", top: -15, zIndex: 10 }}>
         {(() => {
           const item = sectionIcons.find((i) => i.key === "post")!;
@@ -169,56 +163,93 @@ const Navigate: React.FC<NavigateProps> = ({ section, goToSection }) => {
                 width: FAB_SIZE,
                 height: FAB_SIZE,
                 borderRadius: 999,
-                backgroundColor: colors.button, // ← only colored element
+                backgroundColor: colors.accent == "transparent" ? colors.button : colors.accent,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              {item.icon?.("#fff")}
+              {item.icon?.("white")}
             </Button>
           );
         })()}
       </View>
 
-      {/* ===== Glass pill bar ===== */}
-      <GomealGlassView
-        glassEffectStyle="clear"
+      <View
         style={{
-          height: 76,
-          width: "100%",
           borderRadius: 999,
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 16,
-          overflow: "hidden",
+          shadowColor: "black",
+          shadowOpacity: 0.2,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 0 },
+          elevation: 1,
         }}
       >
-        {/* LEFT items */}
-        <View
+        <GomealGlassView
           style={{
-            flex: 1,
-            flexDirection: "row",
-            justifyContent: "space-evenly",
-            paddingRight: FAB_SIZE / 2 + 14,
+            width: "100%",
+            borderRadius: 999,
+            overflow: "hidden",
+            padding: 7,
           }}
         >
-          {leftItems.map(renderItem)}
-        </View>
+          
+          <View
+            style={{
+              width: "100%",
+              borderRadius: 999,
+              backgroundColor: colors.background,
+              padding: 10,
+            }}
+          >
+            
+            <View
+              style={{
+                height: 40,
+                gap: 5,
+                width: "100%",
+                borderRadius: 999,
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: "transparent",
+                overflow: "hidden",
+              }}
+            >
+              {/* LEFT items */}
+              <View
+                style={{
+                  flex: 1,
+                  flexDirection: "row",
+                  justifyContent: "space-evenly",
+                  alignItems: "center",
+                  paddingRight: FAB_SIZE / 2, 
+                }}
+              >
+                {leftItems.map(renderItem)}
+              </View>
 
-        {/* RIGHT items */}
-        <View
-          style={{
-            flex: 1,
-            flexDirection: "row",
-            justifyContent: "space-evenly",
-            paddingLeft: FAB_SIZE / 2 + 14,
-          }}
-        >
-          {rightItems.map(renderItem)}
-        </View>
-      </GomealGlassView>
+              {/* RIGHT items */}
+              <View
+                style={{
+                  flex: 1,
+                  flexDirection: "row",
+                  justifyContent: "space-evenly",
+                  alignItems: "center",
+                  paddingLeft: FAB_SIZE / 2, 
+                }}
+              >
+                {rightItems.map(renderItem)}
+              </View>
+
+            </View>
+
+          </View>
+
+        </GomealGlassView>
+      </View>
+
     </View>
   );
+
 };
 
-export default Navigate;
+export default React.memo(Navigate);

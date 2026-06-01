@@ -30,9 +30,13 @@ export const SECTION_INDEX = {
     settings: 4,
 } as const;
 
-export const INDEX_SECTION = Object.fromEntries(
-    Object.entries(SECTION_INDEX).map(([k, v]) => [v, k])
-) as Record<SectionIndex, Sections>;
+export const INDEX_SECTION: Record<SectionIndex, Sections> = {
+    0: "user",
+    1: "feed",
+    2: "post",
+    3: "leaderboard",
+    4: "settings",
+};
 
 export function getPrevSectionIndex(i: SectionIndex): SectionIndex {
     if (i <= 0) return 0;
@@ -53,8 +57,6 @@ export type SectionIconProps = {
 export type NavigateProps = {
     section: Sections;
     dark: boolean;
-    openNavigateSection: boolean;
-    setOpenNavigateSection: (v: boolean) => void;
     goToSection: (s: Sections) => void;
 };
 
@@ -72,7 +74,8 @@ export type SettingsSection =
     | "food"
     | "feed"
     | "notifications"
-    | "privacy";
+    | "privacy"
+    | "help";
 
 export const SETTINGS_SECTIONS_INDEX: Record<SettingsSection, number> = {
     app: 0,
@@ -80,6 +83,7 @@ export const SETTINGS_SECTIONS_INDEX: Record<SettingsSection, number> = {
     feed: 2,
     notifications: 3,
     privacy: 4,
+    help: 5
 };
 
 export type SettingsLayoutItem = {

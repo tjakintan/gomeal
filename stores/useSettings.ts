@@ -28,10 +28,9 @@ const defaultSettings: Settings = {
     likes: false,
     messages: false,
     cookingReminderTime: null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   },
-
-  privacy: {},
-
+  
   app: {
     theme: "system",
     hapticsEnabled: true,

@@ -27,7 +27,7 @@ type Props = {
 export const REEL_TAG_HEIGHT = Dimensions.get("window").height - 375;
 export const REEL_TAG_WIDTH = Dimensions.get("window").width ;
 export const REEL_TAG_RADIUS = 0;
-const SWIPE_THRESHOLD = REEL_TAG_HEIGHT / 2;
+const SWIPE_THRESHOLD = 60;
 
 const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetActiveProfile, onSetSharePost, onOpenCook }) => {
 
@@ -45,7 +45,7 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
             onStartShouldSetPanResponder: () => false,
 
             onMoveShouldSetPanResponder: (_, gestureState) => {
-                return Math.abs(gestureState.dy) > Math.abs(gestureState.dy)
+                return Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
             },
 
             onPanResponderRelease: (_, gestureState) => {
@@ -151,7 +151,6 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                         }}
                     >
 
-
                         <View 
                             style={{
                                 height: 50,
@@ -215,7 +214,7 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                 <View
                     style={{
                         position: "absolute",
-                        bottom: REEL_TAG_HEIGHT / 3,
+                        bottom: REEL_TAG_HEIGHT / 5,
                         right: 5,
                         gap: 5,
                         padding: 5,
@@ -246,7 +245,7 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
 export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: number) => void}> = ({ post_id, onSetSharePost }) => {
 
     const setMood = useAvatarMood((s) => s.setMood);
-    const { toggleUserReelAction, updateCounts } = useReel();
+    const { toggleUserReelAction } = useReel();
     const updatePostEverywhere = useFeed((s) => s.updatePostEverywhere);
     const { colors, textStyles } = useTheme("dark");
 
@@ -277,10 +276,11 @@ export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: n
         }
 
         toggleUserReelAction(post_id, action as FeedActionType);
-        updateCounts(post_id, action, delta);
 
         updatePostEverywhere(post_id, (post) => {
-            const currentActions = post.user_actions ?? [];
+            const currentActions: FeedActionType[] = Array.isArray(post.user_actions) 
+                ? post.user_actions 
+                : [];
 
             const nextActions = alreadyDone
                 ? currentActions.filter((item: FeedActionType) => item !== action)

@@ -15,7 +15,7 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerPushNotifications() {
-    
+
     if (!Device.isDevice) return null;
 
     if (Platform.OS === "android") {
@@ -26,13 +26,12 @@ export async function registerPushNotifications() {
     }
 
     const existing = await Notifications.getPermissionsAsync();
-
     let granted = existing.granted || existing.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
 
     if (!granted) {
         const requested = await Notifications.requestPermissionsAsync();
-
-        granted = requested.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+        granted = requested.granted ||
+            requested.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
     }
 
     if (!granted) return null;
@@ -41,19 +40,23 @@ export async function registerPushNotifications() {
         Constants.expoConfig?.extra?.eas?.projectId ??
         Constants.easConfig?.projectId;
 
-    if (!projectId) {
-        throw new Error("Missing EAS projectId");
-    }
+    if (!projectId) throw new Error("Missing EAS projectId");
 
-    const token = await Notifications.getExpoPushTokenAsync({ projectId });
-    console.log("Push notification token:", token.data);
+    const [expoToken, deviceToken] = await Promise.all([
+        Notifications.getExpoPushTokenAsync({ projectId }),
+        Notifications.getDevicePushTokenAsync(),
+    ]);
+
+
+console.log("DEVICE TOKEN", deviceToken);
 
     await socketEmit("register-push-token", {
-        token: token.data,
+        token: expoToken.data,
+        native_token: deviceToken.data,
         platform: Platform.OS,
     });
 
-    return token.data;
+    return expoToken.data;
 };
 
 export function registerNotificationResponseListener() {
@@ -77,6 +80,7 @@ export function registerNotificationResponseListener() {
 
     const listener = Notifications.addNotificationResponseReceivedListener((response) => {
         const { type, conversation_id } = response.notification.request.content.data ?? {};
+        if (type === "step_timer") return;
         if (type === "message" && conversation_id) {
             handleNotification(Number(conversation_id));
         }
@@ -84,10 +88,23 @@ export function registerNotificationResponseListener() {
 
     Notifications.getLastNotificationResponseAsync().then((response) => {
         const { type, conversation_id } = response?.notification.request.content.data ?? {};
+        if (type === "step_timer") return;
         if (type === "message" && conversation_id) {
             handleNotification(Number(conversation_id));
         }
     });
 
     return listener;
-}
+};
+
+export const scheduleStepTimerNotification = async (stepNumber: number, dishName: string) => {
+    await Notifications.scheduleNotificationAsync({
+        content: {
+            title: "Timer",
+            body: `Step ${stepNumber} timer finished for ${dishName}`,
+            sound: true,
+            data: { type: "step_timer" },
+        },
+        trigger: null,
+    });
+};

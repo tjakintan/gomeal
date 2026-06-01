@@ -41,7 +41,10 @@ public class GoMealLiveActivityModule: Module {
         timer_label: timerLabel
       )
 
-      let content = ActivityContent(state: contentState, staleDate: nil)
+      let content = ActivityContent(
+          state: contentState,
+          staleDate: Calendar.current.date(byAdding: .hour, value: 3, to: Date()) 
+      )
 
       do {
         let _ = try Activity<GoMealLiveActivityAttributes>.request(
@@ -80,12 +83,18 @@ public class GoMealLiveActivityModule: Module {
     }
 
     AsyncFunction("stop") { (postId: String) in
-      guard #available(iOS 16.2, *) else { return }
-
-      for activity in Activity<GoMealLiveActivityAttributes>.activities
+        guard #available(iOS 16.2, *) else { return }
+        for activity in Activity<GoMealLiveActivityAttributes>.activities
         where activity.attributes.post_id == postId {
-        await activity.end(nil, dismissalPolicy: .immediate)
-      }
+            let finalState = activity.content.state
+            await activity.end(
+                ActivityContent(
+                    state: finalState,
+                    staleDate: Date() 
+                ),
+                dismissalPolicy: .immediate
+            )
+        }
     }
   }
 }

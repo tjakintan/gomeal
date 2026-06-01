@@ -27,6 +27,7 @@ const ProgressCircle: React.FC<{
     trackColor: string;
     children: React.ReactNode;
 }> = ({ size, strokeWidth, progress, color, trackColor, children }) => {
+    
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const clampedProgress = Math.max(0, Math.min(1, progress));
@@ -75,7 +76,6 @@ const ProgressCircle: React.FC<{
         </View>
     );
 };
-
 
 const DashRewardAnim: React.FC<{ dark: boolean }> = ({ dark }) => {
 
@@ -185,7 +185,6 @@ const DashNotificationCircle: React.FC<{
     const { unreadCount, markAllRead } = useNotification();
 
     const setMood = useAvatarMood((s) => s.setMood);
-    const accentColor = useSettingsStore((s) => s.settings.app.accentColor);
 
     const prevCountRef = useRef(unreadCount);
     const spinValue = useRef(new Animated.Value(0)).current;
@@ -237,7 +236,7 @@ const DashNotificationCircle: React.FC<{
                 size={52}
                 strokeWidth={4}
                 progress={xpProgress}
-                color={accentColor === "none" ? colors.button : accentColor}
+                color={colors.accent === "transparent" ? colors.button : colors.accent}
                 trackColor={colors.secondaryCard}
             >
                 <Button
@@ -248,7 +247,7 @@ const DashNotificationCircle: React.FC<{
                         borderRadius: 999,
                         alignItems: "center",
                         justifyContent: "flex-end",
-                        backgroundColor: accentColor === "none" ? colors.background : accentColor,
+                        backgroundColor: colors.accent === "transparent" ? colors.button : colors.accent,
                         overflow: "hidden",
                     }}
                     onPress={() => {setMood("confused", 2000)}}
@@ -314,6 +313,7 @@ const DashBoard: React.FC<DashBoardProps> = ({ dark, onOpenNotification }) => {
                     justifyContent: "space-between",
                     overflow: "hidden",
                 }}
+                glassEffectStyle="clear"
             >
                 <View style={{ flex: 1, gap: 5, minWidth: 0, justifyContent: "center" }}>
 

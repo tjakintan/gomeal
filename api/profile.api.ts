@@ -153,3 +153,23 @@ export async function create_bug_report_api(
     }
 };
 
+export async function delete_account_api(): Promise<{ ok: boolean }> {
+
+    try {
+
+        await apiFetch(`${API_BASE}/chef/delete-account`, {
+            method: "DELETE",
+        });
+
+        return { ok: true };
+
+    } catch (err) {
+
+        console.error("Delete account error:", err);
+
+        return { ok: false };
+
+    }
+
+};
+

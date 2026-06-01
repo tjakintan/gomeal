@@ -46,7 +46,7 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
     return (
         <View
             style={{
-                ...StyleSheet.absoluteFillObject,
+                flex: 1,
                 backgroundColor: colors.background,
             }}
         >
@@ -59,6 +59,7 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
             />
 
             <ScrollView
+                style={{flex: 1}}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
                     gap: 12,
@@ -79,11 +80,8 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
                                     height: 145,
                                     width: 280,
                                     gap: 5,
-                                    borderWidth: 3,
-                                    borderColor: colors.secondaryCard,
                                     borderRadius: 16,
                                     overflow: "hidden",
-                                    backgroundColor: colors.card,
                                 }}
                             >
                                 <View

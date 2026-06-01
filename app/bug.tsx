@@ -21,6 +21,7 @@ type Options = {
 type BugReportScreenProps = {
     visible: boolean;
     section: string;
+    dark: boolean;
     onClose: () => void;
 };
 
@@ -32,6 +33,8 @@ export function useActivateBugReport({ enabled = true, onShake }: Options) {
     const lastShakeAt = useRef(0);
     const lastMagnitude = useRef(0);
     const shakeHits = useRef<number[]>([]);
+    const baselineMagnitude = useRef<number | null>(null);
+    const baselineSamples = useRef<number[]>([]);
 
     useEffect(() => {
         onShakeRef.current = onShake;
@@ -47,27 +50,45 @@ export function useActivateBugReport({ enabled = true, onShake }: Options) {
             const available = await Accelerometer.isAvailableAsync();
             if (!available || !mounted) return;
 
-            Accelerometer.setUpdateInterval(50);
+            Accelerometer.setUpdateInterval(40);
 
             subscription = Accelerometer.addListener(({ x, y, z }) => {
                 const now = Date.now();
-
                 const magnitude = Math.sqrt(x * x + y * y + z * z);
+
+                // Build a rolling baseline over first 20 samples
+                // so resting gravity (~1.0) is factored out per-device
+                if (baselineSamples.current.length < 20) {
+                    baselineSamples.current.push(magnitude);
+                    baselineMagnitude.current =
+                        baselineSamples.current.reduce((a, b) => a + b, 0) /
+                        baselineSamples.current.length;
+                    lastMagnitude.current = magnitude;
+                    return;
+                }
+
+                const baseline = baselineMagnitude.current ?? 1;
                 const delta = Math.abs(magnitude - lastMagnitude.current);
+                const deviation = Math.abs(magnitude - baseline);
 
                 lastMagnitude.current = magnitude;
 
-                const isShakeHit = delta > 1.4 || magnitude > 3.1;
+                // Require both a sharp spike AND meaningful deviation from rest
+                const isShakeHit = delta > 1.2 && deviation > 0.8;
 
                 if (!isShakeHit) return;
 
+                // Sliding window: only keep hits within last 600ms
+                const window = 600;
                 shakeHits.current = shakeHits.current
-                    .filter((hitAt) => now - hitAt < 550)
+                    .filter((hitAt) => now - hitAt < window)
                     .concat(now);
 
+                // Need 4 hits in window (up from 3) to reduce false positives
+                // and enforce a cooldown between triggers
                 if (
-                    shakeHits.current.length >= 3 &&
-                    now - lastShakeAt.current > 1200
+                    shakeHits.current.length >= 4 &&
+                    now - lastShakeAt.current > 1500
                 ) {
                     lastShakeAt.current = now;
                     shakeHits.current = [];
@@ -81,19 +102,22 @@ export function useActivateBugReport({ enabled = true, onShake }: Options) {
         return () => {
             mounted = false;
             subscription?.remove();
+            // Reset calibration on unmount so re-mount recalibrates
+            baselineSamples.current = [];
+            baselineMagnitude.current = null;
         };
     }, [enabled]);
-};
+}
 
 export const BugReportScreen: React.FC<BugReportScreenProps> = ({
     visible,
     section,
+    dark,
     onClose,
 }) => {
 
     const sheetRef = useRef<BottomSheet>(null);
-    const { colors, textStyles } = useTheme();
-    const user = useUser((state) => state.user);
+    const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
 
     const [message, setMessage] = useState("");
     const [sending, setSending] = useState(false);
@@ -261,15 +285,10 @@ export const BugReportScreen: React.FC<BugReportScreenProps> = ({
                             value={message}
                             onChangeText={setMessage}
                             placeholder="What went wrong?"
-                            containerStyle={{
-                                borderRadius: 12,
-                                paddingHorizontal: 0,
-                            }}
                             style={{
                                 minHeight: 98,
                                 maxHeight: 120,
-                                borderRadius: 12,
-                                paddingTop: 12,
+                                backgroundColor: colors.secondaryCard
                             }}
                         />
                     </View>

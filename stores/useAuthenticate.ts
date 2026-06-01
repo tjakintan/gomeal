@@ -97,6 +97,7 @@ export const useOnboarding = create<OnboardingState>((set, get) => ({
     nextStep: () =>
         set((state) => ({
             step: Math.min(state.step + 1, ONBOARD_USER_SECTIONS.length - 1),
+            error: null
         })),
 
     backStep: () => {
@@ -111,6 +112,7 @@ export const useOnboarding = create<OnboardingState>((set, get) => ({
         set((state) => ({
             step: Math.max(0, nextStep),
             draft: prevSection === "Email" ? {} : state.draft,
+            error: null
         }));
     },
 

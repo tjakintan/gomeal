@@ -78,7 +78,7 @@ struct GoMealLiveActivityExtensionLiveActivity: Widget {
         .tint(.white)
         .background(.white.opacity(0.25), in: Capsule())
         
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 8) {
           
           Text("INSTRUCTION")
             .font(.system(size: 10, weight: .heavy))
@@ -89,11 +89,11 @@ struct GoMealLiveActivityExtensionLiveActivity: Widget {
             .font(.subheadline)
             .fontWeight(.medium)
             .foregroundStyle(.white)
-            .lineLimit(3)
-            .fixedSize(horizontal: false, vertical: true)
+            .lineLimit(2)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
         }
         .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 88, alignment: .topLeading) 
         .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
         .overlay(
           RoundedRectangle(cornerRadius: 12)

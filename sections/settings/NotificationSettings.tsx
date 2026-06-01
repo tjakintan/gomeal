@@ -6,6 +6,7 @@ import { SectionHeader } from "@/components/SectionComponent";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { update_notification_settings } from "@/notifications/notification.socket";
 import { Settings } from "@/types";
+import { useEffect } from "react";
 
 const reminderOptions: { label: string; value: string }[] = [
     { label: "Breakfast", value: "08:00" },
@@ -24,6 +25,7 @@ const NotificationSettings: React.FC = () => {
     const messages = useSettingsStore(
         (state) => state.settings.notifications.messages
     );
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const cookingReminderTime = useSettingsStore(
         (state) => state.settings.notifications.cookingReminderTime
     );
@@ -34,12 +36,7 @@ const NotificationSettings: React.FC = () => {
         updates: Partial<Settings["notifications"]>
     ) => {
         updateNotifications(updates);
-
-        const syncedSettings = await update_notification_settings(updates);
-
-        if (syncedSettings) {
-            updateNotifications(syncedSettings);
-        }
+        await update_notification_settings(updates);
     };
 
     return (
@@ -105,9 +102,16 @@ const NotificationSettings: React.FC = () => {
                     <ToggleButton
                         value={reminderEnabled}
                         onChange={(v) =>
-                            handleUpdateNotifications({
-                                cookingReminderTime: v ? "08:00" : null,
-                            })
+                            handleUpdateNotifications(
+                                v
+                                    ? {
+                                        cookingReminderTime: "08:00",
+                                        timezone,
+                                    }
+                                    : {
+                                        cookingReminderTime: null,
+                                    }
+                            )
                         }
                     />
                 </View>
@@ -132,6 +136,7 @@ const NotificationSettings: React.FC = () => {
                                     onPress={() =>
                                         handleUpdateNotifications({
                                             cookingReminderTime: option.value,
+                                            timezone,
                                         })
                                     }
                                     style={{

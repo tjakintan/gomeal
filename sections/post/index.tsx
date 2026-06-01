@@ -26,7 +26,7 @@ const SECTION_KEYS = [
 ] as const;
 
 const PostScreen: React.FC<{
-    isFocused: boolean;
+    isFocused?: boolean;
     setMediaEnhanceOpen: (v: boolean) => void;
 }> = ({ isFocused, setMediaEnhanceOpen }) => {
 
@@ -156,7 +156,7 @@ const PostScreen: React.FC<{
                 )}
             </View>
 
-            <View style={{ flex: 1 }} className="w-full flex-row items-center justify-center p-1">
+            <View style={{ flex: 1, paddingBottom: 125 }} className="w-full flex-row items-center justify-center p-1">
                 <Button
                     onPress={() => overlayRef.current?.snapToIndex(0)}
                     style={{ width: 220, height: 350, borderRadius: 25, backgroundColor: colors.card }}

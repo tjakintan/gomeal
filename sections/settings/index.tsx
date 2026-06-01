@@ -17,9 +17,55 @@ import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { FoodPreferences } from '@/types/index';
 import FoodSettings from './FoodSettings';
 import NotificationSettings from './NotificationSettings';
+import * as WebBrowser from "expo-web-browser";
+import { EmailIcon } from '@/icons/Icon';
 
 const iconHeight = _DEFAULT_ICON_HEIGHT
 const iconWidth = _DEFAULT_ICON_WIDTH
+
+const HelpSettings: React.FC = () => {
+  const { colors, textStyles } = useTheme();
+
+  return (
+    <View
+      style={{
+        padding: 20,
+        gap: 16,
+      }}
+    >
+      <View style={{ gap: 6 }}>
+        <Text
+          className={textStyles.body}
+          style={{ color: colors.text, opacity: 0.6, lineHeight: 20 }}
+        >
+          Have a question or ran into an issue? Our team is here to help.
+        </Text>
+      </View>
+
+      <Button
+        onPress={() => WebBrowser.openBrowserAsync("https://www.gomeal.org/contact")}
+        style={{
+          height: 50,
+          width: 200,
+          flexDirection: "row",
+          gap: 10,
+          backgroundColor: colors.button,
+          paddingHorizontal: 20,
+          alignSelf: "center"
+        }}
+        background={true}
+      >
+        <EmailIcon size={20} color={colors.text} />
+        <Text
+          className={textStyles.h3}
+          style={{ color: "white" }}
+        >
+          Contact
+        </Text>
+      </Button>
+    </View>
+  );
+};
 
 const sections: SettingsLayoutItem[] = [
   {
@@ -83,15 +129,30 @@ const sections: SettingsLayoutItem[] = [
       </Svg>
     )
   },
+  {
+    key: "help",
+    title: "Help & Support",
+    render: () => (
+      <HelpSettings />
+    ),
+    icon: (color) => (
+      <Svg
+        height={iconHeight} width={iconWidth}
+        viewBox="0 0 24 24"
+      >
+        <Path fill={color} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41c0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+      </Svg>
+    )
+  },
 ];
 
-const Settings: React.FC<{isFocused: boolean}> = ({ isFocused }) => {
+const Settings: React.FC<{isFocused?: boolean}> = ({ isFocused }) => {
 
   const { colors, textStyles } = useTheme();
   const [openSectionSettings, setOpenSectionSettings] = useState<string | null>(null);
 
   const userSectionRef = useRef<BottomSheet>(null);
-  const settings = useSettingsStore((state) => state.settings);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(0);
 
   const handleToggle = (key: string) => {
     setOpenSectionSettings((prev) => (prev === key ? null : key));
@@ -107,7 +168,7 @@ const Settings: React.FC<{isFocused: boolean}> = ({ isFocused }) => {
 
   return (
 
-    <View style={StyleSheet.absoluteFillObject}>
+    <View style={{...StyleSheet.absoluteFillObject, paddingBottom: 125 }}>
 
       <SectionHeader 
         showDivider
@@ -166,17 +227,18 @@ const Settings: React.FC<{isFocused: boolean}> = ({ isFocused }) => {
         enablePanDownToClose={false}
         backgroundStyle={{
           backgroundColor: colors.background, 
-          borderRadius: 25,
+          borderRadius: 35,
           shadowColor: colors.text,
           shadowOpacity: 0.10,
           shadowRadius: 5,
           shadowOffset: { width: 0, height: -4 },
           elevation: 5,
         }}
+        onChange={(i) => setShowDeleteConfirm(i)}
         handleIndicatorStyle={{ backgroundColor: colors.secondaryCard, width: 45, height: 7 }}       
       >
-        <BottomSheetView style={{ padding: 5, margin: 10, borderRadius: 25, backgroundColor: colors.button}}>
-          <UserSettings />
+        <BottomSheetView style={{ padding: 10, margin: 10 }}>
+          <UserSettings open={showDeleteConfirm} />
         </BottomSheetView>
       </BottomSheet>
 
