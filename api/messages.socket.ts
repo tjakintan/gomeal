@@ -108,3 +108,37 @@ export const useMessageReadListener = (conversation_id?: number | null) => {
         };
     }, [conversation_id]);
 };
+
+export const useTypingListener = (conversation_id?: number | null) => {
+    useEffect(() => {
+        if (!conversation_id) return;
+        let mounted = true;
+
+        const setup = async () => {
+            const sock = await getSocket();
+            if (!mounted) return;
+
+            const handleTypingStart = () => {
+                useMessage.getState().setTyping(conversation_id, true);
+            };
+
+            const handleTypingStop = () => {
+                useMessage.getState().setTyping(conversation_id, false);
+            };
+
+            sock.on(`typing-start_${conversation_id}`, handleTypingStart);
+            sock.on(`typing-stop_${conversation_id}`, handleTypingStop);
+
+            return () => {
+                sock.off(`typing-start_${conversation_id}`, handleTypingStart);
+                sock.off(`typing-stop_${conversation_id}`, handleTypingStop);
+            };
+        };
+
+        const cleanup = setup();
+        return () => {
+            mounted = false;
+            cleanup.then((fn) => fn?.());
+        };
+    }, [conversation_id]);
+};

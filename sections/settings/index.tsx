@@ -223,7 +223,7 @@ const Settings: React.FC<{isFocused?: boolean}> = ({ isFocused }) => {
         ref={userSectionRef}
         index={0} 
         bottomInset={125}
-        snapPoints={["6%", 225]}
+        snapPoints={["8%", 225]}
         enablePanDownToClose={false}
         backgroundStyle={{
           backgroundColor: colors.background, 
@@ -235,7 +235,12 @@ const Settings: React.FC<{isFocused?: boolean}> = ({ isFocused }) => {
           elevation: 5,
         }}
         onChange={(i) => setShowDeleteConfirm(i)}
-        handleIndicatorStyle={{ backgroundColor: colors.secondaryCard, width: 45, height: 7 }}       
+        handleComponent={() => (
+            <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
+                <Text className={textStyles.small} style={{ color: colors.text, fontSize: 11, opacity: 0.8 }}>Logout</Text>
+                <View style={{ width: 45, height: 7, borderRadius: 99, backgroundColor: colors.secondaryCard }} />
+            </View>
+        )}
       >
         <BottomSheetView style={{ padding: 10, margin: 10 }}>
           <UserSettings open={showDeleteConfirm} />

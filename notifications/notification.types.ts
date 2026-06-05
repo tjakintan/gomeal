@@ -5,6 +5,7 @@ import { Avatar } from "../types/user.types";
 export type NotificationSettings = {
     likes: boolean;
     messages: boolean;
+    cook: boolean;
     cookingReminderTime: string | null;
     timezone: string;
 };
@@ -12,6 +13,7 @@ export type NotificationSettings = {
 export const defaultNotificationSettings: NotificationSettings = {
     likes: true,
     messages: true,
+    cook: true,
     cookingReminderTime: null,
     timezone: "UTC",
 };

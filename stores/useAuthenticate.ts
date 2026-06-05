@@ -7,26 +7,43 @@ import {
     ConfirmUserEmail,
     verifyUserEmail,
     SignUpUser,
-    SocialSignUp
+    SocialSignUp,
+    AppleSignUp
 } from "@/api/authenticate.api";
 import { useUser } from "@/stores/useUser";
 
 export type GoogleSignUpResponse =
     | {
-          exists: true;
-          user: User;
-          accessToken: string;
-          refreshToken: string;
+        exists: true;
+        user: User;
+        accessToken: string;
+        refreshToken: string;
       }
     | {
-          exists: false;
-          googleUser: {
-              email: string;
-              firstName?: string;
-              lastName?: string;
-              avatar?: string;
-          };
-      };
+        exists: false;
+        googleUser: {
+            email: string;
+            firstName?: string;
+            lastName?: string;
+            avatar?: string;
+        };
+    };
+
+export type AppleSignUpResponse =
+    | {
+        exists: true;
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+      }
+    | {
+        exists: false;
+        appleUser: {
+            email: string;
+            firstName?: string;
+            lastName?: string;
+        };
+    };
 
 type OnboardingDraft = Partial<User> & {
     exists?: boolean;
@@ -50,6 +67,10 @@ type OnboardingState = {
 
     submitStep: (data?: OnboardingDraft) => Promise<void>;
     continueWithGoogle: (idToken: string) => Promise<boolean>;
+    continueWithApple: (
+        identityToken: string,
+        fullName?: { givenName?: string | null; familyName?: string | null }
+    ) => Promise<boolean>;
     submitEmail: (email: string) => Promise<boolean>;
     sendEmailCode: () => Promise<boolean>;
     verifyEmailCode: (code: string) => Promise<boolean>;
@@ -274,6 +295,54 @@ export const useOnboarding = create<OnboardingState>((set, get) => ({
         } catch (err) {
             console.error("Google sign-up failed:", err);
             set({ error: "Google sign in failed" });
+            return false;
+        } finally {
+            set({ loading: false });
+        }
+    },
+
+    continueWithApple: async (identityToken, fullName) => {
+        if (!identityToken) {
+            set({ error: "Missing Apple token" });
+            return false;
+        }
+
+        set({ loading: true, error: null });
+
+        try {
+            const result = await AppleSignUp(identityToken, fullName);
+
+            if (!result) {
+                set({ error: "Apple sign in failed" });
+                return false;
+            }
+
+            if (result.exists) {
+                await saveSession({
+                    user: result.user,
+                    accessToken: result.accessToken,
+                    refreshToken: result.refreshToken,
+                });
+
+                return true;
+            }
+
+            get().mergeDraft({
+                email: result.appleUser.email,
+                firstName: result.appleUser.firstName ?? "",
+                lastName: result.appleUser.lastName ?? "",
+            });
+
+            const personalStep = ONBOARD_USER_SECTIONS.indexOf("Personal");
+
+            set({
+                step: personalStep >= 0 ? personalStep : 1,
+            });
+
+            return true;
+        } catch (err) {
+            console.error("Apple sign-up failed:", err);
+            set({ error: "Apple sign in failed" });
             return false;
         } finally {
             set({ loading: false });

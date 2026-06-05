@@ -21,7 +21,7 @@ export type User = {
   email: string;
   firstName?: string;
   lastName?: string;
-  dob: string;
+  dob?: string | null;
   profile_name: string;
   profile_img_url?: string | null;
   avatar?: Avatar;

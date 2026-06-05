@@ -89,11 +89,11 @@ struct GoMealLiveActivityExtensionLiveActivity: Widget {
             .font(.subheadline)
             .fontWeight(.medium)
             .foregroundStyle(.white)
-            .lineLimit(2)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
+            .lineLimit(3)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 88, alignment: .topLeading) 
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
         .overlay(
           RoundedRectangle(cornerRadius: 12)

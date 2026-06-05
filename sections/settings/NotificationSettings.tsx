@@ -21,9 +21,14 @@ const NotificationSettings: React.FC = () => {
         (state) => state.updateNotifications
     );
 
-    const likes = useSettingsStore((state) => state.settings.notifications.likes);
+    const likes = useSettingsStore(
+        (state) => state.settings.notifications.likes
+    );
     const messages = useSettingsStore(
         (state) => state.settings.notifications.messages
+    );
+    const cook = useSettingsStore(
+        (state) => state.settings.notifications.cook
     );
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const cookingReminderTime = useSettingsStore(
@@ -87,6 +92,29 @@ const NotificationSettings: React.FC = () => {
 
                 <Text className={textStyles.small}>
                     Get notified when someone messages you.
+                </Text>
+            </View>
+
+            <View className="flex-1 p-5 gap-2 overflow-hidden">
+                <SectionHeader
+                    title="Cooks"
+                    showDivider
+                    titleClassName={textStyles.section}
+                />
+
+                <View className="flex-row items-center mt-3">
+                    <ToggleButton
+                        value={cook}
+                        onChange={(v) =>
+                            handleUpdateNotifications({
+                                cook: v,
+                            })
+                        }
+                    />
+                </View>
+
+                <Text className={textStyles.small}>
+                    Get notified when someone cooks your recipes.
                 </Text>
             </View>
 

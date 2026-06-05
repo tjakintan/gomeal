@@ -17,6 +17,7 @@ import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useState } from "react";
 import { uploadMediaToS3 } from "@/api/post.api";
 import { Profile } from "./profile";
+import ImageCropPicker from "react-native-image-crop-picker";
 
 export default function UserScreen() {
   const { data, loadProfile, updateAvatar, updateProfileImage } = useProfile();
@@ -56,19 +57,14 @@ export default function UserScreen() {
   const openCamera = async () => {
     mediaSheetRef.current?.close();
 
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
+    const image = await ImageCropPicker.openCamera({
+      width: 1280,
+      height: 720,
+      cropping: true,
+      cropperCircleOverlay: false,
     });
 
-    if (!result.canceled) {
-      await saveProfileImage(result.assets[0].uri);
-    }
+    await saveProfileImage(image.path);
   };
 
   const openGallery = async () => {
@@ -79,16 +75,30 @@ export default function UserScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
+      allowsEditing: false,
       quality: 1,
     });
 
-    if (!result.canceled) {
-      await saveProfileImage(result.assets[0].uri);
+    if (result.canceled) return;
+
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    try {
+      const image = await ImageCropPicker.openCropper({
+        path: result.assets[0].uri.replace("file://", ""),
+        width: 1280,
+        height: 720,
+        cropperCircleOverlay: false,
+        forceJpg: true,
+        mediaType: "photo",
+      });
+      await saveProfileImage(image.path);
+    } catch (err: any) {
+      if (err?.code === "E_PICKER_CANCELLED" || err?.message?.includes("cancelled")) return;
+      console.error("Cropper error:", err);
     }
   };
-
+  
   useEffect(() => {
     loadProfile();
   }, []);

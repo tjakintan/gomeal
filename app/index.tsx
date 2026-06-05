@@ -17,7 +17,7 @@ import { useCook } from "@/stores/useCook";
 import TimerScreen from "@/hooks/Timer";
 import { useTimer } from "@/stores/useTimer";
 import { usePostSteps } from "@/stores/usePost";
-import { registerNotificationResponseListener } from "@/notifications/pushNotification";
+import { registerNotificationResponseListener, registerPushNotifications } from "@/notifications/pushNotification";
 import { useMessage } from "@/stores/useMessage";
 import { InboxMainScreen } from "@/sections/user/inbox";
 import { useActivateBugReport, BugReportScreen } from "./bug";
@@ -70,6 +70,9 @@ const AuthenticatedApp: React.FC = () => {
 
   useEffect(() => {
     const listener = registerNotificationResponseListener();
+    registerPushNotifications().catch((err) => 
+      console.error("Push notification registration failed", err)
+    );
     return () => listener.remove();
   }, []);
 
