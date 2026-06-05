@@ -47,9 +47,6 @@ export async function registerPushNotifications() {
         Notifications.getDevicePushTokenAsync(),
     ]);
 
-
-console.log("DEVICE TOKEN", deviceToken);
-
     await socketEmit("register-push-token", {
         token: expoToken.data,
         native_token: deviceToken.data,

@@ -69,7 +69,7 @@ const LikeCard: React.FC<{likes: LikeNotificationCard, dark: boolean}> = ({ like
                     >
                         <AvatarRender avatar={likes.actor_avatar} size={30} />
                     </View>
-                    <View className="flex-col gap-1">  {/* ← was flex-row */}
+                    <View className="flex-col gap-1"> 
                         <Text
                             className={textStyles.sectionText}
                             numberOfLines={1}

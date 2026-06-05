@@ -6,8 +6,6 @@ import {
     Easing,
     KeyboardAvoidingView,
     Platform,
-    Linking,
-    TouchableOpacity
 } from "react-native";
 import { useTheme } from "@/provider/ThemeProvider";
 import { Input, DigitsInput, DobInput } from "@/components/InputComponent";
@@ -22,10 +20,10 @@ import {
     ForwardEmailIcon,
     GoogleIcon,
     BackIcon,
-    NextIcon,
     PersonIcon,
     TagNameIcon,
     OpenMailboxIcon,
+    AppleIcon,
 } from "@/icons/Icon";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { User } from "@/types/user.types";
@@ -37,6 +35,7 @@ import {
   GoogleSignin,
   statusCodes,
 } from "@react-native-google-signin/google-signin";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useOnboarding } from "@/stores/useAuthenticate";
 
 const WelcomeScreen: React.FC<{ onNext?: () => void }> = () => {
@@ -191,7 +190,7 @@ const AnimatedSection: React.FC<{ children: React.ReactNode }> = ({ children }) 
 const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
 
     const { colors, textStyles } = useTheme();
-    const { continueWithGoogle } = useOnboarding();
+    const { continueWithGoogle, continueWithApple } = useOnboarding();
 
     const handleGoogleSignup = async () => {
         try {
@@ -223,6 +222,33 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
             }
 
             console.error("Google sign in error:", error);
+        }
+    };
+
+    const handleAppleSignup = async () => {
+
+        try {
+            const credential = await AppleAuthentication.signInAsync({
+                requestedScopes: [
+                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                ],
+            });
+
+            const identityToken = credential.identityToken;
+
+            if (!identityToken) {
+                console.log("Apple sign in failed: missing identityToken");
+                return;
+            }
+
+            await continueWithApple(identityToken, credential.fullName ?? undefined);
+        } catch (error: any) {
+            if (error.code === "ERR_REQUEST_CANCELED") {
+                return;
+            }
+
+            console.error("Apple sign in error:", error);
         }
     };
 
@@ -270,41 +296,55 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
                 <GoogleIcon />
             </Button>
 
-<View
-    style={{
-        width: "100%",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingTop: 8,
-        paddingBottom: 16,
-        paddingHorizontal: 20,
-    }}
->
-    <Text
-        style={{
-            color: colors.secondaryText,
-            fontSize: 12,
-            textAlign: "center",
-            lineHeight: 18,
-        }}
-    >
-        By continuing, you agree to GoMeal’s{" "}
-        <Text
-            onPress={() =>
-                WebBrowser.openBrowserAsync(
-                    "https://www.gomeal.org/privacy"
-                )
-            }
-            style={{
-                color: colors.button,
-                textDecorationLine: "underline",
-                fontWeight: "600",
-            }}
-        >
-            Privacy Policy
-        </Text>
-    </Text>
-</View>
+            <Button
+                style={{
+                    flexDirection: "row",
+                    gap: 10,
+                    width: "100%",
+                    height: 60,
+                    backgroundColor: colors.card,
+                }}
+                onPress={handleAppleSignup}
+            >
+                <Text className={textStyles.sectionText}>Continue with Apple</Text>
+                <AppleIcon color={colors.text} />
+            </Button>
+
+            <View
+                style={{
+                    width: "100%",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingTop: 8,
+                    paddingBottom: 16,
+                    paddingHorizontal: 20,
+                }}
+            >
+                <Text
+                    style={{
+                        color: colors.secondaryText,
+                        fontSize: 12,
+                        textAlign: "center",
+                        lineHeight: 18,
+                    }}
+                >
+                    By continuing, you agree to GoMeal’s{" "}
+                    <Text
+                        onPress={() =>
+                            WebBrowser.openBrowserAsync(
+                                "https://www.gomeal.org/privacy"
+                            )
+                        }
+                        style={{
+                            color: colors.button,
+                            textDecorationLine: "underline",
+                            fontWeight: "600",
+                        }}
+                    >
+                        Privacy Policy
+                    </Text>
+                </Text>
+            </View>
             
         </View>
     );
@@ -467,34 +507,30 @@ const Personal: React.FC<onBoardUserSectionProps> = ({ onNext, draft }) => {
 
     const buttonHeight = useRef(new Animated.Value(0)).current;
 
+    // replace handleContinue with:
     const handleContinue = () => {
-        const [dobMonth, dobDay, dobYear] = getDobParts(dob);
-
-        if (!isValidDob(dobMonth, dobDay, dobYear)) {
-            setDobError("Invalid");
-            return;
+        if (dob.trim()) {
+            const [dobMonth, dobDay, dobYear] = getDobParts(dob);
+            if (!isValidDob(dobMonth, dobDay, dobYear)) {
+                setDobError("Invalid");
+                return;
+            }
+            const today = new Date();
+            const birthDate = new Date(Number(dobYear), Number(dobMonth) - 1, Number(dobDay));
+            const age = today.getFullYear() - birthDate.getFullYear();
+            const hasHadBirthdayThisYear =
+                today.getMonth() > birthDate.getMonth() ||
+                (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+            if ((hasHadBirthdayThisYear ? age : age - 1) < 13) {
+                setDobError("You must be at least 13");
+                return;
+            }
         }
-
-        // --- age verification (> 13 years) --------------
-        const today = new Date();
-        const birthDate = new Date(Number(dobYear), Number(dobMonth) - 1, Number(dobDay));
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const hasHadBirthdayThisYear =
-            today.getMonth() > birthDate.getMonth() ||
-            (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
-        const exactAge = hasHadBirthdayThisYear ? age : age - 1;
-
-        if (exactAge < 13) {
-            setDobError("You must be at least 13");
-            return;
-        }
-
-        setDobError("");
-        onNext?.({ firstName, lastName, profile_name, dob });
+        onNext?.({ firstName, lastName, profile_name, dob: dob || undefined });
     };
 
     useEffect(() => {
-        const hasInput = profile_name.trim() && firstName.trim() && lastName.trim() && dob.trim();
+        const hasInput = profile_name.trim() && firstName.trim() && lastName.trim();
 
         Animated.timing(buttonHeight, {
             toValue: hasInput ? 60 : 0,
@@ -502,7 +538,7 @@ const Personal: React.FC<onBoardUserSectionProps> = ({ onNext, draft }) => {
             duration: 1500,
             easing: Easing.out(Easing.cubic),
         }).start();
-    }, [profile_name, firstName, lastName, dob]);
+    }, [profile_name, firstName, lastName]);
 
     return (
         <View style={{ flex: 1 }} className="w-full p-2 justify-start">

@@ -11,9 +11,9 @@ import { _DEFAULT_ICON_WIDTH, _DEFAULT_ICON_HEIGHT } from "@/types/layout.types"
 import { CameraIcon, GalleryIcon, XIcon } from "@/icons/Icon";
 import DishEnhanceMedia from "@/sections/post/DishMedia/EnhanceMedia";
 import * as MediaLibrary from "expo-media-library";
-import { AddIcon } from '@/icons/Icon';
 import { SectionHeader } from "@/components/SectionComponent";
-import { Media,} from "@/media/media";
+import { Media } from "@/media/media";
+import { Camera } from "expo-camera";
 
 const DishMedia: React.FC<PostSectionInfoProps> = ({
   isFocused,
@@ -27,83 +27,102 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
     const { colors } = useTheme("dark");
     const { info, setMedia, } = usePost();
     const [uri, setUri] = useState<{ uri: string; type: MediaType } | null>(null);
+    const [cameraPermission, setCameraPermission] = useState<"granted" | "denied" | "pending">("pending");
 
     type AssetWithLocalUri = MediaLibrary.Asset & { localUri: string };
     const [cameraRollMedia, setCameraRollMedia] = useState<AssetWithLocalUri[]>([]);
 
+    const fetchLastThree = async () => {
+        const permission = await MediaLibrary.getPermissionsAsync();
+
+        if (permission.status !== "granted") {
+            setCameraRollMedia([]);
+            return;
+        }
+
+        try {
+            const mediaResult = await MediaLibrary.getAssetsAsync({
+                first: 3,
+                sortBy: [MediaLibrary.SortBy.creationTime],
+                mediaType: ["photo", "video"],
+            });
+
+            const assetsWithLocalUri = await Promise.all(
+                mediaResult.assets.reverse().map(async (asset) => {
+                    const info = await MediaLibrary.getAssetInfoAsync(asset);
+
+                    return {
+                        ...asset,
+                        localUri: info.localUri || asset.uri,
+                    };
+                })
+            );
+
+            setCameraRollMedia(assetsWithLocalUri);
+        } catch (err) {
+            console.log("Error fetching media:", err);
+        }
+    };
+
     const openCamera = async () => {
+        const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+
+        if (cameraPermission.status !== "granted") {
+            return;
+        }
+
+        if (mediaSource !== "step_image") {
+            const micPermission = await Camera.requestMicrophonePermissionsAsync();
+
+            if (micPermission.status !== "granted") {
+                return;
+            }
+        }
 
         const result = await ImagePicker.launchCameraAsync({
             mediaTypes: mediaSource === "step_image"
                 ? ["images"]
                 : ["images", "videos"],
-
             allowsEditing: true,
             videoMaxDuration: 30,
             quality: 1,
         });
 
         if (!result.canceled) {
-            setUri({ 
-                uri: result.assets[0].uri, 
-                type: result.assets[0].type === "video" ? "video" : "image" 
+            setUri({
+                uri: result.assets[0].uri,
+                type: result.assets[0].type === "video" ? "video" : "image",
             });
         }
     };
 
     const openGallery = async () => {
+        const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (mediaPermission.status !== "granted") {
+            return;
+        }
+
+        await fetchLastThree();
 
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: mediaSource === "step_image"
                 ? ["images"]
                 : ["images", "videos"],
-
-            allowsEditing: true, 
-            videoMaxDuration: 30, 
+            allowsEditing: true,
+            videoMaxDuration: 30,
             quality: 1,
         });
 
         if (!result.canceled) {
-            setUri({ 
-                uri: result.assets[0].uri, 
-                type: result.assets[0].type === "video" ? "video" : "image" 
+            setUri({
+                uri: result.assets[0].uri,
+                type: result.assets[0].type === "video" ? "video" : "image",
             });
         }
     };
 
     useEffect(() => {
-
-        const fetchLastThree = async () => {
-
-            const { status } = await MediaLibrary.requestPermissionsAsync();
-            if (status !== "granted") return;
-
-            try {
-
-                const mediaResult = await MediaLibrary.getAssetsAsync({
-                    first: 3,
-                    sortBy: [MediaLibrary.SortBy.creationTime],
-                    mediaType: ["photo", "video"],
-                });
-
-                const assetsWithLocalUri = await Promise.all(
-                    mediaResult.assets.reverse().map(async (asset) => {
-                        const info = await MediaLibrary.getAssetInfoAsync(asset);
-                        return { 
-                            ...asset, 
-                            localUri: info.localUri || asset.uri,  
-                        };
-                    })
-                );
-
-                setCameraRollMedia(assetsWithLocalUri);
-
-            } catch (err) {
-                console.log("Error fetching media:", err);
-            }
-
-        };
-
         fetchLastThree();
     }, []);
 
@@ -226,9 +245,11 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
                                     </View>
                                 </Pressable>
                             ))}
+
                             <Button onPress={openGallery} style={{height: 90, width: 90, borderRadius: 0, paddingLeft: 5}}>
                                 <GalleryIcon color={colors.text} size={35}/>
                             </Button>
+                            
                         </View>
 
                     </View>

@@ -48,3 +48,11 @@ export const markMessagesReadApi = async (conversation_id: number): Promise<bool
     const res = await socketEmit<{ success: boolean }>("read-message", { conversation_id });
     return res?.success ?? false;
 };
+
+export const emitTypingStart = (conversation_id: number): void => {
+    socketEmit("typing-start", { conversation_id });
+};
+
+export const emitTypingStop = (conversation_id: number): void => {
+    socketEmit("typing-stop", { conversation_id });
+};

@@ -1,6 +1,6 @@
 import { User } from "@/types/user.types";
 import { API_BASE } from '../config';
-import { GoogleSignUpResponse } from "@/stores/useAuthenticate";
+import { GoogleSignUpResponse, AppleSignUpResponse } from "@/stores/useAuthenticate";
 
 export async function findUserByEmail(email: string): Promise<{ exists: false } | { exists: true; sub: string, firstName: string; lastName: string }> {
     
@@ -111,6 +111,20 @@ export async function SocialSignUp(idToken: string): Promise<GoogleSignUpRespons
         console.error("Social sign-up error:", err);
         return null;
     }
+};
+
+export async function AppleSignUp(
+  identityToken: string,
+  fullName?: { givenName?: string | null; familyName?: string | null }
+): Promise<AppleSignUpResponse | null> {
+  const response = await fetch(`${API_BASE}/auth/apple-sign-up`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identityToken, fullName }),
+  });
+
+  if (!response.ok) return null;
+  return await response.json();
 }
 
 

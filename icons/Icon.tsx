@@ -1,9 +1,10 @@
 import Svg, { Path, G, Line, Circle, Rect, Ellipse, Defs, LinearGradient, RadialGradient, Stop} from "react-native-svg";
-import { Image } from "react-native";
+import { Animated, Image } from "react-native";
 import { _DEFAULT_ICON_WIDTH, _DEFAULT_ICON_HEIGHT } from "@/types/layout.types";
 import Chef from "@/assets/chef.svg";
 import FireEarth from "@/assets/fireEarth.svg";
 import Like from "@/assets/like.svg"
+import { useEffect, useRef } from "react";
 
 const iconHeight = _DEFAULT_ICON_HEIGHT 
 const iconWidth = _DEFAULT_ICON_WIDTH 
@@ -524,6 +525,18 @@ export const GoogleIcon = ({ size }: { size?: number }) => {
             <Path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/>
             <Path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
             <Path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+        </Svg>
+    );
+};
+
+export const AppleIcon = ({ size, color }: { size?: number; color?: string }) => {
+    const dimension = size ?? iconWidth;
+    return (
+        <Svg width={dimension} height={dimension} viewBox="0 0 368 432">
+            <Path
+                fill={color ?? "currentColor"} // Defaults to parent text color if no color is provided
+                d="M353 146q-21 7-35 32.5T304 229q0 31 16 57.5t43 33.5q-8 27-26.5 55.5T299 418q-16 11-40 11q-16 0-37-8q-18-9-31-9q-10 0-40 12q-18 5-26 5q-24 0-49-20q-36-34-56-81T0 230q0-53 30.5-93.5T108 96q26 0 48 11q17 11 34 11q16 0 31-6q39-16 52-16q35 0 61 23q12 12 19 27zM179 99q0-32 25-63q25-27 61-33q0 38-24 67q-27 29-62 29z"
+            />
         </Svg>
     );
 };
@@ -1508,6 +1521,53 @@ export const CookedIcon = ({
         strokeWidth={1.5}
         d="M2 9h20M4 9l.504 5.543c.236 2.592.353 3.887 1.213 4.672c.859.785 2.16.785 4.762.785h3.042c2.602 0 3.903 0 4.762-.785c.86-.785.977-2.08 1.213-4.672L20 9M4 6h16M9 6l.623-2.057A1.5 1.5 0 0 1 11.016 3h1.969a1.5 1.5 0 0 1 1.392.943L15 6"
       />
+    </Svg>
+  );
+};
+
+export const ThreeDotsIcon = ({
+  color = "#000",
+  size = 24,
+}: {
+  color?: string;
+  size?: number;
+}) => {
+  const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+  
+  const dot1 = useRef(new Animated.Value(1)).current;
+  const dot2 = useRef(new Animated.Value(0.4)).current;
+  const dot3 = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const animate = (dot: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, { toValue: 0.2, duration: 750, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 1,   duration: 750, useNativeDriver: true }),
+        ])
+      );
+
+    const a1 = animate(dot1, 0);
+    const a2 = animate(dot2, 150);
+    const a3 = animate(dot3, 300);
+
+    a1.start();
+    a2.start();
+    a3.start();
+
+    return () => {
+      a1.stop();
+      a2.stop();
+      a3.stop();
+    };
+  }, []);
+
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <AnimatedCircle cx="4"  cy="12" r="3" fill={color} opacity={dot1} />
+      <AnimatedCircle cx="12" cy="12" r="3" fill={color} opacity={dot2} />
+      <AnimatedCircle cx="20" cy="12" r="3" fill={color} opacity={dot3} />
     </Svg>
   );
 };

@@ -1,9 +1,9 @@
 import { Button } from "@/components/ButtonComponent";
 import { StyleSheet, View, Text, KeyboardAvoidingView, Platform, FlatList, Touchable, TouchableOpacity, Modal, Pressable, Dimensions, Image } from "react-native";
-import { BackIcon, SeenIcon, SendIcon, XIcon,  } from "@/icons/Icon";
+import { BackIcon, SeenIcon, ThreeDotsIcon } from "@/icons/Icon";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useMessage } from "@/stores/useMessage";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/InputComponent";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { Message } from "@/types/messages.types";
@@ -11,8 +11,59 @@ import { formatTime, isSameDay } from "@/utils/time";
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from "react-native-reanimated";
 import { useReport } from "@/stores/useReport";
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
-import { useMessageReadListener, useNewMessageListener } from "@/api/messages.socket";
+import { useMessageReadListener, useNewMessageListener, useTypingListener } from "@/api/messages.socket";
+import { emitTypingStart, emitTypingStop } from "@/api/messages.api";
+import Svg, { Path } from "react-native-svg";
 
+const MessageBubble = ({
+    children,
+    isMe,
+    backgroundColor,
+    maxWidth,
+}: {
+    children: React.ReactNode;
+    isMe: boolean;
+    backgroundColor: string;
+    maxWidth: number;
+}) => {
+    return (
+        <View style={{ alignSelf: isMe ? "flex-end" : "flex-start" }}>
+            <View
+                style={{
+                    backgroundColor,
+                    borderRadius: 20,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    maxWidth,
+                }}
+            >
+                {children}
+            </View>
+            <Svg
+                width={17}
+                height={14}
+                viewBox="0 0 22 18"
+                style={{
+                    position: "absolute",
+                    bottom: -2,
+                    ...(isMe ? { right: -4 } : { left: -4 }),
+                }}
+            >
+                {isMe ? (
+                    <Path
+                        d="M0 0 C3 3 6 6 9 9 C12 12 15 14 19 16 C13 16 5 14 0 9 Z"
+                        fill={backgroundColor}
+                    />
+                ) : (
+                    <Path
+                        d="M22 0 C19 3 16 6 13 9 C10 12 7 14 3 16 C9 16 17 14 22 9 Z"
+                        fill={backgroundColor}
+                    />
+                )}
+            </Svg>
+        </View>
+    );
+};
 const MessageScreen: React.FC<{post_id?: number; conversation_id?: number; receiver_sub?: string; onClose?: () => void}> = ({ post_id, conversation_id, receiver_sub, onClose}) => {
     
     const { colors, textStyles } = useTheme();
@@ -26,8 +77,15 @@ const MessageScreen: React.FC<{post_id?: number; conversation_id?: number; recei
     const hasTypedMessage = text.trim().length > 0;
     const [hasLoadedConversation, setHasLoadedConversation] = useState(false);
 
-    useMessageReadListener(conversation_id ?? conversations?.conversation.id);
-    useNewMessageListener(conversation_id ?? conversations?.conversation.id);
+    const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const activeConversationId = conversations?.conversation.id ?? null;
+    const isOtherUserTyping = useMessage((s) =>
+        activeConversationId ? s.typingUsers[activeConversationId] : false
+    );
+
+    useTypingListener(activeConversationId);
+    useMessageReadListener(activeConversationId);
+    useNewMessageListener(activeConversationId);
 
     const isLink = (content: string): boolean => {
         return /https?:\/\/[^\s]+/.test(content);
@@ -175,16 +233,11 @@ const MessageScreen: React.FC<{post_id?: number; conversation_id?: number; recei
                                                 }}
                                             >
                                                 {/* message bubble */}
-                                                <View
-                                                    style={{
-                                                        maxWidth: bubbleMaxWidth,
-                                                        backgroundColor: isMe ? colors.button : colors.card,
-                                                        paddingHorizontal: isLink(msg.content) ? 6 : 15,
-                                                        paddingVertical: isLink(msg.content) ? 6 : 10,
-                                                        borderRadius: 12,
-                                                        overflow: "hidden",
-                                                    }}
-                                                >
+                                            <MessageBubble
+                                                isMe={isMe}
+                                                backgroundColor={isMe ? colors.button : colors.card}
+                                                maxWidth={bubbleMaxWidth}
+                                            >
                                                     {isLink(msg.content) ? (  
                                                         <LinkPreview
                                                             text={msg.content}
@@ -240,7 +293,7 @@ const MessageScreen: React.FC<{post_id?: number; conversation_id?: number; recei
                                                     ) : (
                                                         <Text style={{ color: colors.text }}>{msg.content}</Text>
                                                     )}
-                                                </View>
+                                                </MessageBubble>
 
                                                 {/* icon row */}
                                                 <View
@@ -308,6 +361,18 @@ const MessageScreen: React.FC<{post_id?: number; conversation_id?: number; recei
                         />
                     )}
 
+                    {hasLoadedConversation && isOtherUserTyping && (
+                        <View style={{ paddingHorizontal: 10, marginBottom: 5 }}>
+                            <MessageBubble
+                                isMe={false}
+                                backgroundColor={colors.card}
+                                maxWidth={70}
+                            >
+                                <ThreeDotsIcon color={colors.text} size={22} />
+                            </MessageBubble>
+                        </View>
+                    )}
+
                 </View>
 
                 <View
@@ -327,7 +392,17 @@ const MessageScreen: React.FC<{post_id?: number; conversation_id?: number; recei
                             value={text}
                             disabled={sendingMessage}
                             placeholder="Message.."
-                            onChangeText={setText}
+                            onChangeText={(value) => {
+                                setText(value);
+                                if (!activeConversationId) return;
+
+                                emitTypingStart(activeConversationId);
+
+                                if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+                                typingTimerRef.current = setTimeout(() => {
+                                    emitTypingStop(activeConversationId!);
+                                }, 5000);
+                            }}
                             containerStyle={{ width: "100%" }}
                         />
                     </View>
@@ -348,6 +423,9 @@ const MessageScreen: React.FC<{post_id?: number; conversation_id?: number; recei
 
                                 if (!conversations?.conversation.id || !messageText) return;
 
+                                if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+
+                                emitTypingStop(activeConversationId!);
                                 setText("");
 
                                 await sendMessage(conversations.conversation.id, messageText);

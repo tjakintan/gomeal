@@ -11,13 +11,13 @@ class NotificationService: UNNotificationServiceExtension {
     ) {
 
         self.contentHandler = contentHandler
-        bestAttemptContent =
-            request.content.mutableCopy() as? UNMutableNotificationContent
 
-        guard let bestAttemptContent = bestAttemptContent else {
+        guard let bestAttemptContent = request.content.mutableCopy() as? UNMutableNotificationContent else {
             contentHandler(request.content)
             return
         }
+
+        self.bestAttemptContent = bestAttemptContent
 
         guard let imageUrlString = bestAttemptContent.userInfo["image"] as? String,
               let imageUrl = URL(string: imageUrlString) else {
@@ -25,40 +25,38 @@ class NotificationService: UNNotificationServiceExtension {
             return
         }
 
-        URLSession.shared.downloadTask(with: imageUrl) { location, _, error in
+        let task = URLSession.shared.dataTask(with: imageUrl) { data, _, _ in
 
-            guard let location = location, error == nil else {
+            guard let data = data else {
                 contentHandler(bestAttemptContent)
                 return
             }
 
             let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
-
-            let localUrl = tempDir.appendingPathComponent(
-                imageUrl.lastPathComponent
-            )
+            let fileURL = tempDir.appendingPathComponent("image.jpg")
 
             do {
-                try? FileManager.default.removeItem(at: localUrl)
-
-                try FileManager.default.moveItem(
-                    at: location,
-                    to: localUrl
-                )
+                try? FileManager.default.removeItem(at: fileURL)
+                try data.write(to: fileURL)
 
                 let attachment = try UNNotificationAttachment(
                     identifier: "image",
-                    url: localUrl
+                    url: fileURL,
+                    options: [
+                        UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"
+                    ]
                 )
 
                 bestAttemptContent.attachments = [attachment]
+
             } catch {
-                print("Attachment error:", error)
+                // silently fail → still show notification
             }
 
             contentHandler(bestAttemptContent)
+        }
 
-        }.resume()
+        task.resume()
     }
 
     override func serviceExtensionTimeWillExpire() {

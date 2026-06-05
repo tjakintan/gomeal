@@ -59,6 +59,9 @@ type MessageState = {
 
     loadConversation: (post_id?: number, conversation_id?: number, receiver_sub?: string) => Promise<DirectConversationData | null>;
 
+    typingUsers: Record<number, boolean>;
+    setTyping: (conversation_id: number, isTyping: boolean) => void;
+
     setConversation: (convo: DirectConversationData | null) => void;
     clearConversation: () => void;
     removeMessage: (message_id: string | number) => void;
@@ -76,6 +79,9 @@ export const useMessage = create<MessageState>((set, get) => ({
     inboxOpen: false,
     loadingInbox: false,
     pendingConversation: null,
+
+    typingUsers: {},
+
     openInbox: () => set({ inboxOpen: true }),
     closeInbox: () => set({ inboxOpen: false }),
 
@@ -285,6 +291,14 @@ export const useMessage = create<MessageState>((set, get) => ({
                     : state.conversations,
         }));
     },
+
+    setTyping: (conversation_id, isTyping) =>
+        set((state) => ({
+            typingUsers: {
+                ...state.typingUsers,
+                [conversation_id]: isTyping,
+            },
+        })),
 
     removeMessage: (message_id) => {
         set((state) => ({
