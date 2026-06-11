@@ -8,6 +8,7 @@ import {
 } from "@/components/WebUI";
 
 import { useTheme, colors } from "@/public/fonts/useTheme";
+import Image from "next/image";
 
 export default function Home() {
   const { theme } = useTheme();
@@ -31,6 +32,22 @@ export default function Home() {
             Have fun, and stay tuned for what’s coming next.
           "
         />
+
+        <div className="flex flex-wrap gap-4 items-center">
+          <a
+            href="https://apps.apple.com/app/gomeal/id6770191094"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              src="/AppStore.svg"
+              alt="Download Gomeal on the App Store"
+              width={180}
+              height={60}
+              priority
+            />
+          </a>
+        </div>
 
         <SectionHeader
           title="Mission"
