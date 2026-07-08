@@ -11,7 +11,7 @@ import { get_direct_inbox } from "../messages/inbox";
 import {
     _update_user_profile,
 } from "./update";
-import { delete_push_token, insert_push_token } from "./push";
+import { delete_push_token, insert_push_token } from "../../services/push";
 import { update_notification_settings } from "./notification_settings";
 import { create_bug_report } from "./bug";
 import { delete_account } from "./deleteUser";

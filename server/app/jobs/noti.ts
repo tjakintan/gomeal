@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import db from "@/services/db";
 import { getNowInTimezone } from "@/utils/time";
-import { send_push_notification, send_push_notification_to_user_devices } from "@/routes/user/push";
+import { send_push_notification, send_push_notification_to_user_devices } from "@/services/push";
 
 export const send_push_noti_cooking_reminder = () => {
     cron.schedule("* * * * *", async () => {

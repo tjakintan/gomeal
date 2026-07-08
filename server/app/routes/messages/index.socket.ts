@@ -3,7 +3,7 @@ import { create_notification } from "../user/notification";
 import { delete_direct_conversation, get_conversation_other_user_sub } from "./conversation";
 import { getDirectMessagesFromPostId, getDirectMessagesFromConversationId, getDirectMessagesFromReceiverSub} from "../feed/feedMessages";
 import { delete_message, insert_message, mark_message_read } from "./messages";
-import { send_push_notification_to_user_devices } from "../user/push";
+import { send_push_notification_to_user_devices } from "../../services/push";
 import { get_user_profile_name } from "../user/getProfile";
 
 export function message_sockets(io: Server) {

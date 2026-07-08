@@ -4,7 +4,7 @@ import { setFeedActionCount } from "./actions";
 import { create_notification } from "../user/notification";
 import { get_post_user_sub, getFeedActionCounts } from "./actions";
 import { ActionWeights } from "@/types/user.types";
-import { send_push_notification_to_user_devices } from "../user/push";
+import { send_push_notification_to_user_devices } from "../../services/push";
 import { get_user_profile_name } from "../user/getProfile";
 import { fetch_post_image_url } from "./feed";
 
