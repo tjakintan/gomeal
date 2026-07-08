@@ -1,4 +1,4 @@
-name: Deploy GoMeal Backend
+name: Deploy
 
 on:
   push:
@@ -10,21 +10,57 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to EC2
+      - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
+
+            echo "========== Changing to project directory =========="
             cd ~/backend
 
+            echo "========== Updating repository =========="
             git checkout backend
             git fetch origin backend
             git reset --hard origin/backend
 
+            echo "========== Stopping existing containers =========="
             docker compose down
 
+            echo "========== Building and starting containers =========="
             docker compose up -d --build
 
+            echo "========== Waiting for services to start =========="
+            sleep 10
+
+            echo "========== Container Status =========="
+            docker compose ps
+
+            echo "========== Docker Stats =========="
+            docker stats --no-stream
+
+            echo "========== Memory Usage =========="
+            free -h
+
+            echo "========== Disk Usage =========="
+            df -h
+
+            echo "========== Backend Logs =========="
+            docker compose logs backend --tail=100
+
+            echo "========== ML Logs =========="
+            docker compose logs ml --tail=100
+
+            echo "========== Redis Logs =========="
+            docker compose logs redis --tail=50
+
+            echo "========== Cleaning Unused Images =========="
             docker image prune -f
+
+            echo "========== Docker Disk Usage =========="
+            docker system df
+
+            echo "========== Deployment Complete ✅ =========="
