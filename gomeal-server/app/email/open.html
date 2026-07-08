@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 24px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    }
+
+    .wordmark {
+      display: block;
+      margin: 0 auto 16px;
+    }
+
+    .store {
+      display: inline-block;
+      margin-bottom: 24px;
+    }
+
+    .store img {
+      height: 52px;
+      width: auto;
+      display: block;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #38bdf8;
+      color: #fff;
+      padding: 14px 28px;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <img
+      class="wordmark"
+      src="https://gomeal.org/logo/gomeal-wordmark.png"
+      width="180"
+      alt="GoMeal"
+    />
+
+    <a
+      class="store"
+      href="https://apps.apple.com/app/gomeal/id6770191094"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <img
+        src="https://gomeal.org/AppStore.svg"
+        alt="Download on the App Store"
+      />
+    </a>
+
+    <br />
+
+    <a
+      class="btn"
+      href="gomeal://open"
+    >
+      Open GoMeal
+    </a>
+  </div>
+</body>
+</html>

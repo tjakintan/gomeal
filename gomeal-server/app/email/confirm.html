@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Inter:wght@400;600&display=swap');
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+
+        .preheader {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            color: transparent;
+        }
+        .wrapper {
+            max-width: 520px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        }
+        .header {
+            background: #fff;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .header p {
+            color: #666;
+            font-size: 14px;
+            margin: 6px 0 0;
+        }
+        .body {
+            padding: 32px 24px;
+            color: #111;
+            text-align: center;
+        }
+        .body h2 {
+            font-size: 22px;
+            margin: 0 0 12px;
+        }
+        .body p {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #444;
+            margin: 0 0 16px;
+        }
+        .code {
+            display: inline-block;
+            background: #f1f7fb;
+            border: 1px solid #d7eefc;
+            border-radius: 14px;
+            color: #111;
+            font-size: 34px;
+            font-weight: 600;
+            letter-spacing: 8px;
+            margin: 12px 0 20px;
+            padding: 16px 22px;
+        }
+        .btn {
+            display: inline-block;
+            background: #38bdf8;
+            color: #fff;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 15px;
+            margin: 8px 0 24px;
+        }
+        .footer {
+            border-top: 1px solid #eee;
+            padding: 16px 24px;
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+        }
+        .footer p {
+            margin: 0 0 10px;
+        }
+        .footer a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="preheader">Use this code to confirm your GoMeal email.</div>
+    <div class="wrapper">
+        <div class="header">
+            <img
+                src="https://gomeal.org/logo/gomeal-wordmark.png"
+                width="180"
+                alt="GoMeal"
+                style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;"
+            />
+            <p>Cook more. Share more. Eat better</p>
+        </div>
+        <div class="body">
+            <h2>Confirm your email</h2>
+            <div class="code">{{code}}</div>
+            <p>This code expires in 10 minutes.</p>
+            <a class="btn" href="https://app.gomeal.org/open">Open GoMeal</a>
+        </div>
+        <div class="footer">
+            <p>If the app is installed, the link above will open it automatically.</p>
+            <p>
+                &copy; 2026 GoMeal. All rights reserved.<br />
+                <a href="https://gomeal.org">Visit our website</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1 @@
+export type S3_FOLDER_STRUCT = "users/profile_images" | "posts/images" | "posts/videos" | "posts/steps";
