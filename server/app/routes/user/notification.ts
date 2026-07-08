@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import db from "@/services/db";
 import { PoolClient } from "pg";
-import { Notification, NotificationActionType, LikeNotificationCard, MessageNotificationCard, NotificationCard, CreateNotificationParams, CookNotificationCard } from "@/types/notification.types";
+import { Notification, NotificationActionType, LikeNotificationCard, MessageNotificationCard, NotificationCard, CreateNotificationParams, CookNotificationCard, TrendNotificationCard } from "@/types/notification.types";
 import { can_send_notification } from "./notification_settings";
 
 export const create_notification = async ({
@@ -24,6 +24,7 @@ export const create_notification = async ({
     if (!canNotify) return null;
 
     try {
+
         if (action_type === "like" && post_id !== null) {
             const result = await runner.query(
                 `INSERT INTO notifications (
@@ -49,6 +50,24 @@ export const create_notification = async ({
                 ) VALUES ($1, $2, $3, $4, $5, false, 'active', NOW())
                 ON CONFLICT (receiver_sub, actor_sub, action_type, conversation_id)
                 WHERE action_type = 'message' AND conversation_id IS NOT NULL
+                DO UPDATE SET
+                    is_read = false,
+                    status = 'active',
+                    created_at = NOW()
+                RETURNING *`,
+                [receiver_sub, actor_sub, action_type, post_id, conversation_id]
+            );
+
+            return (result.rows[0] as Notification) ?? null;
+        }
+
+        if (action_type === "trend" && post_id !== null) {
+            const result = await runner.query(
+                `INSERT INTO notifications (
+                    receiver_sub, actor_sub, action_type, post_id, conversation_id, is_read, status, created_at
+                ) VALUES ($1, $2, $3, $4, $5, false, 'active', NOW())
+                ON CONFLICT (receiver_sub, actor_sub, action_type, post_id)
+                WHERE action_type = 'trend' AND post_id IS NOT NULL
                 DO UPDATE SET
                     is_read = false,
                     status = 'active',
@@ -98,20 +117,57 @@ export const cleanup_notification = () => {
 }
 
 export const get_notifications = async (receiver_sub: string): Promise<NotificationCard> => {
-
     try {
-        const [like, message, cook] = await Promise.all([
+        const [like, message, cook, trend] = await Promise.all([
             get_notifications_like(receiver_sub),
             get_notifications_message(receiver_sub),
             get_notifications_cook(receiver_sub),
+            get_notifications_trend(receiver_sub),
         ]);
 
-        return { like, message, cook };
-
+        return { like, message, cook, trend };
     } catch (err) {
         throw err
     }
+};
 
+export const get_notifications_trend = async (receiver_sub: string): Promise<TrendNotificationCard[]> => {
+    try {
+        const result = await db.query(
+            `SELECT
+                n.post_id,
+                n.is_read,
+                n.created_at,
+                u.avatar         AS actor_avatar,
+                u.profile_name   AS actor_profile_name,
+                p.dish_name,
+                p.image_url      AS dish_media_url,
+                p.media_type     AS dish_media_type,
+                p.trend_rank     AS trend_rank
+            FROM notifications n
+            JOIN users u ON u.sub = n.actor_sub
+            JOIN post  p ON p.id  = n.post_id
+            WHERE n.receiver_sub = $1
+                AND n.action_type = 'trend'
+                AND n.status      = 'active'
+            ORDER BY n.created_at DESC`,
+            [receiver_sub]
+        );
+
+        return (result.rows as TrendNotificationCard[]).map((row) => ({
+            post_id:            row.post_id,
+            is_read:            row.is_read,
+            created_at:         row.created_at,
+            actor_avatar:       row.actor_avatar,
+            actor_profile_name: row.actor_profile_name,
+            dish_name:          row.dish_name,
+            dish_media_url:     row.dish_media_url,
+            dish_media_type:    row.dish_media_type,
+            trend_rank:         row.trend_rank,
+        }));
+    } catch (err) {
+        throw err
+    }
 };
 
 export const get_notifications_like = async (receiver_sub: string): Promise<LikeNotificationCard[]> => {

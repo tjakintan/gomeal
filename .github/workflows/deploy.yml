@@ -42,6 +42,13 @@ jobs:
             echo "========== Docker Stats =========="
             docker stats --no-stream
 
+            echo "========== Docker Health =========="
+            docker inspect $(docker compose ps -q backend) \
+              --format='Status={{.State.Status}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'
+
+            docker inspect $(docker compose ps -q ml) \
+              --format='Status={{.State.Status}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'
+
             echo "========== Memory Usage =========="
             free -h
 

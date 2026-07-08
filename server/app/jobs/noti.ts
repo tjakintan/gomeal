@@ -2,6 +2,7 @@ import cron from "node-cron";
 import db from "@/services/db";
 import { getNowInTimezone } from "@/utils/time";
 import { send_push_notification, send_push_notification_to_user_devices } from "@/services/push";
+import { create_notification } from "@/routes/user/notification";
 
 export const send_push_noti_cooking_reminder = () => {
     cron.schedule("* * * * *", async () => {
@@ -117,6 +118,19 @@ export const send_push_noti_trending = () => {
                     post.id,
                     post.user_sub
                 ]);
+
+                const uniqueReceivers: string[] = Array.from(
+                    new Set<string>(tokens_result.rows.map((r: { user_sub: string }) => r.user_sub))
+                );
+
+                await Promise.all(uniqueReceivers.map((receiver_sub: string) =>
+                    create_notification({
+                        receiver_sub,
+                        actor_sub: post.user_sub,
+                        action_type: "trend",
+                        post_id: post.id,
+                    })
+                ));
 
                 const tokens = tokens_result.rows.map((r: { token: string }) => r.token);
 

@@ -32,6 +32,7 @@ export type NotificationActionType =
     | "message"
     | "like"
     | "cook"
+    | "trend"
     | "post";
 
 export interface Notification {
@@ -47,10 +48,23 @@ export interface Notification {
     conversation_id: number | null;
 };
 
+export type TrendNotificationCard = {
+    post_id: number;
+    created_at: Date;
+    is_read: boolean;
+    actor_avatar: Avatar;
+    actor_profile_name: string;
+    dish_name: string;
+    dish_media_url: string;
+    dish_media_type: MediaType;
+    trend_rank: number;
+};
+
 export type NotificationCard = {
     like: LikeNotificationCard[],
     message: MessageNotificationCard[],
-    cook: CookNotificationCard[];
+    cook: CookNotificationCard[],
+    trend: TrendNotificationCard[];
 }
 
 export type LikeNotificationCard = {
