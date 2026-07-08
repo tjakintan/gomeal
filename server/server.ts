@@ -19,7 +19,10 @@ const io = initSocket(server);
 
 useSocket(io);
 
-server.listen(PORT, () => console.log(`server_running_on_port:${PORT}`));
+server.listen(PORT, () => {
+  console.log(`server_running_on_port:${PORT}`);
+  console.log(`DEV:${process.env.DEV === 'true' ? '✅' : '❌'}`);
+});
 
 cleanup_notification();
 send_push_noti_cooking_reminder();
