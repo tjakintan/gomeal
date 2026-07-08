@@ -20,7 +20,8 @@ jobs:
             cd ~/backend
 
             git checkout backend
-            git pull origin backend
+            git fetch origin backend
+            git reset --hard origin/backend
 
             docker compose down
 
