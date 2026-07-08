@@ -4,8 +4,8 @@ services:
     build: ./server
     ports:
       - "3000:3000"
-    environment: 
-      DEV: ${DEV}
+    env_file:
+      - config.env
     depends_on:
       - ml
       - redis

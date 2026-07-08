@@ -21,7 +21,7 @@ useSocket(io);
 
 server.listen(PORT, () => {
   console.log(`server_running_on_port:${PORT}`);
-  console.log(`DEV value:${process.env.DEV}`);
+  console.log(`DEV:${process.env.DEV === 'true' ? '✅' : '❌'}`);
 });
 
 cleanup_notification();
