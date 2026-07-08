@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   backend:
-    build: ./gomeal-server
+    build: ./server
     ports:
       - "3000:3000"
     environment: 
@@ -11,7 +11,7 @@ services:
       - redis
 
   ml:
-    build: ./gomeal-ml
+    build: ./ml
     ports:
       - "6969:6969"
     depends_on:
