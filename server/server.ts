@@ -4,7 +4,7 @@ import http from "http";
 import { useRouter, useSocket } from './app/routes/index';
 import { initSocket } from './app/services/socket';
 import { cleanup_notification } from './app/routes/user/notification';
-import { send_push_noti_cooking_reminder } from './app/jobs/noti';
+import { send_push_noti_cooking_reminder, send_push_noti_trending } from './app/jobs/noti';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,4 +25,6 @@ server.listen(PORT, () => {
 });
 
 cleanup_notification();
+
 send_push_noti_cooking_reminder();
+send_push_noti_trending();
