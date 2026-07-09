@@ -6,15 +6,30 @@ services:
     env_file:
       - config.env
     depends_on:
-      - ml
-      - redis
+      ml:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   ml:
     build: ./ml
     ports:
       - "6969:6969"
     depends_on:
-      - redis
+      redis:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:6969/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   redis:
     image: redis:7-alpine

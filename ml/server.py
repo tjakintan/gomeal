@@ -37,18 +37,24 @@ socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 _sockets(sio)
 
+app.state.ready = False
 _ready = False
 
 def _boot():
     global _ready
-    print("[brain] => _booting...")
+    
+    print("[brain] => _booting")
+
     brain = _boot_brain()
     _set_rank_brain(brain)
     _set_trends_brain(brain)
     _set_subscription_brain(brain)
     _start_thread()
+
+    app.state.ready = True
     _ready = True
-    print("[brain] => _booted")
+
+    print("[brain] => _booted✅")
 
     _start_trend_score_refresh_job(interval_seconds=900)
 
@@ -59,7 +65,7 @@ async def startup():
 
 
 if __name__ == "__main__":
-    print(f"server_running_on_port:{PORT}")
+    print(f"[SERVER] => Running on port {PORT}")
     uvicorn.run(socket_app, host="0.0.0.0", port=PORT)
 
 

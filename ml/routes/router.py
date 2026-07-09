@@ -1,6 +1,8 @@
 import traceback
 from typing import Literal
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+
+from server import is_ready
 
 from routes.feed.trending.trend import _post_trends, _user_trends
 from routes.feed.rank.rank import _rank
@@ -13,6 +15,17 @@ router = APIRouter()
 @router.get("/")
 async def status():
     return {"status": "running"}
+
+
+@router.get("/health")
+async def health(request: Request):
+    if not request.app.state.ready:
+        raise HTTPException(
+            status_code=503,
+            detail="[brain] => _loading..."
+        )
+
+    return {"status": "healthy"}
 
 
 @router.post("/embed/{post_id}")
@@ -35,7 +48,7 @@ async def embed_user_route(user_sub: str):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-    
+  
 
 @router.get("/rank/{user_sub}")
 async def rank_feed(

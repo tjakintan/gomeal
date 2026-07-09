@@ -33,8 +33,14 @@ jobs:
             echo "========== Building and starting containers =========="
             docker compose up -d --build
 
-            echo "========== Waiting for services to start =========="
-            sleep 10
+            echo "========== Waiting for ML Health =========="
+
+            until [ "$(docker inspect $(docker compose ps -q ml) --format='{{.State.Health.Status}}')" = "healthy" ]; do
+                echo "[SERVER] => waiting_on_ml"
+                sleep 2
+            done
+
+            echo "[SERVER] => ml_booted✅"
 
             echo "========== Container Status =========="
             docker compose ps
