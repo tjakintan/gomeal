@@ -2,8 +2,6 @@ import traceback
 from typing import Literal
 from fastapi import APIRouter, HTTPException, Request
 
-from server import is_ready
-
 from routes.feed.trending.trend import _post_trends, _user_trends
 from routes.feed.rank.rank import _rank
 
