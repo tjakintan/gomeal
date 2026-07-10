@@ -3,7 +3,6 @@ import http from "http";
 import jwt from "jsonwebtoken";
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
 
 let io: Server;
 
@@ -17,10 +16,10 @@ export function initSocket(server: http.Server) {
     });
 
     io.on("connection", (socket) => {
-        console.log(`socket_connected_on_${socket?.id}`);
+        console.log(`[SOCKET] => connected_on_${socket?.id}`);
 
         socket.on("disconnect", (reason) => {
-            console.log(`socket_disconnected_on_${socket?.id}_${reason}`);
+            console.log(`[SOCKET] => disconnected_on_${socket?.id}_${reason}`);
         });
     });
 
@@ -53,7 +52,7 @@ export function initSocket(server: http.Server) {
 
 export function getIO(): Server {
 
-    if (!io) throw new Error("socket.io_not_initialized");
+    if (!io) throw new Error("[SOCKET] => socket.io_not_initialized");
     return io;
 }
 
