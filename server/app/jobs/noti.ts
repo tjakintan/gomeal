@@ -173,26 +173,19 @@ const send_push_noti_trending = () => {
                 const tokens_result = await db.query(`
                     SELECT
                         pt.token,
+                        pt.native_token,
                         ue.user_sub,
                         us.first_name,
                         1 - (ue.embedding <=> pe.embedding) AS similarity
                     FROM user_embeddings ue
-                    JOIN push_tokens pt
-                        ON pt.user_sub = ue.user_sub
-                    JOIN users us
-                        ON us.sub = ue.user_sub
-                    JOIN post_embeddings pe
-                        ON pe.post_id = $1
-                    WHERE
-                        ue.user_sub <> $2
-                    AND
-                        1 - (ue.embedding <=> pe.embedding) > 0.55
+                    JOIN push_tokens pt ON pt.user_sub = ue.user_sub
+                    JOIN users us ON us.sub = ue.user_sub
+                    JOIN post_embeddings pe ON pe.post_id = $1
+                    WHERE ue.user_sub <> $2
+                    AND 1 - (ue.embedding <=> pe.embedding) > 0.55
                     ORDER BY ue.embedding <=> pe.embedding
                     LIMIT 500
-                `, [
-                    post.id,
-                    post.user_sub,
-                ]);
+                `, [post.id, post.user_sub]);
 
                 if (tokens_result.rows.length === 0) {
                     // No candidates at all — still mark notified so we don't
@@ -267,10 +260,10 @@ const send_push_noti_trending = () => {
                 // their own first_name, and skipped users get no push either.
                 const rowsByUser = new Map<string, { token: string; first_name: string }[]>();
 
-                for (const row of tokens_result.rows as { user_sub: string; token: string; first_name: string }[]) {
+                for (const row of tokens_result.rows as { user_sub: string; token: string; native_token: string | null; first_name: string }[]) {
                     if (!eligibleSet.has(row.user_sub)) continue;
                     if (!rowsByUser.has(row.user_sub)) rowsByUser.set(row.user_sub, []);
-                    rowsByUser.get(row.user_sub)!.push({ token: row.token, first_name: row.first_name });
+                    rowsByUser.get(row.user_sub)!.push({ token: row.native_token ?? row.token, first_name: row.first_name });
                 }
 
                 // Send one push per device token, personalized per user.
