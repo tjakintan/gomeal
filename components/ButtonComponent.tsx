@@ -13,7 +13,7 @@ import {
   ViewStyle,
   StyleSheet,
 } from "react-native";
-import Reanimated, { withDelay, withTiming } from "react-native-reanimated";
+import Reanimated, { Extrapolation, interpolate, withDelay, withTiming } from "react-native-reanimated";
 import { useTheme } from "@/provider/ThemeProvider";
 import { GestureProps, ButtonProps, ToggleButtonProps, SelectionPickerButtonProps, DifficultyOptionButtonProps } from "@/types/components";
 import { Gesture as RNGesture, GestureDetector } from "react-native-gesture-handler";
@@ -26,6 +26,7 @@ import { useSettingsStore } from "@/stores/useSettings";
 import { CheckIcon } from "@/icons/Icon";
 import { Unit } from "@/types";
 import { formatCount } from "@/utils/time";
+import GomealGlassView from "./GlassComponent";
 
 // gesture
 const SPRING = { damping: 22, stiffness: 450, mass: 0.35 };
@@ -89,6 +90,7 @@ export const Button = forwardRef<View, ButtonProps>(
       onLongPress,
       disabled = false,
       background = false,
+      clearBackground = false,
       children,
       style,
       className = "",
@@ -97,37 +99,57 @@ export const Button = forwardRef<View, ButtonProps>(
   ) => {
     const { colors, textStyles } = useTheme();
 
+    const pressable = (
+      <Pressable
+        ref={ref}
+        onPress={disabled ? undefined : onPress}
+        onLongPress={disabled ? undefined : onLongPress}
+        disabled={disabled}
+        className={`items-center justify-center p-2 ${className}`}
+        style={[
+          {
+            height: (background || clearBackground) ? 40 : undefined,
+            width: (background || clearBackground) ? 40 : undefined,
+            backgroundColor: background ? colors.button : undefined,
+            borderRadius: 999,
+            elevation: background ? 1 : 0,
+            shadowColor: background ? colors.text : "transparent",
+            shadowOpacity: background ? 0.15 : 0,
+            shadowRadius: background ? 5 : 0,
+            shadowOffset: { width: 0.5, height: background ? 0.5 : 0 },
+            opacity: disabled ? 0.5 : 1,
+          },
+          style,
+        ]}
+      >
+        {children ?? <Text className={textStyles.body}>{label}</Text>}
+      </Pressable>
+    );
+
+    if (!clearBackground) {
+      return <Gesture scaleAmount={0.999} haptic={!disabled}>{pressable}</Gesture>;
+    }
+
     return (
-      <Gesture scaleAmount={0.999} haptic={!disabled}>
-        <Pressable
-          ref={ref}
-          onPress={disabled ? undefined : onPress}
-          onLongPress={disabled ? undefined : onLongPress}
-          disabled={disabled}
-          className={`items-center justify-center p-2 ${className}`}
-          style={[
-            {
-              height: background ? 40 : undefined,
-              width: background ? 40 : undefined,
-              backgroundColor: background ? colors.button : undefined,
-              borderRadius: 999,
-              elevation: background ? 1 : 0,
-              shadowColor: background ? colors.text : "transparent",
-              shadowOpacity: background ? 0.15 : 0,
-              shadowRadius: background ? 5 : 0,
-              shadowOffset: { width: 0.5, height: background ? 0.5 : 0 },
-              opacity: disabled ? 0.5 : 1,
-            },
-            style,
-          ]}
-        >
-          {children ?? <Text className={textStyles.body}>{label}</Text>}
-        </Pressable>
-      </Gesture>
+      <GomealGlassView
+        style={{
+          height: 40,
+          width: 40,
+          justifyContent: "center",
+          alignItems: "center",
+          elevation: 1,
+          borderRadius: 999,
+        }}
+        glassEffectStyle="regular"
+        interactive
+      >
+        <Gesture scaleAmount={0.999} haptic={!disabled}>
+          {pressable}
+        </Gesture>
+      </GomealGlassView>
     );
   }
 );
-
 Button.displayName = "Button";
 
 
@@ -437,6 +459,7 @@ export const NutritionServingsButton: React.FC<{
     <View style={{ alignItems: "center", gap: 20 }}>
       <Button
         onPress={() => { onChange( Math.max(min, value - step))}}
+        clearBackground
       >
         <Text style={{ color: colors.text, fontSize: 18, lineHeight: 22 }}>−</Text>
       </Button>
@@ -448,6 +471,7 @@ export const NutritionServingsButton: React.FC<{
       <Button
         onPress={() => onChange(value + step)}
         disabled={value === max ? true : false}
+        clearBackground
       >
         <Text style={{ color: colors.text, fontSize: 18, lineHeight: 22 }}>+</Text>
       </Button>
@@ -462,12 +486,14 @@ export const CheckButton: React.FC<{
   onChange?: (checked: boolean) => void;
   disabled?: boolean;
   size?: number;
+  style?: StyleProp<ViewStyle>;
 }> = ({
   value,
   defaultValue = false,
   onChange,
   disabled = false,
   size = 28,
+  style,
 }) => {
   const { colors } = useTheme();
   const [internal, setInternal] = useState(defaultValue);
@@ -488,17 +514,18 @@ export const CheckButton: React.FC<{
       <Pressable
         onPress={toggle}
         disabled={disabled}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size / 4,
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: disabled ? 0.4 : 1,
-          backgroundColor: checked ? colors.button : colors.card,
-          borderWidth: 2,
-          borderColor: checked ? colors.button : colors.secondaryCard,
-        }}
+        style={[
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 4,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: disabled ? 0.4 : 1,
+            backgroundColor: checked ? colors.button : colors.card,
+          },
+          style, // 👈 custom style override
+        ]}
       >
         {checked ? (
           <CheckIcon
@@ -520,6 +547,10 @@ export const ExpandingButton: React.FC<{
   expandedChildren?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   expandedStyle?: StyleProp<ViewStyle>;
+  clearBackground?: boolean;
+  expandedWidth?: number;
+  expandedHeight?: number;
+  borderRadius?: number;
 }> = ({
   expanded,
   onPress,
@@ -527,73 +558,108 @@ export const ExpandingButton: React.FC<{
   expandedChildren,
   style,
   expandedStyle,
+  clearBackground = false,
+  expandedWidth = 175,
+  expandedHeight = 105,
+  borderRadius = 20,
 }) => {
   const { colors } = useTheme();
 
   const width = useSharedValue(40);
   const height = useSharedValue(40);
+  const radius = useSharedValue(50);
 
   useEffect(() => {
-    width.value = withSpring(expanded ? 200 : 40, SPRING);
-    height.value = withSpring(expanded ? 125 : 40, SPRING);
-  }, [expanded, width, height]);
+    width.value = withSpring(expanded ? expandedWidth : 40, SPRING);
+    height.value = withSpring(expanded ? expandedHeight : 40, SPRING);
+
+    radius.value = withSpring(
+      expanded ? borderRadius : 20,
+      SPRING
+    );
+  }, [expanded, expandedWidth, expandedHeight, borderRadius]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     width: width.value,
     height: height.value,
+    borderRadius: radius.value,
   }));
 
-  return (
-    <Reanimated.View
-      style={[
-        animatedStyle,
-        {
-          position: "relative",
-          zIndex: expanded ? 999 : 1,
-          elevation: expanded ? 999 : 1,
-        },
-        style,
-      ]}
-    >
-      <Gesture scaleAmount={0.97}>
-        <AnimatedPressable
-          onPress={onPress}
-          hitSlop={8}
-          disabled={expanded}
-          style={[
-            animatedStyle,
-            {
-              position: "absolute",
-              top: 0,
-              right: 0,
-              borderRadius: expanded ? 20 : 999,
-              borderWidth: expanded ? 2 : 0,
-              borderColor: colors.button,
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              zIndex: expanded ? 999 : 1,
-              elevation: expanded ? 999 : 1,
-              backgroundColor: expanded ? undefined : colors.button,
-            },
-            expanded && expandedStyle,
-          ]}
-        >
-          {expanded && (
-            <View
-              pointerEvents="none"
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                backgroundColor: colors.button,
-                opacity: 0.8,
-              }}
-            />
-          )}
+  const content = expanded ? expandedChildren ?? children : children;
 
-          {expanded ? expandedChildren ?? children : children}
-        </AnimatedPressable>
+  const innerContent = (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      {content}
+    </View>
+  );
+
+  return (
+  <>
+      <Gesture scaleAmount={0.97}>
+        {clearBackground ? (
+          <Reanimated.View
+            style={[
+              animatedStyle,
+              {
+                position: "relative",
+                overflow: "hidden",
+                borderCurve: "continuous",
+                zIndex: expanded ? 999 : 1,
+                elevation: expanded ? 999 : 1,
+              },
+              style,
+              expanded && expandedStyle,
+            ]}
+          >
+            <GomealGlassView
+              style={[StyleSheet.absoluteFillObject, { overflow: "hidden", borderRadius, }]}
+              glassEffectStyle="clear"
+              interactive
+            >
+              <AnimatedPressable
+                onPress={onPress}
+                hitSlop={8}
+                disabled={expanded}
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {innerContent}
+              </AnimatedPressable>
+            </GomealGlassView>
+          </Reanimated.View>
+        ) : (
+          <AnimatedPressable
+            onPress={onPress}
+            hitSlop={8}
+            disabled={expanded}
+            style={[
+              animatedStyle,
+              {
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "transparent",
+                overflow: "hidden",
+              },
+              expanded && expandedStyle,
+            ]}
+          >
+            {expanded && (
+              <View
+                pointerEvents="none"
+                style={{
+                  ...StyleSheet.absoluteFillObject,
+                  backgroundColor: colors.background,
+                  opacity: 0.8,
+                }}
+              />
+            )}
+            {innerContent}
+          </AnimatedPressable>
+        )}
       </Gesture>
-    </Reanimated.View>
+    </>
   );
 };
-

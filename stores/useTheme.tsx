@@ -34,7 +34,7 @@ export const baseTextStyles = {
     h2: "font-luckiest-guy text-2xl",
     h3: "font-luckiest-guy text-xl tracking-wide",
   
-    section: "font-inter-semibold text-lg tracking-widest",
+    section: "font-inter-semibold text-lg",
     sectionText: "font-inter-semibold text-base tracking-wide",
     body: "font-inter",
     

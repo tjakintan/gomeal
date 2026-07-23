@@ -126,3 +126,15 @@ export const isValidDob = (month: string, day: string, year: string) => {
         date <= today
     );
 };
+
+export const formatMonthDayYear = (
+    date: Date | string
+): string => {
+    const d = new Date(date);
+
+    return d.toLocaleDateString([], {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+};

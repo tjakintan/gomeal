@@ -61,6 +61,7 @@ export type ButtonProps = PressableProps & {
     style?: StyleProp<ViewStyle>;
     className?: React.ReactNode;
     gesture?: any;
+    clearBackground?: boolean;
     children?: React.ReactNode;
 };
 

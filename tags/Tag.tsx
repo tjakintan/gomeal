@@ -1,12 +1,10 @@
 import React, { useRef, useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, ViewStyle, StyleProp, Animated, ScrollView, Pressable, Dimensions } from "react-native";
+import { View, Text, StyleSheet, ViewStyle, StyleProp, Animated } from "react-native";
 import { Button } from "@/components/ButtonComponent";
 import { useTheme } from "@/provider/ThemeProvider";
-import { usePost, usePostNutrition } from "@/stores/usePost";
 import {  difficultyColors } from "@/types/styles.types";
-import { DietaryData, dietaryDescriptions } from "@/types/food.types";
-import FlipCard from 'react-native-flip-card'
-import ScrambleResolveText from "@/hooks/ScrambleResolveText";
+import { DietaryData } from "@/types/food.types";
+import { formatCount } from "@/utils/time";
 import { _DEFAULT_ICON_WIDTH, _DEFAULT_ICON_HEIGHT } from "@/types/layout.types";
 import {
     VegetarianIcon, VeganIcon, GlutenFreeIcon,
@@ -14,50 +12,44 @@ import {
     HalalIcon, PescatarianIcon, KosherIcon, VegetablesIcon,
     MoreIcon
 } from "@/icons/Icon";
-import { NutritionData, nutrients_label_icon } from "@/types";
-import { FeedCard, MinimumFeedCard } from "@/types/feed.types";
-import { AvatarRender } from "@/dashboard/Avatar";
+import { FeedActionType, FeedCard } from "@/types/feed.types";
+import { DynamicAvatarRenderer } from "@/dashboard/Avatar";
 import { Media } from "@/media/media";
+import { LinearGradient } from "expo-linear-gradient";
+import { Mood, useAvatarMood } from "@/dashboard/store/useAvatar";
+import { useFeed } from "@/stores/useFeed";
+import { setFeedActionCount } from "@/api/feed.api";
+import { FeedLoveIcon } from "@/icons/feed_icon";
+import { useSettingsStore } from "@/stores/useSettings";
 
-const tagRadius = 20;
-const iconHeight = _DEFAULT_ICON_HEIGHT + 15
-const iconWidth = _DEFAULT_ICON_WIDTH + 15
+const GAP = 5; 
+const CONTENT_MIN_RATIO = 0.4;
+const CONTENT_MAX_RATIO = 0.5;
 
 type Props = {
     card: FeedCard; 
-    minCard?: MinimumFeedCard;
     onPressProfile?: () => void;
     onPressMedia?: () => void;
     onPressInfo?: () => void;
-    onDietaryPress?: (info: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        data: any;
-    }) => void;
     style?: StyleProp<ViewStyle>;
     flipEnabled?: boolean;
+    height?: number;
+    width?: number | `${number}%`;
 };
 
-const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPress, onPressInfo, style, flipEnabled }) => {
-
-    const { info, dietary, nutrition, num_ingredients, profile_name, level, avatar, action_counts } = card;
+const Tag: React.FC<Props> = ({
+    card, onPressProfile, onPressMedia, onPressInfo, style, flipEnabled,
+    height = 285,
+    width = 195,
+}) => {
+    const { info, post_id, tag_color, dietary,num_ingredients, profile_name, level, avatar, action_counts } = card;
 
     // zustand
-    const { colors, textStyles } = useTheme("dark");
-    const { getPercents, servings } = usePostNutrition();
-
-    // refs
-    const pulseAnim = useRef(new Animated.Value(1)).current;
-
-    // states
-    const [isFlipped, setIsFlipped] = useState(false);
+    const { colors, textStyles } = useTheme();
+    const allowFeedColors = useSettingsStore((state) => state.settings.feed.allowFeedColors);
 
     // Render dietary icons 
     type IconComponent = React.FC<{ size?: number; color?: string }>;
-
-    const buttonRef = useRef<View>(null);
 
     const dietaryIcons: Partial<Record<keyof DietaryData, IconComponent>> = {
         vegetarian:  VegetarianIcon,
@@ -75,294 +67,329 @@ const Tag: React.FC<Props> = ({ card,onPressProfile, onPressMedia, onDietaryPres
         (key) => dietary[key] === true
     );
 
-    // get nutritional values
-    const perServing = nutrition?.[0] ?? null;
-
-    const percents = getPercents(
-        perServing?.per_serving?.calories > 0
-            ? [{ per_serving: perServing.per_serving, servings: 1 }]
-            : []
+    const usableHeight = height - GAP; 
+    const contentHeight = Math.round(
+        Math.min(
+            Math.max(usableHeight * CONTENT_MIN_RATIO, usableHeight * CONTENT_MIN_RATIO),
+            usableHeight * CONTENT_MAX_RATIO
+        )
     );
-    
+    const imageHeight = usableHeight - contentHeight;
+
+    // ── heart state ─────────────────────────────────────────────────────────
+    const setMood = useAvatarMood((s) => s.setMood);
+    const { updatePostEverywhere } = useFeed();
+    const userActions: FeedActionType[] = card.user_actions ?? [];
+    const isLoved = userActions.includes("post_love" as FeedActionType);
+    const [animateLove, setAnimateLove] = useState(0);
+    const [avatarMood, setAvatarMood] = useState<Mood>("idle");
+
+    const handleLove = async () => {
+        if (!post_id) return;
+
+        const alreadyLoved = userActions.includes("post_love" as FeedActionType);
+        const delta = alreadyLoved ? -1 : 1;
+
+        if (!alreadyLoved) {
+            setAnimateLove((prev) => prev + 1);
+
+            setAvatarMood("love");
+
+            setTimeout(() => {
+                setAvatarMood("idle");
+            }, 3000);
+        }
+
+        updatePostEverywhere(post_id, (post) => {
+            const currentActions: FeedActionType[] = post.user_actions ?? [];
+            const nextActions = alreadyLoved
+                ? currentActions.filter((a: FeedActionType) => a !== "post_love")
+                : [...currentActions, "post_love" as FeedActionType];
+
+            return {
+                ...post,
+                user_actions: nextActions,
+                action_counts: {
+                    ...post.action_counts,
+                    post_love: Math.max((post.action_counts?.post_love ?? 0) + delta, 0),
+                },
+            };
+        });
+
+        try {
+            await setFeedActionCount(post_id, "post_love");
+        } catch (err) {
+            // rollback
+            updatePostEverywhere(post_id, (post) => {
+                const currentActions: FeedActionType[] = post.user_actions ?? [];
+                const rolledBack = alreadyLoved
+                    ? [...currentActions, "post_love" as FeedActionType]
+                    : currentActions.filter((a: FeedActionType) => a !== "post_love");
+
+                return {
+                    ...post,
+                    user_actions: rolledBack,
+                    action_counts: {
+                        ...post.action_counts,
+                        post_love: Math.max((post.action_counts?.post_love ?? 0) - delta, 0),
+                    },
+                };
+            });
+            console.error("[cook] love failed:", err);
+        }
+    };
+        
     return (
-        <View style={{ width: 195}} className="flex-col items-center justify-center">
 
-            <View style={{ height: 285}} className="w-full">
+        <View
+            style={[
+                {
+                    height, width, gap: 10, 
+                    borderRadius: 20,
+                    backgroundColor: allowFeedColors ? tag_color ?? colors.card : colors.card,
+                    justifyContent: "center",
+                    alignItems: "center"
+                }, style,
+            ]}
+        >
 
-                <FlipCard 
-                    flip={isFlipped} 
-                    flipHorizontal={true} 
-                    flipVertical={false} 
-                    friction={10} 
+            {/* image box */}
+            <View 
+                style={{ 
+                    flex: 1, 
+                    width: "100%", 
+                    paddingHorizontal: 7,
+                    paddingVertical: 15
+                }}
+            >
+                <View
+                    style={{
+                        flex: 1,
+                        width: "100%",
+                        borderRadius: 15,
+                    }}
                 >
 
-                    {/* front */}
-                    <Button
-                        style={[
-                            {
-                                height: 285, width: 195, gap: 10, borderWidth: 2,
-                                borderColor: colors.secondaryCard,
-                                borderRadius: 15,
-                                backgroundColor: colors.card,
-                                overflow: "hidden",
-                                justifyContent: "center"
-                            }, style,
-                        ]}
-                        onLongPress={()=>{if (flipEnabled) setIsFlipped(prev => !prev)}}
-                    >
-                        <Media
-                            uri={info.dish_media_url}
-                            mediaType={info.dish_media_type ?? "image"}
-                            style={StyleSheet.absoluteFillObject}
-                            onPress={onPressMedia}
-                            onLongPress={() => { if (flipEnabled) setIsFlipped(prev => !prev) }}
-                            //useSettingsAutoPlay={false}
-                            iconSize={30}
-                            muteControl="row"
-                        />
+                    <Media
+                        uri={info.dish_media_url}
+                        mediaType={info.dish_media_type ?? "image"}
+                        style={{
+                            flex: 1,
+                            borderRadius: 15
+                        }}
+                        onPress={onPressMedia}
+                        //useSettingsAutoPlay={false}
+                        iconSize={30}
+                        muteControl="bottomRow"
+                    />
 
-                        <View 
-                            style={{
-                                position: "absolute",
-                                opacity: 0.9,
-                                bottom: 5,
-                                width: 180,
-                                alignSelf: "center",
-                            }}
-                        >
-
-                                <Button 
-                                    onPress={onPressProfile} 
-                                    style={{
-                                        height: "auto",
-                                        width: "auto",
-                                        padding: 0,
-                                        flexDirection: "row",
-                                        alignItems: "flex-end",
-                                        justifyContent: "flex-start",
-                                        gap: 5,
-                                    }} className="w-full">
-
-                                    {avatar && (
-                                            <AvatarRender avatar={avatar} size={30} background />
-                                    )}
-
-                                    {profile_name && (
-                                        <Text style={{ maxWidth: 100 }} className={textStyles.caption} numberOfLines={1} ellipsizeMode="tail">
-                                            {profile_name}
-                                        </Text>
-                                    )}
-
-                                </Button>
-
-                            <Pressable
-                                style={{
-                                    alignSelf: "center",
-                                    overflow: "hidden",
-                                }}
-                                className="w-full"
-                                onPress={onPressInfo}
-                                onLongPress={()=>{if (flipEnabled) setIsFlipped(prev => !prev)}}
-                            >
-                        
-                                <View style={{ paddingLeft: 15 }} className="flex-row gap-2">
-
-                                    {/* dif */}
-                                    <View className="justify-center">
-                                        {info.dish_difficulty ? (
-                                            <>
-                                                {(["Hard", "Medium", "Easy"] as const).map((level) =>
-                                                    info.dish_difficulty === level ? (
-                                                        <View
-                                                            key={level}
-                                                            style={{
-                                                                width: 14,
-                                                                height: 14,
-                                                                borderRadius: 7,
-                                                                backgroundColor: difficultyColors[level],
-                                                            }}
-                                                        />
-                                                    ) : null
-                                                )}
-                                            </>
-                                        ) : (
-                                            <View 
-                                                style={{
-                                                    width: 20,
-                                                    height: 20,
-                                                    borderRadius: 999,
-                                                    backgroundColor: colors.card,
-                                                }}
-                                            />
-                                        )}
-
-                                    </View>
-                                   
-                                    {/* name */}
-                                    <View className="flex-1 justify-center">
-                                        {info.dish_name ? (
-                                            <Text className={textStyles.caption} numberOfLines={1} ellipsizeMode="tail">
-                                                {info.dish_name}
-                                            </Text>
-                                        ) : (
-                                            <Text className={` font-thin ${textStyles.body}`} numberOfLines={1} ellipsizeMode="tail">
-                                                Name
-                                            </Text>
-                                        )}
-
-                                    </View>
-
-                                </View>
-
-                                <View 
-                                    style={{ paddingLeft: 7}}
-                                    className="flex-1 gap-2 flex-row justify-start items-center"
-                                >    
-
-                                    {/* Active dietary icons */}
-                                    {activeDiets.length > 0 && (
-                                        <View
-                                            onStartShouldSetResponder={() => true}
-                                            onTouchEnd={(e) => {
-                                                e.stopPropagation();
-                                                buttonRef.current?.measure((x, y, width, height, pageX, pageY) => {
-                                                onDietaryPress?.({
-                                                    x: pageX,
-                                                    y: pageY,
-                                                    width,
-                                                    height,
-                                                    data: card,
-                                                });
-                                                });
-                                            }}
-                                        >
-                                            <Button
-                                                ref={buttonRef}
-                                                style={{
-                                                    height: 30,
-                                                    width: 30,
-                                                    overflow: "hidden",
-                                                    alignItems: "center",
-                                                    justifyContent: "center"
-                                                }}
-                                                background
-                                                onPress={() => {
-                                                    buttonRef.current?.measure((x, y, width, height, pageX, pageY) => {
-                                                        onDietaryPress?.({
-                                                            x: pageX,
-                                                            y: pageY,
-                                                            width,
-                                                            height,
-                                                            data: card,
-                                                        });
-                                                    });
-                                                }}
-                                            >
-                                                {activeDiets.length > 1 ? (
-                                                    <MoreIcon color={colors.text} size={15} />
-                                                ) : (
-                                                    activeDiets.map((key) => {
-                                                        const Icon = dietaryIcons[key]!;
-                                                        return (
-                                                            <Icon key={key} size={15} color={colors.text} />
-                                                        );
-                                                    })
-                                                )}
-                                            </Button>
-                                        </View>
-                                    )}
-
-                                    {/* ingredient count */}
-                                    <View className="flex-row gap-1 items-end">
-                                        <Text className={textStyles.h3} style={{ color: colors.text }}>
-                                            {num_ingredients} 
-                                        </Text>
-                                        <Text className={textStyles.small}>
-                                            ing{num_ingredients !== 1 ? "s" : ""}
-                                        </Text>
-                                    </View>
-
-                                </View>
-
-                            </Pressable>
-
-                        </View>
-
-                    </Button>
-
-                    {/* back */}
-                    <Button
-                        style={[
-                            {
-                                height: 285, width: 195, gap: 10, borderWidth: 2, padding: 0,
-                                borderColor: colors.secondaryCard,
-                                borderRadius: 15,
-                                backgroundColor: colors.card,
-                                overflow: "hidden",
-                                justifyContent: "center"
-                            }, style,
-                        ]}
-                        onLongPress={() => flipEnabled && setIsFlipped(prev => !prev)}
-                    >
-
-                        <ScrollView 
-                            contentContainerClassName="gap-5 p-2 items-center justify-between"
-                            showsVerticalScrollIndicator={false}
-                        >
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', }}>
-
-                            {nutrients_label_icon.map(({ key, label, icon: Icon, color }) => {
-                                const percent = percents[key] ?? 0;
-        
-                                return (
-                                    <View key={key}  style={{ width: '50%', gap: 3, paddingVertical: 7 }} className="flex-row items-center">
-        
-                                        <View style={{width: 40, height: 40, borderRadius: 5, borderColor: colors.secondaryCard, borderWidth: 1}} className="items-center justify-center">
-                                            <Icon size={30} color={colors.text}/>
-                                        </View>
-        
-                                        <View className="gap-2 flex-row">
-
-                                            <View 
-                                                style={{
-                                                    width: 10,
-                                                    height: 40,
-                                                    backgroundColor: colors.secondaryCard,
-                                                    borderRadius: 5,
-                                                    overflow: 'hidden',
-                                                    justifyContent: 'flex-end',
-                                                }}
-                                            >
-                                                <View 
-                                                    style={{
-                                                        width: "100%",
-                                                        height: `${percent}%`,
-                                                        backgroundColor: color,
-                                                    }} 
-                                                />
-                                            </View>
-                                                
-                                            <View className="flex-row justify-between items-end">
-                                                <Text className={textStyles.caption}>{percent.toFixed(0)}%</Text>
-                                            </View>
-        
-                                        </View>
-        
-                                    </View>
-                                );
-        
-                            })}
-                        </View>
-        
-                        </ScrollView>
-
-                    </Button>
-
-                </FlipCard>
+                </View>
 
             </View>
 
+            <View
+                style={{
+                    position: "absolute",
+                    top: -20,
+                    left: 10,
+                    alignItems: "flex-end",
+                    flexDirection: "row",
+                    gap: 2,
+                }}
+            >
+                <Button
+                    style={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: 999,
+                        padding: 0,
+                    }}
+                    clearBackground
+                    onPress={handleLove}
+                >
+                    <FeedLoveIcon
+                        color={colors.text}
+                        fillColor="red"
+                        liked={isLoved}
+                        animationKey={animateLove}
+                        size={25}
+                    />
+                </Button>
+
+                <Text className={textStyles.caption} style={{ color: colors.text }}>
+                    {formatCount(action_counts?.post_love ?? 0)}
+                </Text>
+            </View>
+
+            {/* content box */}
+            <View
+                style={{
+                    width: "100%",
+                    gap: 5,
+                    flexDirection: "column",
+                    padding: 5,
+                }}
+            >
+
+                <Button 
+                    onPress={onPressProfile} 
+                    style={{
+                        height: "auto",
+                        width: "100%",
+                        padding: 0,
+                        flexDirection: "row",
+                        alignItems: "flex-end",
+                        justifyContent: "flex-start",
+                        gap: 5,
+                        backgroundColor: "transparent"
+                    }} className="w-full"
+                    background
+                >
+
+                    <View
+                        style={{
+                            ...StyleSheet.absoluteFillObject,
+                            backgroundColor: colors.secondaryCard,
+                            borderRadius: 25,
+                            opacity: 0.2
+                        }}
+                    />
+                        {avatar && (
+                            <DynamicAvatarRenderer
+                                avatar={avatar}
+                                background
+                                size={27}
+                                mood={avatarMood}
+                            />
+                        )}
+
+                    {profile_name && (
+                        <Text style={{ maxWidth: 100 }} className={textStyles.sectionText} numberOfLines={1} ellipsizeMode="tail">
+                            {profile_name}
+                        </Text>
+                    )}
+
+                </Button>
+
+                <Button
+                    style={{
+                        height: 30,
+                        width: "auto",
+                        paddingVertical: 0,
+                        alignSelf: "center",
+                        overflow: "hidden",
+                        backgroundColor: "transparent"
+                    }}
+                    className="w-full"
+                    onPress={onPressInfo}
+                >
+
+                    <View
+                        style={{
+                            ...StyleSheet.absoluteFillObject,
+                            backgroundColor: colors.secondaryCard,
+                            borderRadius: 25,
+                            opacity: 0.4
+                        }}
+                    />
+
+                    <View 
+                        style={{ 
+                            flex: 1, 
+                            gap: 5,
+                            alignItems: "center",
+                            flexDirection: "row",
+                            justifyContent: "center"
+                        }} 
+                    >
+
+                        {/* dif */}
+                        <View className="justify-center">
+                            {info.dish_difficulty ? (
+                                <>
+                                    {(["Hard", "Medium", "Easy"] as const).map((level) =>
+                                        info.dish_difficulty === level ? (
+                                            <View
+                                                key={level}
+                                                style={{
+                                                    width: 14,
+                                                    height: 14,
+                                                    borderRadius: 7,
+                                                    backgroundColor: difficultyColors[level],
+                                                }}
+                                            />
+                                        ) : null
+                                    )}
+                                </>
+                            ) : (
+                                <View 
+                                    style={{
+                                        width: 20,
+                                        height: 20,
+                                        borderRadius: 999,
+                                        backgroundColor: colors.card,
+                                    }}
+                                />
+                            )}
+
+                        </View>
+                        
+                        {/* name */}
+                        <View className="flex-1 justify-center">
+                            {info.dish_name ? (
+                                <Text className={textStyles.bodyMedium} numberOfLines={1} ellipsizeMode="tail">
+                                    {info.dish_name}
+                                </Text>
+                            ) : (
+                                <Text className={` font-thin ${textStyles.body}`} numberOfLines={1} ellipsizeMode="tail">
+                                    Name
+                                </Text>
+                            )}
+
+                        </View>
+
+                        {/* Active dietary icons */}
+                        {activeDiets.length > 0 && (
+                            <View
+                                style={{
+                                    height: 25,
+                                    width: 25,
+                                    borderRadius: 999,
+                                    overflow: "hidden",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    backgroundColor: colors.button
+                                }}
+                            >
+                                {activeDiets.length > 1 ? (
+                                    <MoreIcon color={colors.text} size={15} />
+                                ) : (
+                                    activeDiets.map((key) => {
+                                        const Icon = dietaryIcons[key]!;
+                                        return (
+                                            <Icon key={key} size={15} color={colors.text} />
+                                        );
+                                    })
+                                )}
+                            </View>
+                        )}
+
+                        {/* ingredient count */}
+                        <View className="flex-row gap-1 items-end">
+                            <Text className={textStyles.h3} style={{ color: colors.text }}>
+                                {num_ingredients} 
+                            </Text>
+                            <Text className={textStyles.small}>
+                                ing{num_ingredients !== 1 ? "s" : ""}
+                            </Text>
+                        </View>
+                    </View>
+
+                </Button>
+            </View>
+
         </View>
+
     );
 };
 

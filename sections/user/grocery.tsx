@@ -5,12 +5,14 @@ import {
     IngredientQuantityButton,
     IngredientUnitDropDownButton,
 } from "@/components/ButtonComponent";
+import { GradientHeader } from "@/components/GradientComponent";
 import { Input } from "@/components/InputComponent";
 import { SectionHeader } from "@/components/SectionComponent";
 import { AddIcon, BackIcon, EmptyImageIcon, SearchIcon, XIcon, WalmartIcon, InstaCartIcon, AmazonIcon, TargetIcon, WeisIcon, KrogerIcon, CostcoIcon } from "@/icons/Icon";
 import { Media } from "@/media/media";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useCart } from "@/stores/useCart";
+import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
 import { Ingredient } from "@/types";
 import { Cart, Retailer } from "@/types/cart.types";
 import { DEFAULT_INGREDIENT_SEARCH_CACHE_TIME } from "@/types/Time.types";
@@ -143,102 +145,109 @@ export const GroceryMainScreen: React.FC<{
                 style={{
                     ...StyleSheet.absoluteFillObject,
                     backgroundColor: colors.background,
-                    
+                    paddingBottom: DASHBOARD_HEIGHT
                 }}
             >
                 <View style={{ flex: 1 }}>
 
-                    <View
-                        style={{
-                            height: 65,
-                            paddingHorizontal: 20,
-                            alignItems: "center",
-                            flexDirection: "row",
-                        }}
+                    <GradientHeader
+                        baseColor={colors.background}
                     >
-                        <Button onPress={() => clearActiveCart()} background>
-                            <BackIcon color={colors.background} />
-                        </Button>
 
-                        <SectionHeader
-                            title={activeCart.name}
-                            titleClassName={textStyles.caption}
-                            showBackground
-                        />
-                    </View>
-
-                    <View style={{ paddingHorizontal: 10, paddingBottom: 8, maxHeight: 150 }}>
-
-                        <Input
-                            multiline={false}
-                            value={ingredientSearch}
-                            disabled={false}
-                            leftIcon={
-                                searchingIngredients ? (
-                                    <SpinningLogoImage size={30} />
-                                ) : (
-                                    <SearchIcon color={colors.text} />
-                                )
-                            }
-                            placeholder="Search ingredient"
-                            onIconPress={() => {}}
-                            onChangeText={(value) => {
-                                setIngredientSearch(value);
-                                setShowIngredientResults(value.trim().length >= 3);
+                        <View
+                            style={{
+                                height: 65,
+                                paddingHorizontal: 20,
+                                alignItems: "center",
+                                flexDirection: "row",
                             }}
-                            onSubmitEditing={() => {
-                                setDebouncedIngredientSearch(ingredientSearch.trim());
-                            }}
-                        />
+                        >
+                            <Button onPress={() => clearActiveCart()} clearBackground>
+                                <BackIcon color={colors.text} />
+                            </Button>
 
-                        {showIngredientResults && ingredientResults.length > 0 && (
-                            <ScrollView showsVerticalScrollIndicator={false}>
-                                {ingredientResults.map((ingredient) => (
-                                    <TouchableOpacity key={ingredient.id ?? ingredient.name} activeOpacity={1}>
-                                        <Button
-                                            style={{
-                                                width: "100%",
-                                                alignItems: "flex-start",
-                                                padding: 8,
-                                                borderRadius: 0,
-                                                borderBottomWidth: 1,
-                                                borderColor: colors.secondaryCard,
-                                            }}
-                                            onPress={async () => {
-                                                const ingredientId = Number(ingredient.id);
-                                                if (!Number.isFinite(ingredientId)) return;
+                            <SectionHeader
+                                title={activeCart.name}
+                                titleClassName={textStyles.caption}
+                                showBackground
+                            />
+                        </View>
 
-                                                await insertIntoCart(
-                                                    ingredientId,
-                                                    activeCart.id,
-                                                    1,
-                                                    null,
-                                                );
+                        <View style={{ paddingHorizontal: 10, paddingBottom: 8, maxHeight: 150 }}>
 
-                                                setIngredientSearch("");
-                                                setDebouncedIngredientSearch("");
-                                                setShowIngredientResults(false);
-                                                await setActiveCart(activeCart.id);
-                                                await loadCarts();
-                                            }}
-                                        >
-                                            <Text className={textStyles.caption}>
-                                                {ingredient.name}
-                                            </Text>
+                            <Input
+                                multiline={false}
+                                value={ingredientSearch}
+                                disabled={false}
+                                leftIcon={
+                                    searchingIngredients ? (
+                                        <SpinningLogoImage size={30} />
+                                    ) : (
+                                        <SearchIcon color={colors.text} size={20}/>
+                                    )
+                                }
+                                placeholder="Search ingredient"
+                                onIconPress={() => {}}
+                                onChangeText={(value) => {
+                                    setIngredientSearch(value);
+                                    setShowIngredientResults(value.trim().length >= 3);
+                                }}
+                                onSubmitEditing={() => {
+                                    setDebouncedIngredientSearch(ingredientSearch.trim());
+                                }}
+                            />
 
-                                            {ingredient.category && (
-                                                <Text className={textStyles.small} style={{ color: colors.secondaryText }}>
-                                                    {ingredient.category}
+                            {showIngredientResults && ingredientResults.length > 0 && (
+                                <ScrollView showsVerticalScrollIndicator={false}>
+                                    {ingredientResults.map((ingredient) => (
+                                        <TouchableOpacity key={ingredient.id ?? ingredient.name} activeOpacity={1}>
+                                            <Button
+                                                style={{
+                                                    width: "100%",
+                                                    alignItems: "flex-start",
+                                                    padding: 8,
+                                                    borderRadius: 0,
+                                                    borderBottomWidth: 1,
+                                                    borderColor: colors.secondaryCard,
+                                                }}
+                                                onPress={async () => {
+                                                    const ingredientId = Number(ingredient.id);
+                                                    if (!Number.isFinite(ingredientId)) return;
+
+                                                    await insertIntoCart(
+                                                        ingredientId,
+                                                        activeCart.id,
+                                                        1,
+                                                        null,
+                                                    );
+
+                                                    setIngredientSearch("");
+                                                    setDebouncedIngredientSearch("");
+                                                    setShowIngredientResults(false);
+                                                    await setActiveCart(activeCart.id);
+                                                    await loadCarts();
+                                                }}
+                                            >
+                                                <Text className={textStyles.caption}>
+                                                    {ingredient.name}
                                                 </Text>
-                                            )}
-                                        </Button>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        )}
-                    </View>
 
-                    <View style={{ flex: 1, overflow: "hidden", padding: 10 }}>
+                                                {ingredient.category && (
+                                                    <Text className={textStyles.small} style={{ color: colors.secondaryText }}>
+                                                        {ingredient.category}
+                                                    </Text>
+                                                )}
+                                            </Button>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            )}
+                            
+                        </View>
+
+                    </GradientHeader>
+
+                    <View style={{ flex: 1, overflow: "hidden",  }}>
                         {!activeCart.items?.length ? (
                             <View className="flex-1 items-center justify-center">
                                 <Text className={textStyles.caption} style={{ color: colors.secondaryText }}>
@@ -250,7 +259,8 @@ export const GroceryMainScreen: React.FC<{
                                 showsVerticalScrollIndicator={false}
                                 contentContainerStyle={{
                                     gap: 45,
-                                    paddingBottom: 125
+                                    paddingBottom: 125,
+                                    paddingTop: showIngredientResults ? 215 : 100 
                                 }}
                             >
                                 {activeCart.items.map((item) => {
@@ -270,6 +280,7 @@ export const GroceryMainScreen: React.FC<{
                                                     flexDirection: "row",
                                                     alignItems: "center",
                                                     gap: 10,
+                                                    paddingHorizontal: 5
                                                 }}
                                             >
                                                 <View
@@ -277,7 +288,6 @@ export const GroceryMainScreen: React.FC<{
                                                         flex: 1,
                                                         height: 75,
                                                         gap: 10,
-                                                        paddingHorizontal: 10,
                                                         borderColor: colors.secondaryCard,
                                                         borderBottomWidth: 2,
                                                         overflow: "hidden",
@@ -355,7 +365,7 @@ export const GroceryMainScreen: React.FC<{
                                                             ) : (
                                                                 <>
                                                                     <Text
-                                                                        className={textStyles.caption}
+                                                                        className={textStyles.body}
                                                                         numberOfLines={1}
                                                                         ellipsizeMode="tail"
                                                                         style={{ color: colors.text }}
@@ -377,9 +387,6 @@ export const GroceryMainScreen: React.FC<{
 
                                                         {editingItemId === item.id ? (
                                                             <Button
-                                                                style={{
-                                                                    backgroundColor: colors.danger,
-                                                                }}
                                                                 onPress={() => {
                                                                     setEditingItemId(null);
 
@@ -395,9 +402,9 @@ export const GroceryMainScreen: React.FC<{
                                                                         return next;
                                                                     });
                                                                 }}
-                                                                background
+                                                                clearBackground
                                                             >
-                                                                <XIcon color={colors.background} size={25} />
+                                                                <XIcon color={colors.danger} size={25} />
                                                             </Button>
                                                         ) : (
                                                             <Button
@@ -455,6 +462,9 @@ export const GroceryMainScreen: React.FC<{
                                                 <CheckButton
                                                     defaultValue={false}
                                                     size={40}
+                                                    style={{
+                                                        borderRadius: 999
+                                                    }}
                                                     onChange={async (checked) => {
                                                         if (!checked || ingredientId == null) return;
                                                         await removeFromCart(Number(ingredientId), activeCart.id);
@@ -620,9 +630,9 @@ export const GroceryMainScreen: React.FC<{
                         onClose?.();
                         clearActiveCart();
                     }}
-                    background
+                    clearBackground
                 >
-                    <BackIcon color={colors.background} />
+                    <BackIcon color={colors.text} />
                 </Button>
 
                 <SectionHeader
@@ -821,8 +831,8 @@ export const GroceryPickerScreen: React.FC<{
                     flexDirection: "row",
                 }}
             >
-                <Button onPress={onClose} background>
-                    <XIcon color={colors.background} />
+                <Button onPress={onClose} clearBackground>
+                    <XIcon color={colors.text} />
                 </Button>
 
                 <SectionHeader

@@ -45,6 +45,8 @@ export const useNotification = create<NotificationState>((set, get) => ({
                 ? {
                     like: state.notifications.like.map((n) => ({ ...n, is_read: true })),
                     message: state.notifications.message.map((n) => ({ ...n, is_read: true })),
+                    cook: state.notifications.cook.map((n) => ({ ...n, is_read: true })),
+                    trend: state.notifications.trend.map((n) => ({ ...n, is_read: true })),
                 }
                 : null,
         }));

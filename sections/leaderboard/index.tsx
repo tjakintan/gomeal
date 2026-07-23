@@ -1,59 +1,143 @@
 import { Button } from "@/components/ButtonComponent";
 import { get_leaderboard, LeaderboardEntry, useLeaderboardListener } from "@/api/leaderboard.socket";
-import { BackIcon, MessageIcon } from "@/icons/Icon";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
-import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import LeaderboardPodium from "../../utils/3Dblock";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { AvatarRender, LevelRender, BreadRender, BadgeRender } from "@/dashboard/Avatar";
-import BottomSheet, { BottomSheetFlatList, BottomSheetView } from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useUser } from "@/stores/useUser";
-import { BadgeLevel } from "@/types";
+import { BadgeLevel, BOTTOM_INSETS, BOTTOM_SNAP_POINTS } from "@/types";
+import { useFeed } from "@/stores/useFeed";
+import FeedProfile, { FEED_CARD_PROFILE_RADIUS } from "../feed/feedProfile";
+import { NAV_SIZE } from "../Navigate";
+import { G } from "react-native-svg";
+import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
 
+const BADGE_LEVELS: { level: number; xp: number; badge: BadgeLevel }[] = [
+    { level: 1,   xp: 100,   badge: 1 },
+    { level: 20,  xp: 2000,  badge: 2 },
+    { level: 40,  xp: 4000,  badge: 3 },
+    { level: 70,  xp: 7000,  badge: 4 },
+    { level: 120, xp: 12000, badge: 5 },
+    { level: 200, xp: 20000, badge: 6 },
+];
 
-export default function Leaderboard() {
+const PodiumSpot: React.FC<{
+    entry?: LeaderboardEntry;
+    rank: 1 | 2 | 3;
+    colors: any;
+    textStyles: any;
+    onPress: () => void;
+}> = ({ entry, rank, colors, textStyles, onPress }) => {
+    const dims = {
+        1: { width: 120, height: 125, depth: 24, taperLeft: 20, taperRight: 20, top: 30 },
+        2: { width: 120, height: 75,  depth: 24, taperLeft: 25, taperRight: 0,  top: 40 },
+        3: { width: 120, height: 50,  depth: 24, taperLeft: 0,  taperRight: 25, top: 30 },
+    }[rank];
 
+    return (
+        <View style={{ justifyContent: "flex-end" }} className="items-center gap-2">
+            <Button onPress={onPress}>
+                <AvatarRender avatar={entry?.avatar} badge={entry?.badge} showBadge background />
+            </Button>
+            <Text
+                className={textStyles.bodyMedium}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={{ textAlign: "center", width: 120, fontWeight: rank === 1 ? "bold" : "normal" }}
+            >
+                {entry?.profile_name}
+            </Text>
+            <LevelRender xp={entry?.xp ?? 0} level={entry?.level} />
+            <BreadRender bread={entry?.bread ?? 0} />
+            <View>
+                <LeaderboardPodium
+                    width={dims.width}
+                    height={dims.height}
+                    depth={dims.depth}
+                    color={colors.card}
+                    taperLeft={dims.taperLeft}
+                    taperRight={dims.taperRight}
+                />
+                <Text className={textStyles.h1} style={{ position: "absolute", alignSelf: "center", top: dims.top, opacity: 0.5 }}>
+                    {rank}
+                </Text>
+            </View>
+        </View>
+    );
+};
+
+const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
     const { user } = useUser();
     const { colors, textStyles } = useTheme();
+    const { setActiveProfile, clearActiveProfile } = useFeed();
 
     const MAX_LEVEL = 200;
     const MAX_XP = MAX_LEVEL * 100;
     const progress = Math.min((user?.xp ?? 0) / MAX_XP, 1);
-    const BADGE_LEVELS = [
-        { level: 1,   xp: 100,   badge: 1 as BadgeLevel },
-        { level: 20,  xp: 2000,  badge: 2 as BadgeLevel },
-        { level: 40,  xp: 4000,  badge: 3 as BadgeLevel },
-        { level: 70,  xp: 7000,  badge: 4 as BadgeLevel },
-        { level: 120, xp: 12000, badge: 5 as BadgeLevel },
-        { level: 200, xp: 20000, badge: 6 as BadgeLevel },
-    ];
 
-    const sheetRef = useRef<BottomSheet>(null);
-    const snapPoints = useMemo(() => [140, 140 +  325], []);
+    const profileSheetRef = useRef<BottomSheet>(null);
 
     const [rankings, setRankings] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showProfile, setShowProfile] = useState(false);
+
+    const top3 = rankings.slice(0, 3);
+    const rest = rankings.slice(3);
 
     useEffect(() => {
-        const fetch = async () => {
-            setLoading(true);
-            const data = await get_leaderboard(10, 0);
-            if (data) setRankings(data);
-            setLoading(false);
-        };
-        fetch();
+        if (isFocused) {
+            profileSheetRef.current?.close();
+        }
+    }, [isFocused]);
+
+    const openProfile = async (sub?: string) => {
+        await setActiveProfile(undefined, sub);
+        setShowProfile(true);
+    };
+
+    ///
+    const PAGE_SIZE = 20;
+    const [cursor, setCursor] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+
+    const refreshLeaderboard = useCallback(async () => {
+        const page = await get_leaderboard(PAGE_SIZE, 0);
+        if (!page) return;
+        setRankings(page.rankings);
+        setCursor(page.nextCursor);
+        setHasMore(page.hasMore);
     }, []);
 
-    useLeaderboardListener(setRankings);
+    useEffect(() => {
+        const init = async () => {
+            setLoading(true);
+            await refreshLeaderboard();
+            setLoading(false);
+        };
+        init();
+    }, [refreshLeaderboard]);
 
-    const top3 = rankings.slice(0, 3); 
-    const rest = rankings.slice(3);   
+    useLeaderboardListener(refreshLeaderboard);
 
-    return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+    const loadMore = async () => {
+        if (loadingMore || !hasMore) return;
+        setLoadingMore(true);
+        const page = await get_leaderboard(PAGE_SIZE, cursor);
+        if (page) {
+            setRankings((prev) => [...prev, ...page.rankings]);
+            setCursor(page.nextCursor);
+            setHasMore(page.hasMore);
+        }
+        setLoadingMore(false);
+    };
 
-            <View style={{height: 125, paddingHorizontal: 25, gap: 8}} className="justify-center">
+    const ListHeader = useMemo(() => (
+        <>
+            <View style={{ height: 125, marginHorizontal: 10, paddingHorizontal: 25, gap: 8 }} className="justify-center">
 
                 <View style={{ flexDirection: "row", position: "relative", height: 40 }}>
                     {user && BADGE_LEVELS.map(({ xp: lvlXp, badge }) => (
@@ -92,12 +176,7 @@ export default function Leaderboard() {
                         <Text
                             key={lvl}
                             className={textStyles.caption}
-                            style={{
-                                position: "absolute",
-                                left: `${(lvlXp / MAX_XP) * 100}%`,
-                                transform: [{ translateX: -8 }],
-                                opacity: 0.5,
-                            }}
+                            style={{ position: "absolute", left: `${(lvlXp / MAX_XP) * 100}%`, transform: [{ translateX: -8 }], opacity: 0.5 }}
                         >
                             {lvl}
                         </Text>
@@ -107,129 +186,111 @@ export default function Leaderboard() {
             </View>
 
             <View style={{ height: 300, gap: 1, flexDirection: "row", paddingHorizontal: 10 }} className="w-full justify-center">
-
-                <View style={{ justifyContent: "flex-end" }} className="items-center gap-2">
-                     
-                    <AvatarRender avatar={top3[1]?.avatar} badge={top3[1]?.badge} showBadge background/>
-
-                    <Text className={textStyles.bodyMedium} numberOfLines={1} ellipsizeMode="tail" style={{ textAlign: "center", width: 120 }}>{top3[1]?.profile_name}</Text>
-                    <LevelRender xp={top3[1]?.xp} level={top3[1]?.level}/>
-                    <BreadRender bread={top3[1]?.bread} />
-                    
-                    <View>
-                        <LeaderboardPodium width={120} height={75} depth={24} color={colors.card} taperRight={0} taperLeft={25} />
-                        <Text className={textStyles.h1} style={{ position: "absolute", alignSelf: "center", top: 40, opacity: 0.5 }}>2</Text>
-                    </View>
-
-                </View>
-
-                <View style={{ justifyContent: "flex-end" }} className="items-center gap-2">
-                    
-                    <AvatarRender avatar={top3[0]?.avatar} badge={top3[0]?.badge} showBadge background/>
-
-                    <Text className={textStyles.bodyMedium} numberOfLines={1} ellipsizeMode="tail" style={{ textAlign: "center", fontWeight: "bold", width: 120 }}>{top3[0]?.profile_name}</Text>
-                    <LevelRender xp={top3[0]?.xp} level={top3[0]?.level}/>
-                    <BreadRender bread={top3[0]?.bread} />
-
-                    <View>
-                        <LeaderboardPodium width={120} height={125} depth={24} color={colors.card} taperRight={20} taperLeft={20} />
-                        <Text className={textStyles.h1} style={{ position: "absolute", alignSelf: "center", top: 30, opacity: 0.5 }}>1</Text>
-                    </View>
-
-                </View>
-
-                <View style={{ justifyContent: "flex-end" }} className="items-center gap-2">
-
-                    <AvatarRender avatar={top3[2]?.avatar} badge={top3[2]?.badge} showBadge background/>
-
-                    <Text className={textStyles.bodyMedium} numberOfLines={1} ellipsizeMode="tail" style={{ textAlign: "center", width: 120 }}>{top3[2]?.profile_name}</Text>
-                    <LevelRender xp={top3[2]?.xp} level={top3[2]?.level}/>
-                    <BreadRender bread={top3[2]?.bread} />
-
-                    <View>
-                        <LeaderboardPodium width={120} height={50} depth={24} color={colors.card} taperRight={25} taperLeft={0} />
-                        <Text className={textStyles.h1} style={{ position: "absolute", alignSelf: "center", top: 30, opacity: 0.5 }}>3</Text>
-                    </View>
-
-                </View>
-
+                <PodiumSpot entry={top3[1]} rank={2} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[1]?.sub)} />
+                <PodiumSpot entry={top3[0]} rank={1} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[0]?.sub)} />
+                <PodiumSpot entry={top3[2]} rank={3} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[2]?.sub)} />
             </View>
+        </>
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    ), [user, progress, top3, colors, textStyles]);
 
-            <BottomSheet
-                index={0}
-                ref={sheetRef}
-                snapPoints={snapPoints}
-                enablePanDownToClose={false}
-                enableOverDrag={false}
-                animateOnMount={false}
-                bottomInset={125}
-                enableDynamicSizing={false}
-                onChange={(index) => {
-                    if (index < 0) sheetRef.current?.snapToIndex(0);
+    if (loading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: colors.background }} className="items-center justify-center">
+                <SpinningLogoImage size={30} />
+            </View>
+        );
+    }
+
+    return (
+        <View style={{ flex: 1, backgroundColor: colors.background}}>
+            <FlatList
+                data={rest}
+                style={{
+                    paddingBottom: BOTTOM_INSETS,
                 }}
-                containerStyle={{justifyContent: "center", alignItems: "center",}}
-                backgroundStyle={{ 
-                    backgroundColor: colors.background, 
-                    borderRadius: 35,
-                    shadowColor: colors.text,
-                    shadowOpacity: 0.15,
-                    shadowRadius: 10,
-                    shadowOffset: { width: 0, height: 4 },
-                    elevation: 5,
-                }}
-                handleIndicatorStyle={{ backgroundColor: colors.secondaryCard, width: 45, height: 7 }}
-            >
-                <BottomSheetView 
-                    style={{ 
-                        position: "absolute",
-                        bottom: 0,
-                        left: 5,
-                        right: 5,
-                        alignSelf: "center",
-                    }}
-                >
-                    {loading ? (
-                        <View className="flex-1 items-center justify-center">
-                            <SpinningLogoImage size={30} />
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.5}
+                showsVerticalScrollIndicator={false}
+                ListHeaderComponent={ListHeader}
+                contentContainerStyle={{ paddingBottom: BOTTOM_INSETS  }}
+                keyExtractor={(item) => item.sub}
+                renderItem={({ item }) => (
+                    <View
+                        style={{
+                            height: 100,
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            marginVertical: 5,
+                            marginHorizontal: 10,
+                            padding: 10,
+                            borderBottomWidth: 1,
+                            borderBottomColor: colors.background,
+                        }}
+                    >
+                        <View style={{ width: 100, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                            <Text numberOfLines={1} style={{ opacity: 0.5 }} className={textStyles.h1}>{item.rank}</Text>
+                            <Button onPress={() => openProfile(item.sub)}>
+                                <AvatarRender avatar={item.avatar} badge={item.badge} showBadge background />
+                            </Button>
                         </View>
-                    ) : (
-                        <BottomSheetFlatList
-                            data={rest as LeaderboardEntry[]}
-                            keyExtractor={(item: LeaderboardEntry, index: number) => `${item.rank}-${index}`}
-                            renderItem={({ item }: { item: LeaderboardEntry }) => (
 
-                                <View 
-                                    style={{ 
-                                        height: 100,
-                                        flexDirection: "row", 
-                                        justifyContent: "space-between", 
-                                        marginVertical: 5,
-                                        marginHorizontal: 10,
-                                        padding: 10,  
-                                        borderBottomWidth: 1, 
-                                        borderBottomColor: colors.background,
-                                    }}
-                            >
+                        <View style={{ flex: 1, paddingHorizontal: 10, paddingVertical: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+                            <LevelRender xp={item.xp} level={item.level} width={50} />
+                            <Text numberOfLines={1} ellipsizeMode="tail" className={textStyles.bodyMedium}>{item.profile_name}</Text>
+                            <BreadRender bread={item.bread} size={50} />
+                        </View>
+                    </View>
+                )}
+            />
 
-                                    <View style={{ width: 100, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                                        <Text numberOfLines={1}  style={{opacity: 0.5}} className={textStyles.h1}>{item.rank}</Text>
-                                        <AvatarRender avatar={item.avatar} badge={item.badge} showBadge background/>
-                                    </View>
-
-                                    <View style={{flex: 1, paddingHorizontal: 10, paddingVertical: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end"}}>                                   
-                                        <LevelRender xp={item.xp} level={item.level} width={50}/>
-                                        <Text numberOfLines={1} ellipsizeMode="tail" className={textStyles.bodyMedium}>{item.profile_name}</Text>
-                                        <BreadRender bread={item.bread} size={50}/>     
-                                    </View>
-
-                                </View>
-
-                            )}
+            {showProfile && (
+                <BottomSheet
+                    ref={profileSheetRef}
+                    index={0}
+                    snapPoints={BOTTOM_SNAP_POINTS}
+                    enablePanDownToClose={false}
+                    enableContentPanningGesture={false}
+                    enableHandlePanningGesture={false}
+                    enableDynamicSizing={false}
+                    backgroundStyle={{ backgroundColor: "transparent" }}
+                    handleComponent={() => null}
+                >
+                    <View style={{ flex: 1, borderTopLeftRadius: FEED_CARD_PROFILE_RADIUS + 10, borderTopRightRadius: FEED_CARD_PROFILE_RADIUS + 10 }}>
+                        <View
+                            style={{
+                                ...StyleSheet.absoluteFillObject,
+                                opacity: 0.85,
+                                backgroundColor: colors.secondaryCard,
+                                borderRadius: FEED_CARD_PROFILE_RADIUS + 10,
+                            }}
                         />
-                    )}
-                </BottomSheetView>
-            </BottomSheet>
-
+                        <BottomSheetView
+                            style={{
+                                height: 450,
+                                marginTop: 10,
+                                marginHorizontal: 10,
+                                overflow: "hidden",
+                                alignSelf: "center",
+                                backgroundColor: colors.background,
+                                borderRadius: FEED_CARD_PROFILE_RADIUS,
+                            }}
+                        >
+                            <FeedProfile
+                                showMore
+                                showCloseButton
+                                showMessagesButton
+                                onClose={() => {
+                                    setShowProfile(false);
+                                    clearActiveProfile();
+                                }}
+                            />
+                        </BottomSheetView>
+                    </View>
+                </BottomSheet>
+            )}
         </View>
     );
 };
+
+export default Leaderboard;

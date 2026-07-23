@@ -66,18 +66,23 @@ export type UserActionedPostsType = {
 
 export type FeedCard = {
     post_id: number,
-    user_sub: string,
     firstName: string;
     lastName: string | null;
+    user_sub: string,
     info: DishInfoData;
     dietary: DietaryData;
     num_ingredients: number;
-    nutrition: NutritionData[];
     profile_name: string;
     level: number;
     avatar: Avatar;
     user_actions: FeedActionType[];
-    action_counts: FeedActionCountsTypes;
+    action_counts: {
+        post_love: number;
+        post_cook: number;
+        post_star: number;
+        post_share: number;
+    };
+    tag_color?: string | null;
 };
 
 export type MinimumFeedCard = {
@@ -98,6 +103,10 @@ export type FeedProfileCard ={
     firstName: string;
     lastName: string;
     profile_name: string;
+
+    bio?: string | null;
+    website?: string | null;
+
     date_joined: string;
     num_of_likes: number;
     num_of_cooks: number;
@@ -111,15 +120,18 @@ export type FeedProfileCard ={
 
 export type ReelFeedCard = {
     post_id: number,
+    user_sub: string,
     firstName: string;
     lastName: string | null;
-    user_sub: string,
     info: DishInfoData;
     user_actions: FeedActionType[];
     action_counts: FeedActionCountsTypes;
-    avatar: Avatar; 
+    avatar: Avatar;
     level: number; 
     profile_name: string;
+
+    dietary: DietaryData;
+    nutrition: NutritionData[];
 };
 
 export type FullPost = FeedCard & {

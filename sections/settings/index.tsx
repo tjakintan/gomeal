@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, ScrollView, Pressable, TouchableOpacity, StyleSheet } from "react-native";
 import { useSettingsStore } from "@/stores/useSettings";
 import UserSettings from "./UserSettings";
-import { SettingsLayoutItem } from "@/types/layout.types";
+import { BOTTOM_INSETS, SettingsLayoutItem } from "@/types/layout.types";
 import AppSettings from "./AppSettings";
 import FeedSettings from "./FeedSettings";
 import { useTheme } from "@/provider/ThemeProvider";
@@ -19,6 +19,8 @@ import FoodSettings from './FoodSettings';
 import NotificationSettings from './NotificationSettings';
 import * as WebBrowser from "expo-web-browser";
 import { EmailIcon } from '@/icons/Icon';
+import { DASHBOARD_HEIGHT } from '@/tags/ReelTag';
+import { NAV_SIZE } from '../Navigate';
 
 const iconHeight = _DEFAULT_ICON_HEIGHT
 const iconWidth = _DEFAULT_ICON_WIDTH
@@ -27,42 +29,43 @@ const HelpSettings: React.FC = () => {
   const { colors, textStyles } = useTheme();
 
   return (
-    <View
-      style={{
-        padding: 20,
-        gap: 16,
-      }}
-    >
-      <View style={{ gap: 6 }}>
-        <Text
-          className={textStyles.body}
-          style={{ color: colors.text, opacity: 0.6, lineHeight: 20 }}
-        >
+    <View style={{ flex: 1, width: "100%" }} className="rounded-[30px] gap-1 p-1 overflow-hidden">
+
+      {/* contact support */}
+      <View className="flex-1 p-5 gap-2 overflow-hidden">
+
+        <SectionHeader
+          title="Contact Support"
+          showDivider
+          titleClassName={textStyles.section}
+        />
+
+        <View className="flex-row mt-3">
+          <Button
+            onPress={() => WebBrowser.openBrowserAsync("https://www.gomeal.org/contact")}
+            style={{
+              height: 50,
+              width: 120,
+              flexDirection: "row",
+              gap: 10,
+              backgroundColor: colors.button,
+              paddingHorizontal: 20,
+              borderRadius: 16
+            }}
+            background={true}
+          >
+            <EmailIcon size={20} color={colors.secondaryText} />
+            <Text className={textStyles.h3} style={{ color: "white" }}>
+              Email
+            </Text>
+          </Button>
+        </View>
+
+        <Text className={textStyles.small}>
           Have a question or ran into an issue? Our team is here to help.
         </Text>
       </View>
 
-      <Button
-        onPress={() => WebBrowser.openBrowserAsync("https://www.gomeal.org/contact")}
-        style={{
-          height: 50,
-          width: 200,
-          flexDirection: "row",
-          gap: 10,
-          backgroundColor: colors.button,
-          paddingHorizontal: 20,
-          alignSelf: "center"
-        }}
-        background={true}
-      >
-        <EmailIcon size={20} color={colors.text} />
-        <Text
-          className={textStyles.h3}
-          style={{ color: "white" }}
-        >
-          Contact
-        </Text>
-      </Button>
     </View>
   );
 };
@@ -152,7 +155,6 @@ const Settings: React.FC<{isFocused?: boolean}> = ({ isFocused }) => {
   const [openSectionSettings, setOpenSectionSettings] = useState<string | null>(null);
 
   const userSectionRef = useRef<BottomSheet>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(0);
 
   const handleToggle = (key: string) => {
     setOpenSectionSettings((prev) => (prev === key ? null : key));
@@ -168,84 +170,55 @@ const Settings: React.FC<{isFocused?: boolean}> = ({ isFocused }) => {
 
   return (
 
-    <View style={{...StyleSheet.absoluteFillObject, paddingBottom: 125 }}>
+    <View style={{...StyleSheet.absoluteFillObject }}>
 
       <SectionHeader 
         showDivider
         subtitle="Manage your preferences and settings"
       />
 
-      <View style={{flex: 1}} className="w-full flex-row items-center justify-center p-1">
-        <ScrollView contentContainerStyle={{flexGrow: 1, gap: 10, paddingBottom: 20}} showsVerticalScrollIndicator={false}>
-          {sections.map((section) => {
-            const isOpen = openSectionSettings === section.key;
-            return (
-              <TouchableOpacity key={section.key} activeOpacity={1}>
-                <View className="p-3 gap-3">
-                  <Button onPress={() => handleToggle(section.key)} className="flex-row px-10  justify-between items-center">
+      <ScrollView contentContainerStyle={{ paddingBottom: BOTTOM_INSETS + 20}} showsVerticalScrollIndicator={false}>
+        {sections.map((section) => {
+          const isOpen = openSectionSettings === section.key;
+          return (
+            <TouchableOpacity key={section.key} activeOpacity={1}>
+              <View className="p-3 gap-3">
+                <Button onPress={() => handleToggle(section.key)} className="flex-row px-10  justify-between items-center">
 
-                    <View className="flex-row items-center gap-3">
+                  <View className="flex-row items-center gap-3">
 
-                      {section.icon && (
-                        <View className="w-9 h-9 rounded-xl items-center justify-center">
-                          {section.icon(colors.text)}
-                        </View>
-                      )}
+                    {section.icon && (
+                      <View className="w-9 h-9 rounded-xl items-center justify-center">
+                        {section.icon(colors.text)}
+                      </View>
+                    )}
 
-                      <Text style={{ color: colors.text }} className={textStyles.h3}>
-                        {section.title}
-                      </Text>
+                    <Text style={{ color: colors.text }} className={textStyles.h3}>
+                      {section.title}
+                    </Text>
 
-                    </View>
+                  </View>
 
-                    <Entypo
-                      name={isOpen ? "chevron-thin-up" : "chevron-thin-down"}
-                      size={20}
-                      color={colors.text}
-                    />
+                  <Entypo
+                    name={isOpen ? "chevron-thin-up" : "chevron-thin-down"}
+                    size={20}
+                    color={colors.text}
+                  />
 
-                  </Button>
+                </Button>
 
-                  {isOpen && (
-                    <View>
-                      {section.render()}
-                    </View>
-                  )}
+                {isOpen && (
+                  <View>
+                    {section.render()}
+                  </View>
+                )}
 
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      <BottomSheet
-        ref={userSectionRef}
-        index={0} 
-        bottomInset={125}
-        snapPoints={["8%", 225]}
-        enablePanDownToClose={false}
-        backgroundStyle={{
-          backgroundColor: colors.background, 
-          borderRadius: 35,
-          shadowColor: colors.text,
-          shadowOpacity: 0.10,
-          shadowRadius: 5,
-          shadowOffset: { width: 0, height: -4 },
-          elevation: 5,
-        }}
-        onChange={(i) => setShowDeleteConfirm(i)}
-        handleComponent={() => (
-            <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
-                <Text className={textStyles.small} style={{ color: colors.text, fontSize: 11, opacity: 0.8 }}>Logout</Text>
-                <View style={{ width: 45, height: 7, borderRadius: 99, backgroundColor: colors.secondaryCard }} />
-            </View>
-        )}
-      >
-        <BottomSheetView style={{ padding: 10, margin: 10 }}>
-          <UserSettings open={showDeleteConfirm} />
-        </BottomSheetView>
-      </BottomSheet>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+          <UserSettings/>
+      </ScrollView>
 
     </View>
 

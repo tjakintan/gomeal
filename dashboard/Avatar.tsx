@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Animated, Easing, DimensionValue, StyleSheet } from "react-native";
 import { useTheme } from "@/provider/ThemeProvider";
 import { SectionHeader } from "@/components/SectionComponent";
-import { Mood, useAvatar, useAvatarMood, DEFAULT_AVATAR, } from "@/dashboard/store/useAvatar";
+import { Mood, useAvatar, useAvatarMood, DEFAULT_AVATAR, DEFAULT_AVATAR_BASE } from "@/dashboard/store/useAvatar";
 import { Avatar, BadgeLevel } from "@/types/user.types";
 import { useUser } from "@/stores/useUser";
 import { SvgXml } from "react-native-svg";
@@ -20,25 +20,30 @@ import {
 } from "@/icons/badge_icon";
 import Bread from "./bread";
 import { formatBread } from "@/utils/time";
+import { BOTTOM_INSETS } from "@/types";
+
+const OPTION_AVATAR_SIZE = 65;
 
 const OptionRow = ({
-    label,
-    options,
-    selected,
-    onSelect,
-    isColor = false,
-    withNone = false,
-    noneSelected = false,
-    onNone,
+  label,
+  options,
+  selected,
+  onSelect,
+  renderOption,
+  isColor = false,
+  withNone = false,
+  noneSelected = false,
+  onNone,
 }: {
-    label: string;
-    options: readonly string[];
-    selected: string | undefined;
-    onSelect: (value: string) => void;
-    isColor?: boolean;
-    withNone?: boolean;
-    noneSelected?: boolean;
-    onNone?: () => void;
+  label: string;
+  options: readonly string[];
+  selected: string | undefined;
+  onSelect: (value: string) => void;
+  renderOption?: (value: string, isSelected: boolean) => React.ReactNode;
+  isColor?: boolean;
+  withNone?: boolean;
+  noneSelected?: boolean;
+  onNone?: () => void;
 }) => {
     const { colors, textStyles } = useTheme();
 
@@ -47,60 +52,72 @@ const OptionRow = ({
 
             <TouchableOpacity activeOpacity={1}>
 
-                <View className="p-5 gap-5">
+                <View 
+                    style={{
+                        paddingVertical: 20,
+                        gap: 5
+                    }}
+                >
 
-                    <Text className={textStyles.caption}>{label}</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
 
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <TouchableOpacity activeOpacity={1} style={{ flexDirection: "row", gap: 20}}>
 
-                            <TouchableOpacity activeOpacity={1} style={{flexDirection: "row", gap: 10}}>
+                            {withNone && (
+                                <Button
+                                    onPress={onNone}
+                                    style={{
+                                        width: 60,
+                                        height: 60,
+                                        borderRadius: 999,
+                                        borderWidth: noneSelected ? 3 : 1.5,
+                                        borderColor: noneSelected ? colors.button : "transparent",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <EmptyIcon size={25} color={colors.text}/>
+                                </Button>
+                            )}
 
-                                {withNone && (
+                            {options.map((opt, i) => {
+                                const isSelected = selected === opt && !noneSelected;
+                                return (
                                     <Button
-                                        onPress={onNone}
+                                        key={opt}
+                                        onPress={() => onSelect(opt)}
                                         style={{
                                             width: 60,
                                             height: 60,
                                             borderRadius: 999,
-                                            borderWidth: noneSelected ? 3 : 1.5,
-                                            borderColor: noneSelected ? colors.button : "transparent",
+                                            backgroundColor: isColor ? `#${opt}` : "transparent",
+                                            borderWidth: isSelected ? 3 : 1.5,
+                                            borderColor: isSelected ? colors.button : "transparent",
                                             alignItems: "center",
                                             justifyContent: "center",
+                                            overflow: "hidden",
                                         }}
                                     >
-                                        <EmptyIcon size={50} color={colors.background}/>
-                                    </Button>
-                                )}
-
-                                {options.map((opt, i) => {
-                                    const isSelected = selected === opt && !noneSelected;
-                                    return (
-                                        <Button
-                                            key={opt}
-                                            onPress={() => onSelect(opt)}
-                                            style={{
-                                                width: 60,
-                                                height: 60,
-                                                borderRadius: 999,
-                                                backgroundColor: isColor ? `#${opt}` : "transparent",
-                                                borderWidth: isSelected ? 3 : 1.5,
-                                                borderColor: isSelected ? colors.button : "transparent",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            {!isColor && (
+                                        {!isColor && (
+                                            renderOption ? (
+                                                    renderOption(opt, isSelected)
+                                            ) : (
                                                 <Text style={{ color: isSelected ? colors.text : colors.secondaryText, fontSize: 12, fontWeight: "600" }}>
                                                     {i + 1}
                                                 </Text>
-                                            )}
-                                        </Button>
-                                    );
-                                })}
+                                            )
+                                        )}
+                                    </Button>
+                                );
+                            })}
 
-                            </TouchableOpacity>
+                        </TouchableOpacity>
 
-                        </ScrollView>
+                    </ScrollView>
+
+                    <Text style={{ alignSelf: "center"}} className={textStyles.small}>
+                        {label}
+                    </Text>
 
                 </View>
             
@@ -142,25 +159,23 @@ export const CreateAvatarScreen: React.FC<onBoardUserSectionProps> = ({ onNext, 
 
             <SectionHeader title="Avatar" subtitle="Edit your avatar traits, choose from a variety of options, how you want to be seen." />
 
-            <View style={{ alignItems: "center" }} className="py-4">
+            <View style={{ alignItems: "center" }}>
                 <SvgXml xml={getSvg().toString()} width={175} height={175} />
             </View>
 
-            <View style={{
-                flex: 1,
-                backgroundColor: colors.secondaryCard,
-                borderRadius: 25,
-                elevation: 1,
-                shadowColor:colors.text,
-                shadowOpacity: 0.25,
-                shadowRadius: 20,
-                shadowOffset: { width: 1, height: 1}, 
-                paddingHorizontal: 5,
-                paddingVertical: 10,                  
-            }}>
+            <View 
+                style={{
+                    flex: 1,
+                }}
+            >
 
                 <ScrollView 
                     showsVerticalScrollIndicator={false}
+                    style={{
+                        flex: 1,
+                        borderRadius: 25,
+                        overflow: "hidden"
+                    }}
                 >
 
                     <OptionRow
@@ -171,6 +186,13 @@ export const CreateAvatarScreen: React.FC<onBoardUserSectionProps> = ({ onNext, 
                         noneSelected={avatar.hairProbability === 0}
                         onNone={() => updateTrait("hairProbability", 0)}
                         onSelect={(v) => { updateTrait("hair", v); updateTrait("hairProbability", 100); }}
+                        renderOption={(hair) => (
+                            <SvgXml
+                                xml={getSvg({ hair, hairProbability: 100 }, DEFAULT_AVATAR_BASE).toString()}
+                                width={OPTION_AVATAR_SIZE}
+                                height={OPTION_AVATAR_SIZE}
+                            />
+                        )}
                     />
 
                     <OptionRow
@@ -181,6 +203,8 @@ export const CreateAvatarScreen: React.FC<onBoardUserSectionProps> = ({ onNext, 
                         isColor
                     />
 
+
+
                     <OptionRow
                         label="Beard"
                         options={DEFAULT_AVATAR.beard}
@@ -189,14 +213,73 @@ export const CreateAvatarScreen: React.FC<onBoardUserSectionProps> = ({ onNext, 
                         noneSelected={avatar.beardProbability === 0}
                         onNone={() => updateTrait("beardProbability", 0)}
                         onSelect={(v) => { updateTrait("beard", v); updateTrait("beardProbability", 100); }}
+                        renderOption={(beard) => (
+                            <SvgXml
+                                xml={getSvg({ beard, beardProbability: 100 }, DEFAULT_AVATAR_BASE).toString()}
+                                width={OPTION_AVATAR_SIZE}
+                                height={OPTION_AVATAR_SIZE}
+                            />
+                        )}
                     />
 
-                    <OptionRow label="Eyes" options={DEFAULT_AVATAR.eyes} selected={avatar.eyes} onSelect={(v) => updateTrait("eyes", v)} />
-                    <OptionRow label="Mouth" options={DEFAULT_AVATAR.mouth} selected={avatar.mouth} onSelect={(v) => updateTrait("mouth", v)} />
-                    <OptionRow label="Skin Color" options={DEFAULT_AVATAR.skinColor} selected={avatar.skinColor} onSelect={(v) => updateTrait("skinColor", v)} isColor />
-                    <OptionRow label="Clothes" options={DEFAULT_AVATAR.clothes} selected={avatar.clothes} onSelect={(v) => updateTrait("clothes", v)} />
-                    <OptionRow label="Clothes Color" options={DEFAULT_AVATAR.clothesColor} selected={avatar.clothesColor} onSelect={(v) => updateTrait("clothesColor", v)} isColor />
-                
+                    <OptionRow
+                        label="Eyes"
+                        options={DEFAULT_AVATAR.eyes}
+                        selected={avatar.eyes}
+                        onSelect={(v) => updateTrait("eyes", v)}
+                        renderOption={(eyes) => (
+                            <SvgXml
+                                xml={getSvg({ eyes }, DEFAULT_AVATAR_BASE).toString()}
+                                width={OPTION_AVATAR_SIZE}
+                                height={OPTION_AVATAR_SIZE}
+                            />
+                        )}
+                    />
+
+                    <OptionRow
+                        label="Mouth"
+                        options={DEFAULT_AVATAR.mouth}
+                        selected={avatar.mouth}
+                        onSelect={(v) => updateTrait("mouth", v)}
+                        renderOption={(mouth) => (
+                            <SvgXml
+                                xml={getSvg({ ...avatar, mouth }, DEFAULT_AVATAR_BASE).toString()}
+                                width={OPTION_AVATAR_SIZE}
+                                height={OPTION_AVATAR_SIZE}
+                            />
+                        )}
+                    />
+
+                    <OptionRow
+                        label="Skin Color"
+                        options={DEFAULT_AVATAR.skinColor}
+                        selected={avatar.skinColor}
+                        onSelect={(v) => updateTrait("skinColor", v)}
+                        isColor
+                    />
+
+                    <OptionRow
+                        label="Clothes"
+                        options={DEFAULT_AVATAR.clothes}
+                        selected={avatar.clothes}
+                        onSelect={(v) => updateTrait("clothes", v)}
+                        renderOption={(clothes) => (
+                            <SvgXml
+                                xml={getSvg({ clothes }, DEFAULT_AVATAR_BASE).toString()}
+                                width={OPTION_AVATAR_SIZE}
+                                height={OPTION_AVATAR_SIZE}
+                            />
+                        )}
+                    />
+
+                    <OptionRow
+                        label="Clothe Color"
+                        options={DEFAULT_AVATAR.clothesColor}
+                        selected={avatar.clothesColor}
+                        onSelect={(v) => updateTrait("clothesColor", v)}
+                        isColor
+                    />
+
                 </ScrollView>
 
             </View>
@@ -247,7 +330,7 @@ export const EditAvatarScreen: React.FC<{
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
-                paddingBottom: 135
+                paddingBottom: BOTTOM_INSETS
             }}
         >
             <View
@@ -258,7 +341,7 @@ export const EditAvatarScreen: React.FC<{
                     flexDirection: "row",
                 }}
             >
-                <Button onPress={onClose} background>
+                <Button onPress={onClose} clearBackground>
                     <BackIcon color={colors.text} />
                 </Button>
 
@@ -275,100 +358,128 @@ export const EditAvatarScreen: React.FC<{
                 <SvgXml xml={getSvg().toString()} width={175} height={175} />
             </View>
 
-            <View
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
                 style={{
                     flex: 1,
-                    backgroundColor: colors.secondaryCard,
-                    borderRadius: 25,
-                    elevation: 1,
-                    shadowColor: colors.text,
-                    shadowOpacity: 0.25,
-                    shadowRadius: 20,
-                    shadowOffset: { width: 1, height: 1 },
                     paddingHorizontal: 5,
-                    paddingVertical: 10,
-                }}
+                    borderRadius: 25,
+                    overflow: "hidden"
+                }}            
             >
-                <ScrollView showsVerticalScrollIndicator={false}>
 
-                    <OptionRow
-                        label="Hair"
-                        options={DEFAULT_AVATAR.hair}
-                        selected={editAvatar.hair}
-                        withNone
-                        noneSelected={editAvatar.hairProbability === 0}
-                        onNone={() => updateTrait("hairProbability", 0)}
-                        onSelect={(v) => {
-                            updateTrait("hair", v);
-                            updateTrait("hairProbability", 100);
-                        }}
-                    />
+                <OptionRow
+                    label="Hair"
+                    options={DEFAULT_AVATAR.hair}
+                    selected={editAvatar.hair}
+                    withNone
+                    noneSelected={editAvatar.hairProbability === 0}
+                    onNone={() => updateTrait("hairProbability", 0)}
+                    onSelect={(v) => {
+                        updateTrait("hair", v);
+                        updateTrait("hairProbability", 100);
+                    }}
+                    renderOption={(hair) => (
+                        <SvgXml
+                            xml={getSvg({ hair, hairProbability: 100 }, DEFAULT_AVATAR_BASE).toString()}
+                            width={OPTION_AVATAR_SIZE}
+                            height={OPTION_AVATAR_SIZE}
+                        />
+                    )}
+                />
 
-                    <OptionRow
-                        label="Hair Color"
-                        options={DEFAULT_AVATAR.hairColor}
-                        selected={editAvatar.hairColor}
-                        onSelect={(v) => updateTrait("hairColor", v)}
-                        isColor
-                    />
+                <OptionRow
+                    label="Hair Color"
+                    options={DEFAULT_AVATAR.hairColor}
+                    selected={editAvatar.hairColor}
+                    onSelect={(v) => updateTrait("hairColor", v)}
+                    isColor
+                />
 
-                    <OptionRow
-                        label="Beard"
-                        options={DEFAULT_AVATAR.beard}
-                        selected={editAvatar.beard}
-                        withNone
-                        noneSelected={editAvatar.beardProbability === 0}
-                        onNone={() => updateTrait("beardProbability", 0)}
-                        onSelect={(v) => {
+                <OptionRow
+                    label="Beard"
+                    options={DEFAULT_AVATAR.beard}
+                    selected={editAvatar.beard}
+                    withNone
+                    noneSelected={editAvatar.beardProbability === 0}
+                    onNone={() => updateTrait("beardProbability", 0)}
+                    onSelect={(v) => {
                         updateTrait("beard", v);
                         updateTrait("beardProbability", 100);
-                        }}
-                    />
+                    }}
+                    renderOption={(beard) => (
+                        <SvgXml
+                            xml={getSvg({ beard, beardProbability: 100 }, DEFAULT_AVATAR_BASE).toString()}
+                            width={OPTION_AVATAR_SIZE}
+                            height={OPTION_AVATAR_SIZE}
+                        />
+                    )}
+                />
 
-                    <OptionRow
-                        label="Eyes"
-                        options={DEFAULT_AVATAR.eyes}
-                        selected={editAvatar.eyes}
-                        onSelect={(v) => updateTrait("eyes", v)}
-                    />
+                <OptionRow
+                    label="Eyes"
+                    options={DEFAULT_AVATAR.eyes}
+                    selected={editAvatar.eyes}
+                    onSelect={(v) => updateTrait("eyes", v)}
+                    renderOption={(eyes) => (
+                        <SvgXml
+                            xml={getSvg({ eyes }, DEFAULT_AVATAR_BASE).toString()}
+                            width={OPTION_AVATAR_SIZE}
+                            height={OPTION_AVATAR_SIZE}
+                        />
+                    )}
+                />
 
-                    <OptionRow
-                        label="Mouth"
-                        options={DEFAULT_AVATAR.mouth}
-                        selected={editAvatar.mouth}
-                        onSelect={(v) => updateTrait("mouth", v)}
-                    />
+                <OptionRow
+                    label="Mouth"
+                    options={DEFAULT_AVATAR.mouth}
+                    selected={editAvatar.mouth}
+                    onSelect={(v) => updateTrait("mouth", v)}
+                    renderOption={(mouth) => (
+                        <SvgXml
+                            xml={getSvg({ mouth }, DEFAULT_AVATAR_BASE).toString()}
+                            width={OPTION_AVATAR_SIZE}
+                            height={OPTION_AVATAR_SIZE}
+                        />
+                    )}
+                />
 
-                    <OptionRow
-                        label="Skin Color"
-                        options={DEFAULT_AVATAR.skinColor}
-                        selected={editAvatar.skinColor}
-                        onSelect={(v) => updateTrait("skinColor", v)}
-                        isColor
-                    />
+                <OptionRow
+                    label="Skin Color"
+                    options={DEFAULT_AVATAR.skinColor}
+                    selected={editAvatar.skinColor}
+                    onSelect={(v) => updateTrait("skinColor", v)}
+                    isColor
+                />
 
-                    <OptionRow
-                        label="Clothes"
-                        options={DEFAULT_AVATAR.clothes}
-                        selected={editAvatar.clothes}
-                        onSelect={(v) => updateTrait("clothes", v)}
-                    />
+                <OptionRow
+                    label="Clothes"
+                    options={DEFAULT_AVATAR.clothes}
+                    selected={editAvatar.clothes}
+                    onSelect={(v) => updateTrait("clothes", v)}
+                    renderOption={(clothes) => (
+                        <SvgXml
+                            xml={getSvg({ clothes }, DEFAULT_AVATAR_BASE).toString()}
+                            width={OPTION_AVATAR_SIZE}
+                            height={OPTION_AVATAR_SIZE}
+                        />
+                    )}
+                />
 
-                    <OptionRow
-                        label="Clothes Color"
-                        options={DEFAULT_AVATAR.clothesColor}
-                        selected={editAvatar.clothesColor}
-                        onSelect={(v) => updateTrait("clothesColor", v)}
-                        isColor
-                    />
-                </ScrollView>
-            </View>
+                <OptionRow
+                    label="Clothes Color"
+                    options={DEFAULT_AVATAR.clothesColor}
+                    selected={editAvatar.clothesColor}
+                    onSelect={(v) => updateTrait("clothesColor", v)}
+                    isColor
+                />
+
+            </ScrollView>
 
             <View style={{ height: 60, width: "100%", alignItems: "center", marginTop: 5 }}>
                 <Button
                     style={{
-                        height: "100%",
-                        width: 300,
+                        width: 100,
                         flexDirection: "row",
                         backgroundColor: colors.button,
                         gap: 10,
@@ -417,7 +528,7 @@ export const AvatarRender: React.FC<{
     dark?: boolean;
 }> = ({ avatar, size = 40, badge, showBadge, background = false, dark = false, }) => {
 
-    const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
+    const { colors } = useTheme(dark ? "dark" : undefined);
     const userAvatar = useUser((s) => s.user?.avatar);
     const userBadge = useUser((s) => s.user?.badge);
 
@@ -496,13 +607,33 @@ export const BreadRender: React.FC<{ bread: number; dark?: boolean; size?: Dimen
     );
 };
 
-export const DynamicAvatarRenderer: React.FC<{ size?: number; showBadge?: boolean }> = ({ size = 20, showBadge = false }) => {
+export const DynamicAvatarRenderer: React.FC<{
+    avatar?: Avatar;
+    badge?: BadgeLevel;
+    mood?: Mood;
+    size?: number;
+    showBadge?: boolean;
+    background?: boolean;
+    dark?: boolean;
+}> = ({
+    avatar,
+    badge,
+    mood,
+    size = 20,
+    showBadge = false,
+    background = false,
+    dark = false,
+}) => {
 
-    const mood = useAvatarMood((s) => s.mood);
+    const globalMood = useAvatarMood((s) => s.mood);
+    const resolvedMood = mood ?? globalMood;
     const userAvatar = useUser((s) => s.user?.avatar);
+    const resolvedAvatar = avatar ?? userAvatar;
     const userBadge = useUser((s) => s.user?.badge);
+    const resolvedBadge = badge ?? userBadge;
 
-    const { getSvg, setAvatar } = useAvatar(userAvatar?.seed ?? "default");
+    const { colors } = useTheme(dark ? "dark" : undefined);
+    const { getSvg, setAvatar } = useAvatar(resolvedAvatar?.seed ?? "default");
     const opacity = useRef(new Animated.Value(1)).current;
 
     const MOOD_TRAITS: Record<Mood, Partial<Avatar>> = {
@@ -570,7 +701,7 @@ export const DynamicAvatarRenderer: React.FC<{ size?: number; showBadge?: boolea
     };
 
     useEffect(() => {
-        if (!userAvatar) return;
+        if (!resolvedAvatar) return;
 
         Animated.timing(opacity, {
             toValue: 0,
@@ -578,7 +709,7 @@ export const DynamicAvatarRenderer: React.FC<{ size?: number; showBadge?: boolea
             useNativeDriver: true,
             easing: Easing.out(Easing.ease),
         }).start(() => {
-            setAvatar({ ...userAvatar, ...MOOD_TRAITS[mood] });
+            setAvatar({ ...resolvedAvatar, ...MOOD_TRAITS[resolvedMood] });
 
             Animated.timing(opacity, {
                 toValue: 1,
@@ -587,21 +718,41 @@ export const DynamicAvatarRenderer: React.FC<{ size?: number; showBadge?: boolea
                 easing: Easing.in(Easing.ease),
             }).start();
         });
-    }, [userAvatar, mood]);
+    }, [resolvedAvatar, resolvedMood]);
 
-    if (!userAvatar) return null;
-
-    return (
+    const inner = (
         <>
             <Animated.View style={{ opacity, width: size, height: size }}>
                 <SvgXml xml={getSvg().toString()} width={size} height={size} />
             </Animated.View>
 
-            {showBadge && userBadge && (
-                <View style={{ position: "absolute", top: 0, right: -5 }}>
-                    <BadgeRender badge={userBadge} size={size * 0.35} />
+            {showBadge && resolvedBadge && (
+                <View style={{ position: "absolute", top: 0, right: 0 }}>
+                    <BadgeRender badge={resolvedBadge} size={size * 0.35} />
                 </View>
             )}
         </>
+    );
+
+    if (!resolvedAvatar) return null;
+
+    if (!background) return inner;
+
+    return (
+        <View
+            style={{
+                height: size * 1.5,
+                width: size * 1.5,
+                borderRadius: 999,
+                borderWidth: 2,
+                borderColor: colors.secondaryCard,
+                backgroundColor: colors.background,
+                justifyContent: "flex-end",
+                alignItems: "center",
+                overflow: "hidden"
+            }}
+        >
+            {inner}
+        </View>
     );
 };

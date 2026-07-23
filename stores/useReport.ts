@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { block_user_api, get_blocked_users_api, get_report_api, remove_blocked_user_api } from "@/api/profile.api";
-import { MinimumProfile } from "@/types/profile.types";
+import { UltraMinimumProfile } from "@/types/profile.types";
 
 export type BlockedUserType = {
     blocked_sub: string;
@@ -9,7 +9,7 @@ export type BlockedUserType = {
 export type ReportTargetType = "post" | "message" | "user";
 
 type BlockUserState = {
-    blockedUsers: MinimumProfile[];
+    blockedUsers: UltraMinimumProfile[];
     loadingBlockUser: boolean;
     loadingBlockedUsers: boolean;
     blockUser: (blocked_sub: string) => Promise<void>;

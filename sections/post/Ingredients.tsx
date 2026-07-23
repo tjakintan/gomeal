@@ -78,7 +78,7 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
                     multiline={false}
                     value={search}
                     disabled={false}
-                    leftIcon={isLoading ? <SpinningLogoImage size={30} /> : <SearchIcon color={colors.text} />}
+                    leftIcon={isLoading ? <SpinningLogoImage size={30} /> : <SearchIcon color={colors.text} size={20}/>}
                     onIconPress={() => {}}
                     onSubmitEditing={() => setSearch(search)}
                     onChangeText={(value) => setSearch(value)}

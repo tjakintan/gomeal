@@ -3,6 +3,8 @@ import {
     sendMessageApi,
     markMessagesReadApi,
     getInboxApi,
+    deleteConversationApi,
+    deleteMessageApi
 } from "@/api/messages.api";
 
 import {
@@ -17,7 +19,6 @@ type ConversationCacheEntry = {
     data: DirectConversationData;
     createdAt: number;
 };
-
 
 const getConversationKey = (
     post_id?: number,
@@ -51,6 +52,9 @@ type MessageState = {
         reader_sub: string
     ) => void;
 
+    deleteConversation: (conversation_id: number) => Promise<boolean>;
+    removeConversationLocally: (conversation_id: number) => void;
+
     pendingConversation: InboxConversation | null;
     loadInbox: () => Promise<InboxConversation[]>;
     inboxOpen: boolean;
@@ -58,6 +62,8 @@ type MessageState = {
     closeInbox: () => void;
 
     loadConversation: (post_id?: number, conversation_id?: number, receiver_sub?: string) => Promise<DirectConversationData | null>;
+
+    deleteMessage: (message_id: number, conversation_id: number) => Promise<boolean>;
 
     typingUsers: Record<number, boolean>;
     setTyping: (conversation_id: number, isTyping: boolean) => void;
@@ -266,7 +272,9 @@ export const useMessage = create<MessageState>((set, get) => ({
                             ...state.conversations,
                             messages: state.conversations.messages.map((message) => ({
                                 ...message,
-                                is_read: true,
+                                is_read: message.sender_sub === state.conversations?.sender_sub
+                                    ? message.is_read
+                                    : true,
                             })),
                         }
                         : state.conversations,
@@ -300,17 +308,68 @@ export const useMessage = create<MessageState>((set, get) => ({
             },
         })),
 
+    deleteConversation: async (conversation_id: number): Promise<boolean> => {
+
+        try {
+            await deleteConversationApi(conversation_id);
+
+            get().removeConversationLocally(conversation_id);
+
+            return true;
+        } catch (err) {
+            console.error("Error deleting conversation:", err);
+            return false;
+        }
+    },
+
+    removeConversationLocally: (conversation_id: number) => {
+        set((state) => {
+            const isActive = state.conversations?.conversation.id === conversation_id;
+
+            const nextCache = Object.fromEntries(
+                Object.entries(state.conversationCache).filter(
+                    ([, entry]) => entry.data.conversation.id !== conversation_id
+                )
+            );
+
+            return {
+                inbox: state.inbox.filter(
+                    (item) => item.conversation.id !== conversation_id
+                ),
+                conversationCache: nextCache,
+                conversations: isActive ? null : state.conversations,
+                activeConversationKey: isActive ? null : state.activeConversationKey,
+            };
+        });
+    },
+
+    deleteMessage: async (message_id, conversation_id) => {
+
+        get().removeMessage(message_id); 
+
+        const success = await deleteMessageApi(message_id, conversation_id);
+
+        if (!success) {
+            await get().loadConversation(undefined, conversation_id);
+            return false;
+        }
+
+        return true;
+    },
+
     removeMessage: (message_id) => {
-        set((state) => ({
-            conversations: state.conversations
-                ? {
+        set((state) => {
+            if (!state.conversations) return state;
+
+            return {
+                conversations: {
                     ...state.conversations,
                     messages: state.conversations.messages.filter(
                         (message) => String(message.id) !== String(message_id)
                     ),
-                }
-                : null,
-        }));
+                },
+            };
+        });
     },
 
     setConversation: (convo) => set({ conversations: convo }),

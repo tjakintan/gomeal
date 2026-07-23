@@ -125,13 +125,14 @@ export const useFeed = create<FeedState>((set, get) => ({
             return response.posts;
         }
 
-        set({ loadingFeed: true });
+        set({ loadingFeed: true, posts: [], feedCursor: 0 });
 
         const request = fetchFeedPosts(
             limit,
             selectedScope ?? undefined,
             markSeen,
             0,
+            forceRefresh,
         );
 
         set({
@@ -203,8 +204,17 @@ export const useFeed = create<FeedState>((set, get) => ({
 
             const nextPosts = response.posts;
 
+            const merged = Array.from(
+                new Map(
+                    [...posts, ...nextPosts].map(post => [
+                        post.post_id,
+                        post,
+                    ])
+                ).values()
+            );
+
             set({
-                posts: [...posts, ...nextPosts],
+                posts: merged,
                 feedCursor: response.nextCursor,
                 hasMoreFeed: response.hasMore,
             });

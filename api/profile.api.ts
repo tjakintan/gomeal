@@ -1,9 +1,8 @@
 import { apiFetch } from "./api";
 import { API_BASE } from '../config';
 import { socketEmit } from "./socket";
-import { MinimumProfile, Profile, ProfileResponse, UpdateUserProfile,  } from "@/types/profile.types";
+import { MinimumProfile, Profile, ProfileResponse, UltraMinimumProfile, UpdateUserProfile,  } from "@/types/profile.types";
 import { ReportTargetType } from "@/stores/useReport";
-import { Avatar } from "@/types";
 
 export async function get_profile_api(): Promise<ProfileResponse> {
 
@@ -19,36 +18,19 @@ export const update_user_profile_api = async (
     profile: UpdateUserProfile
 ): Promise<{ profile: MinimumProfile }> => {
 
-    const response = await apiFetch(`${API_BASE}/chef/update`, {
-        method: "PATCH",
-        body: JSON.stringify(profile)
-    });
+    const res = await socketEmit<{
+        success: boolean;
+        profile: MinimumProfile;
+        error?: string;
+    }>("update-profile", profile);
 
-    return response as { profile: MinimumProfile };
-};
+    if (!res?.success) {
+        throw new Error(res?.error ?? "failed_to_update_user_profile");
+    }
 
-export async function update_user_avatar_api(
-    avatar: Avatar
-): Promise<{ profile: MinimumProfile }> {
-
-    const response = await apiFetch(`${API_BASE}/chef/avatar`, {
-        method: "PATCH",
-        body: JSON.stringify({ avatar }),
-    });
-
-    return response as { profile: MinimumProfile };
-};
-
-export async function update_user_profile_image_api(
-    profile_img_url: Profile["profile_img_url"]
-): Promise<{ profile_image: Pick<Profile, "sub" | "profile_img_url"> }> {
-
-    const response = await apiFetch(`${API_BASE}/chef/profile_image`, {
-        method: "PATCH",
-        body: JSON.stringify({ profile_img_url }),
-    });
-
-    return response as { profile_image: Pick<Profile, "sub" | "profile_img_url"> };
+    return {
+        profile: res.profile,
+    };
 };
 
 export async function delete_post_api(
@@ -106,9 +88,9 @@ export async function block_user_api(
     }
 };
 
-export async function get_blocked_users_api(): Promise<MinimumProfile[]> {
+export async function get_blocked_users_api(): Promise<UltraMinimumProfile[]> {
     try {
-        const res = await socketEmit<{ blocked_users: MinimumProfile[] }>(
+        const res = await socketEmit<{ blocked_users: UltraMinimumProfile[] }>(
             "get-blocked-users",
             {}
         );

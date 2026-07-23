@@ -20,6 +20,8 @@ import { usePost } from "@/stores/usePost";
 
 import { delete_account_api } from "@/api/profile.api";
 import { SpinningLogoImage } from "@/utils/Logo";
+import { useOverlay } from "@/stores/useOverlay";
+import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
 
 export const clearAppState = async () => {
 
@@ -93,12 +95,99 @@ export const clearAppState = async () => {
 
 };
 
-const UserSettings: React.FC<{ open?: number}> = ({ open }) => {
+const DeleteConfirmContent: React.FC<{
+    onConfirm: () => Promise<void>;
+    onCancel: () => void;
+}> = ({ onConfirm, onCancel }) => {
 
     const { colors, textStyles } = useTheme();
-    
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
+
+    const handleConfirm = async () => {
+        try {
+            setDeleting(true);
+            await onConfirm();
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    return (
+        <View style={{ flex: 1, width: "100%", gap: 20, justifyContent: "center", alignItems: "center" }}>
+
+            <Text
+                className={textStyles.body}
+                style={{
+                    textAlign: "center",
+                    lineHeight: 22,
+                }}
+            >
+                Your account will be deactivated immediately. Account data may be retained
+                for up to 30 days before permanent deletion in accordance with our{" "}
+                <Text
+                    onPress={() => WebBrowser.openBrowserAsync("https://www.gomeal.org/privacy")}
+                    style={{
+                        color: colors.button,
+                        fontSize: 13,
+                        textDecorationLine: "underline",
+                        fontWeight: "600",
+                    }}
+                >
+                    Privacy Policy
+                </Text>
+            </Text>
+
+            <Button
+                onPress={handleConfirm}
+                disabled={deleting}
+                style={{
+                    width: 200,
+                    height: 60,
+                    backgroundColor: deleting ? "transparent" : colors.danger,
+                    alignSelf: "center",
+                }}
+                background={true}
+            >
+                {deleting ? (
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                        <SpinningLogoImage size={20} />
+                    </View>
+                ) : (
+                    <Text
+                        className={textStyles.h3}
+                        style={{
+                            color: "white",
+                        }}
+                    >
+                        Confirm
+                    </Text>
+                )}
+            </Button>
+
+            <Button
+                onPress={onCancel}
+                disabled={deleting}
+                style={{
+                    width: 200,
+                    height: 55,
+                    alignSelf: "center",
+                }}
+                background={true}
+            >
+                <Text className={textStyles.h3}>
+                    Cancel
+                </Text>
+            </Button>
+
+        </View>
+    );
+};
+
+const UserSettings: React.FC= () => {
+
+    const { colors, textStyles } = useTheme();
+    const openOverlay = useOverlay((state) => state.openOverlay);
+    const closeOverlay = useOverlay((state) => state.closeOverlay);
 
     const handleLogout = async () => {
         await clearAppState();
@@ -106,14 +195,7 @@ const UserSettings: React.FC<{ open?: number}> = ({ open }) => {
 
     const handleDelete = async () => {
 
-        if (!showDeleteConfirm) {
-            setShowDeleteConfirm(true);
-            return;
-        }
-
         try {
-
-            setDeleting(true);
 
             const res = await delete_account_api();
 
@@ -121,163 +203,81 @@ const UserSettings: React.FC<{ open?: number}> = ({ open }) => {
                 return;
             }
 
+            closeOverlay();
             await clearAppState();
 
         } catch (err) {
 
             console.error("Delete account failed:", err);
 
-        } finally {
-
-            setDeleting(false);
-
         }
 
     };
 
-    useEffect(() => {
-        setShowDeleteConfirm(false);
-    }, [open]);
+    const handleDeletePress = () => {
+        openOverlay({
+            title: "Delete Account",
+            custom: (
+                <DeleteConfirmContent
+                    onConfirm={handleDelete}
+                    onCancel={closeOverlay}
+                />
+            ),
+        });
+    };
 
     return (
 
         <View
             style={{
-                height: showDeleteConfirm ? 400 : 175,
-                borderRadius: 25, 
-                backgroundColor: showDeleteConfirm ? colors.secondaryCard : colors.button
+                height: 175,
+                marginHorizontal: 10,
+                borderRadius: 25,
+                backgroundColor: colors.button,
             }}
             className="flex-1 gap-5 items-center justify-center px-5"
         >
 
-            {!showDeleteConfirm ? (
-                <>
-                    <Button
-                        onPress={handleLogout}
-                        style={{
-                            width: 300,
-                            height: 60,
-                            flexDirection: "row",
-                            gap: 10,
-                            backgroundColor: colors.card,
-                        }}
-                        background={true}
-                    >
-                        <Text className={textStyles.h3}>
-                            Logout
-                        </Text>
+            <Button
+                onPress={handleLogout}
+                style={{
+                    width: 300,
+                    height: 60,
+                    flexDirection: "row",
+                    gap: 10,
+                    backgroundColor: colors.card,
+                }}
+                background={true}
+            >
+                <Text className={textStyles.h3}>
+                    Logout
+                </Text>
 
-                        <LogOutIcon color={colors.buttonSecondary} />
-                    </Button>
+                <LogOutIcon color={colors.buttonSecondary} />
+            </Button>
 
-                    <Button
-                        onPress={() => setShowDeleteConfirm(true)}
-                        style={{
-                            width: 300,
-                            height: 60,
-                            flexDirection: "row",
-                            gap: 10,
-                            backgroundColor: colors.card,
-                        }}
-                        background={true}
-                    >
-                        <Text
-                            className={textStyles.h3}
-                            style={{
-                                color: colors.danger,
-                            }}
-                        >
-                            Delete Account
-                        </Text>
-
-                        <DeleteIcon color={colors.danger} />
-                    </Button>
-                </>
-            ) : (
-                <View
+            <Button
+                onPress={handleDeletePress}
+                style={{
+                    width: 300,
+                    height: 60,
+                    flexDirection: "row",
+                    gap: 10,
+                    backgroundColor: colors.card,
+                }}
+                background={true}
+            >
+                <Text
+                    className={textStyles.h3}
                     style={{
-                        width: "100%",
-                        gap: 20,
-                        justifyContent: "center"
+                        color: colors.danger,
                     }}
                 >
+                    Delete Account
+                </Text>
 
-                    <Text
-                        className={textStyles.h2}
-                        style={{
-                            color: colors.danger,
-                            textAlign: "center",
-                        }}
-                    >
-                        Delete Account
-                    </Text>
-
-                    <Text
-                        className={textStyles.body}
-                        style={{
-                            textAlign: "center",
-                            lineHeight: 22,
-                        }}
-                    >
-                        Your account will be deactivated immediately. Account data may be retained
-                        for up to 30 days before permanent deletion in accordance with our{" "}
-                        <Text
-                            onPress={() => WebBrowser.openBrowserAsync("https://www.gomeal.org/privacy")}
-                            style={{
-                                color: colors.button,
-                                fontSize: 13,
-                                textDecorationLine: "underline",
-                                fontWeight: "600",
-                            }}
-                        >
-                            Privacy Policy
-                        </Text>
-                    </Text>
-
-                    <Button
-                        onPress={handleDelete}
-                        disabled={deleting}
-                        style={{
-                            width: 200,
-                            height: 60,
-                            backgroundColor: deleting ? "transparent" : colors.danger,
-                            alignSelf: "center"
-                        }}
-                        background={true}
-                    >
-                        {deleting ? (
-                            <View style={{ flex: 1, justifyContent: "center", alignItems: "center"}}>
-                                <SpinningLogoImage size={20} />
-                            </View>
-                        ) : (
-                            <Text
-                                className={textStyles.h3}
-                                style={{
-                                    color: "white",
-                                }}
-                            >
-                                Confirm
-                            </Text>
-                        )}
-                    </Button>
-
-                    <Button
-                        onPress={() => setShowDeleteConfirm(false)}
-                        style={{
-                            width: 200,
-                            height: 55,
-                            backgroundColor: colors.background,
-                            alignSelf: "center"
-                        }}
-                        background={true}
-                    >
-                        <Text className={textStyles.h3}>
-                            Cancel
-                        </Text>
-                    </Button>
-
-                </View>
-            )}
+                <DeleteIcon color={colors.danger} />
+            </Button>
 
         </View>
     );

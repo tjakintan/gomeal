@@ -46,8 +46,8 @@ export const SectionHeader = ({
           width: "100%",
           paddingHorizontal: 8,
           paddingVertical: 4,
-        },
-        style,
+          ...style,
+        }
       ]}
     >
       <View

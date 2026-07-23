@@ -13,9 +13,14 @@ import { AvatarRender } from "@/dashboard/Avatar";
 import { useAvatarMood } from "@/dashboard/store/useAvatar";
 import { useFeed } from "@/stores/useFeed";
 import { LinearGradient } from "expo-linear-gradient";
+import { setFeedActionCount } from "@/api/feed.api";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { capitalize } from "@/utils/text";
 
 type Props = {
     card?: ReelFeedCard;
+    height?: number;
+    fullscreen?: boolean;
     onSwipeUp: () => void;
     onSwipeDown: () => void;
     onSetActiveProfile: (post_id: number) => void;
@@ -24,14 +29,19 @@ type Props = {
     style?: StyleProp<ViewStyle>;
 };
 
-export const REEL_TAG_HEIGHT = Dimensions.get("window").height - 375;
+export const DASHBOARD_HEIGHT = 175;
+export const REEL_TAG_HEIGHT = Dimensions.get("window").height - 305;
 export const REEL_TAG_WIDTH = Dimensions.get("window").width ;
 export const REEL_TAG_RADIUS = 0;
 const SWIPE_THRESHOLD = 60;
 
-const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetActiveProfile, onSetSharePost, onOpenCook }) => {
+const ReelTag: React.FC<Props> = ({ card, style, height, fullscreen, onSwipeUp, onSwipeDown, onSetActiveProfile, onSetSharePost, onOpenCook }) => {
 
-    const { post_id, info, avatar, profile_name, level } = card ?? {};
+    const { post_id, info, avatar, profile_name, firstName, lastName, level } = card ?? {};
+
+    const insets = useSafeAreaInsets();
+    const tagHeight = height ?? REEL_TAG_HEIGHT;
+    const infoBottomPadding = fullscreen ? insets.bottom : 0;
     const { colors, textStyles } = useTheme("dark");
 
     const onSwipeUpRef = useRef(onSwipeUp);
@@ -77,12 +87,12 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
 
     return (
         <View
-            style={{height: REEL_TAG_HEIGHT, width: REEL_TAG_WIDTH,}}
+            style={{height: tagHeight, width: REEL_TAG_WIDTH}}
             {...panResponder.panHandlers}
         >
             <View
                 style={{
-                    height: REEL_TAG_HEIGHT,
+                    height: tagHeight,
                     width: REEL_TAG_WIDTH,
                     borderRadius: REEL_TAG_RADIUS,
                     backgroundColor: colors.background,
@@ -97,7 +107,7 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                     <Media
                         uri={info?.dish_media_url ?? ""}
                         mediaType={info?.dish_media_type ?? "image"}
-                        style={{height: info?.dish_media_type === "image" ? "80%":"100%", width: "100%"}}
+                        style={{height: "100%", width: "100%"}}
                         iconSize={55}
                         onLongPress={() => setHide(true)}
                         onInteractionEnd={() => setHide(false)}
@@ -140,7 +150,7 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                         right: 0,
                         gap: 5,
                         paddingHorizontal: 10,
-                        paddingBottom: 15,
+                        paddingBottom: infoBottomPadding,
                         alignItems: "flex-start",
                     }}
                     pointerEvents={hide ? "none" : "auto"}
@@ -151,27 +161,65 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                         }}
                     >
 
-                        <View 
+                        <Button 
                             style={{
-                                height: 50,
-                                gap: 5,
-                                flexDirection: "row",  
+                                width: "auto",
+                                gap: 15,
+                                flexDirection: "column", 
+                                alignItems: "flex-start"
                             }}
+                            onPress={() => onSetActiveProfile(post_id ?? 0)}
                         >
-                            <Button 
+                            <View
                                 style={{
-                                    height: 40,
-                                    width: 40, 
-                                    borderWidth: 1,
-                                    borderRadius: 999,
-                                    borderColor: colors.text,
-                                    overflow: "hidden" ,                   
+                                    gap: 10,
+                                    flexDirection: "row",
+                                    alignItems: "flex-end"
                                 }}
-                                onPress={() => onSetActiveProfile(post_id ?? 0)}
-                                className="items-center justify-center"
                             >
-                                <AvatarRender avatar={avatar} size={30} />
-                            </Button>
+                                <View 
+                                    style={{
+                                        height: 40,
+                                        width: 40, 
+                                        borderWidth: 1,
+                                        borderRadius: 999,
+                                        borderColor: colors.text,
+                                        overflow: "hidden" ,                   
+                                    }}
+                                    className="items-center justify-center"
+                                >
+                                    <AvatarRender avatar={avatar} size={30} />
+                                </View>
+
+                                <View
+                                    style={{
+                                        flexDirection: "column",
+                                    }}
+                                >
+                                    <Text
+                                        className={textStyles.caption}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                    >
+                                        {profile_name}
+                                    </Text>
+
+                                    <Text
+                                        className={textStyles.body}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                        style={{
+                                            color: colors.secondaryText,
+                                            opacity: 0.8,
+                                            fontSize: 13,
+                                        }}
+                                    >
+                                        {capitalize(firstName ?? "")}{" "}
+                                        {capitalize(lastName ?? "")}
+                                    </Text>
+                                </View>
+
+                            </View>
 
                             <Button 
                                 style={{
@@ -206,7 +254,7 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
 
                             </Button>
 
-                        </View>
+                        </Button>
                     
                     </Animated.View>
                 </View>
@@ -214,7 +262,7 @@ const ReelTag: React.FC<Props> = ({ card, style, onSwipeUp, onSwipeDown, onSetAc
                 <View
                     style={{
                         position: "absolute",
-                        bottom: REEL_TAG_HEIGHT / 5,
+                        bottom: tagHeight / 5,
                         right: 5,
                         gap: 5,
                         padding: 5,
@@ -247,6 +295,8 @@ export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: n
     const setMood = useAvatarMood((s) => s.setMood);
     const { toggleUserReelAction } = useReel();
     const updatePostEverywhere = useFeed((s) => s.updatePostEverywhere);
+
+    
     const { colors, textStyles } = useTheme("dark");
 
     const reel = useReel((state) => state.reels.find((r) => r.post_id === post_id));
@@ -256,7 +306,7 @@ export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: n
 
     const [animateLove, setAnimateLove] = useState(0);
 
-    const handleAction = (action: keyof FeedActionCountsTypes) => {
+    const handleAction = async (action: keyof FeedActionCountsTypes) => {
 
         const alreadyDone = userActions.includes(action as FeedActionType);
         const delta = alreadyDone ? -1 : 1;
@@ -297,6 +347,12 @@ export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: n
                 },
             };
         });
+
+        try {
+            await setFeedActionCount(post_id, action as FeedActionType);
+        } catch (err) {
+            console.error("[handleAction] failed to emit set-count:", err);
+        }
     };
 
     type ReelActionKey = keyof Pick<
@@ -357,8 +413,12 @@ export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: n
     );
 };
 
-export const EmptyReelTag: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
+export const EmptyReelTag: React.FC<{ delay?: number; height?: number; fullscreen?: boolean }> = ({ delay = 0, height, fullscreen }) => {
+
     const { colors } = useTheme("dark");
+    const insets = useSafeAreaInsets();
+    const tagHeight = height ?? REEL_TAG_HEIGHT;
+    const infoBottomPadding = fullscreen ? 65 : 15;
     const opacity = useRef(new Animated.Value(0.45)).current;
 
     useEffect(() => {
@@ -407,13 +467,13 @@ export const EmptyReelTag: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
         <View
             style={{
                 width: REEL_TAG_WIDTH,
-                height: REEL_TAG_HEIGHT,
+                height: tagHeight,
                 borderRadius: REEL_TAG_RADIUS,
                 overflow: "hidden",
                 backgroundColor: colors.background,
             }}
         >
-            {bone("100%", REEL_TAG_HEIGHT, REEL_TAG_RADIUS)}
+            {bone("100%", tagHeight, REEL_TAG_RADIUS)}
 
             <View
                 pointerEvents="none"
@@ -433,7 +493,7 @@ export const EmptyReelTag: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
                     left: 0,
                     right: 0,
                     paddingHorizontal: 10,
-                    paddingBottom: 15,
+                    paddingBottom: infoBottomPadding,
                 }}
             >
                 <View
@@ -465,7 +525,7 @@ export const EmptyReelTag: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
             <View
                 style={{
                     position: "absolute",
-                    bottom: REEL_TAG_HEIGHT / 3,
+                    bottom: tagHeight / 3,
                     right: 10,
                     gap: 18,
                     alignItems: "center",

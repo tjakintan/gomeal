@@ -22,12 +22,14 @@ const defaultSettings: Settings = {
 
   feed: {
     autoPlayVideos: true,
+    allowFeedColors: true,
   },
 
   notifications: {
-    likes: false,
-    messages: false,
-    cookingReminderTime: null,
+    likes: true,
+    messages: true,
+    cook: true,
+    cookingReminderTime: "08:00",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   },
   

@@ -2,17 +2,18 @@ import { Button } from "@/components/ButtonComponent";
 import { DobInput, Input } from "@/components/InputComponent";
 import { SectionHeader } from "@/components/SectionComponent";
 import { AvatarRender } from "@/dashboard/Avatar";
-import { BackIcon, EditIcon, InfoIcon, PersonXIcon } from "@/icons/Icon";
+import { BackIcon, EditIcon, PersonXIcon } from "@/icons/Icon";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useFeed } from "@/stores/useFeed";
 import { useBlockUser } from "@/stores/useReport";
 import { useUser } from "@/stores/useUser";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { getDobParts, isValidDob } from "@/utils/time";
 import { useProfile } from "@/stores/useProfile";
 import { UpdateUserProfile } from "@/types/profile.types";
 import { SpinningLogoImage } from "@/utils/Logo";
+import { BOTTOM_INSETS } from "@/types";
 
 export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
@@ -34,7 +35,6 @@ export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
-                paddingBottom: 125
             }}
         >
             <View
@@ -45,8 +45,8 @@ export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
                     flexDirection: "row",
                 }}
             >
-                <Button onPress={() => onClose?.()} background>
-                    <BackIcon color={colors.background} />
+                <Button onPress={() => onClose?.()} clearBackground>
+                    <BackIcon color={colors.text} />
                 </Button>
 
                 <SectionHeader
@@ -146,7 +146,6 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
-                paddingBottom: 125
             }}
         >
             <View
@@ -157,8 +156,8 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     flexDirection: "row",
                 }}
             >
-                <Button onPress={() => onClose?.()} background>
-                    <BackIcon color={colors.background} />
+                <Button onPress={() => onClose?.()} clearBackground>
+                    <BackIcon color={colors.text} />
                 </Button>
 
                 <SectionHeader
@@ -171,11 +170,9 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
             <View style={{ flex: 1, padding: 10 }}>
                 {loadingBlockedUsers ? (
-                    <View className="flex-1 items-center justify-center">
-                        <SpinningLogoImage size={30} />
-                    </View>
+                    <EmptyBlockSection />
                 ) : !blockedUsers.length ? (
-                    <View className="flex-1 items-center justify-center">
+                    <View style={{ paddingBottom: BOTTOM_INSETS}} className="flex-1 items-center justify-center">
                         <Text
                             className={textStyles.caption}
                         >
@@ -187,6 +184,7 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={{
                             gap: 10,
+                            paddingBottom: BOTTOM_INSETS
                         }}
                     >
                         {blockedUsers.map((user) => (
@@ -318,7 +316,7 @@ const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
-                paddingBottom: 125
+                paddingBottom: BOTTOM_INSETS
             }}
         >
             
@@ -330,8 +328,8 @@ const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     flexDirection: "row",
                 }}
             >
-                <Button onPress={() => onClose?.()} background>
-                    <BackIcon color={colors.background} />
+                <Button onPress={() => onClose?.()} clearBackground>
+                    <BackIcon color={colors.text} />
                 </Button>
 
                 <SectionHeader
@@ -490,7 +488,7 @@ const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 <View style={{padding: 10}}>
                     <Button 
                         onPress={handleConfirm} 
-                        style={{height: 50, width: 250, gap: 15, alignSelf: "center", flexDirection: "row", justifyContent: "center"}} 
+                        style={{width: 100, gap: 15, alignSelf: "center", flexDirection: "row", justifyContent: "center"}} 
                         background={loading ? false : true}
                         disabled={(loading || isEmpty) ? true : false}
                     >
@@ -512,3 +510,77 @@ const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     );
 };
 
+// empty loader
+const EmptyBlockSection = () => {
+    const { colors } = useTheme();
+
+    const opacity = useRef(new Animated.Value(0.45)).current;
+
+    useEffect(() => {
+        const anim = Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacity, {
+                    toValue: 0.9,
+                    duration: 700,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacity, {
+                    toValue: 0.45,
+                    duration: 700,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+
+        anim.start();
+
+        return () => anim.stop();
+    }, []);
+
+    const bone = (
+        width: number | `${number}%`,
+        height: number,
+        radius = 8,
+    ) => (
+        <Animated.View
+            style={{
+                width,
+                height,
+                borderRadius: radius,
+                backgroundColor: colors.card,
+                opacity,
+            }}
+        />
+    );
+
+    return (
+        <View style={{ gap: 10 }}>
+            {[1, 2, 3, 4, 5].map((i) => (
+                <View
+                    key={i}
+                    style={{
+                        width: "100%",
+                        height: 85,
+                        borderRadius: 20,
+                        borderWidth: 2,
+                        paddingHorizontal: 14,
+                        backgroundColor: colors.card,
+                        borderColor: colors.secondaryCard,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                    }}
+                >
+                    {bone(30, 30, 999)}
+
+                    <View style={{ flex: 1, gap: 6 }}>
+                        {bone("55%", 14, 5)}
+                        {bone("35%", 11, 4)}
+                    </View>
+
+                    {bone(75, 32, 12)}
+                </View>
+            ))}
+        </View>
+    );
+};

@@ -13,6 +13,7 @@ export async function fetchFeedPosts(
     selectedScope?: FeedScopeType,
     markSeen = false,
     cursor = 0,
+    forceRefresh = false,
 ): Promise<FeedPageResponse> {
 
     const params = new URLSearchParams();
@@ -27,6 +28,10 @@ export async function fetchFeedPosts(
 
     if (cursor) {
         params.append("cursor", String(cursor));
+    }
+
+    if (forceRefresh) {
+        params.append("forceRefresh", "true");
     }
 
     const url = `${API_BASE}/feed/fetch-post/${limit}${params.toString() ? `?${params.toString()}` : ""}`;

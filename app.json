@@ -14,10 +14,12 @@
         "applinks:app.gomeal.org"
       ],
       "infoPlist": {
+        "UIBackgroundModes": [],
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
         "ITSAppUsesNonExemptEncryption": false,
+        "NSMotionUsageDescription": "GoMeal uses motion data to detect device orientation when capturing meal photos and videos.",
         "NSCameraUsageDescription": "GoMeal uses your camera to take meal photos and videos to share as posts and recipe steps.",
         "NSMicrophoneUsageDescription": "GoMeal uses your microphone to record audio when capturing meal videos for posts and recipe steps.",
         "NSPhotoLibraryUsageDescription": "GoMeal uses your photo library so you can select meal photos and videos to share as posts and recipe steps.",

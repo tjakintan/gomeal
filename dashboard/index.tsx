@@ -5,14 +5,15 @@ import { NotiIcon, NotiDeliveredIcon } from "@/icons/Icon";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useUser } from "@/stores/useUser";
 import Bread from "./bread";
-import { BreadRender, DynamicAvatarRenderer } from "./Avatar";
+import { BadgeRender, BreadRender, DynamicAvatarRenderer } from "./Avatar";
 import { useNotification } from "@/notifications/useNotification";
 import { useShowReward } from "./store/useReward";
-import { Button } from "@/components/ButtonComponent";
+import { Button, Gesture } from "@/components/ButtonComponent";
 import { useSettingsStore } from "@/stores/useSettings";
 import Svg, { Circle } from "react-native-svg";
 import { useAvatarMood } from "./store/useAvatar";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { capitalize } from "@/utils/text";
 
 type DashBoardProps = {
     dark?: any;
@@ -177,6 +178,8 @@ const DashNotificationCircle: React.FC<{
 }> = ({ onOpenNotification, dark }) => {
 
     const { user } = useUser();
+    const setMood = useAvatarMood((s) => s.setMood);
+    
     const XP_PER_LEVEL = Number(process.env.EXPO_PUBLIC_XP_PER_LEVEL);
     const xpIntoCurrentLevel = user ? user.xp % XP_PER_LEVEL : 0;
     const xpProgress = xpIntoCurrentLevel / XP_PER_LEVEL;
@@ -184,39 +187,38 @@ const DashNotificationCircle: React.FC<{
     const { colors } = useTheme(dark ? "dark" : undefined);
     const { unreadCount, markAllRead } = useNotification();
 
-    const setMood = useAvatarMood((s) => s.setMood);
-
     const prevCountRef = useRef(unreadCount);
     const spinValue = useRef(new Animated.Value(0)).current;
-    const [showDelivered, setShowDelivered] = useState(false);
+    const loopRef = useRef<Animated.CompositeAnimation | null>(null);
+    const [showDelivered, setShowDelivered] = useState(unreadCount > 0);
 
     const spin = spinValue.interpolate({
         inputRange: [0, 1],
         outputRange: ["0deg", "360deg"],
     });
 
-    const runDeliverySpin = useCallback(() => {
-        spinValue.setValue(0);
-        setShowDelivered(true);
-
-        Animated.timing(spinValue, {
-            toValue: 1,
-            duration: 520,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-        }).start(() => {
-            setTimeout(() => {
-                setShowDelivered(false);
-            }, 700);
-        });
-    }, [spinValue]);
-
     useEffect(() => {
-        if (unreadCount > prevCountRef.current) {
-            runDeliverySpin();
-        }
+        const hasUnread = unreadCount > 0;
+        const justIncreased = unreadCount > prevCountRef.current;
         prevCountRef.current = unreadCount;
-    }, [runDeliverySpin, unreadCount]);
+
+        setShowDelivered(hasUnread);
+
+        if (justIncreased) {
+            spinValue.setValue(0);
+            Animated.timing(spinValue, {
+                toValue: 1,
+                duration: 520,
+                easing: Easing.out(Easing.ease),
+                useNativeDriver: true,
+            }).start(() => {
+                spinValue.setValue(0); // reset so next arrival has somewhere to animate from
+            });
+        }
+    }, [unreadCount, spinValue]);
+
+    // stop the loop on unmount, otherwise it keeps ticking against a dead component
+    useEffect(() => () => loopRef.current?.stop(), []);
 
     const handlePress = useCallback(() => {
         markAllRead();
@@ -248,11 +250,25 @@ const DashNotificationCircle: React.FC<{
                         alignItems: "center",
                         justifyContent: "flex-end",
                         backgroundColor: colors.accent === "transparent" ? colors.button : colors.accent,
-                        overflow: "hidden",
+                        overflow: "visible",
                     }}
-                    onPress={() => {setMood("confused", 2000)}}
+                    onPress={() => setMood("confused", 3000)}
                 >
+                    <View
+                        style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 999,
+                            alignItems: "center",
+                            justifyContent: "flex-end",
+                            overflow: "hidden"
+                        }}
+                    >
                     <DynamicAvatarRenderer size={35} />
+                    </View>
+                    <View style={{ position: "absolute", top: -4, right: -4 }}>
+                        <BadgeRender size={16} />
+                    </View>
                 </Button>
             </ProgressCircle>
 
@@ -288,6 +304,7 @@ const DashNotificationCircle: React.FC<{
 
 const DashBoard: React.FC<DashBoardProps> = ({ dark, onOpenNotification }) => {
 
+    const setMood = useAvatarMood((s) => s.setMood);
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
     const { user } = useUser();
 
@@ -302,76 +319,86 @@ const DashBoard: React.FC<DashBoardProps> = ({ dark, onOpenNotification }) => {
                 zIndex: 10,
             }}
         >
-            <GomealGlassView
-                style={{
-                    minHeight: 64,
-                    borderRadius: 24,
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    overflow: "hidden",
-                }}
-                glassEffectStyle="clear"
-            >
-                <View style={{ flex: 1, gap: 5, minWidth: 0, justifyContent: "center" }}>
-
-                    <View>
-                        <Text
-                            className={textStyles.sectionText}
-                            style={{ color: colors.text, opacity: 0.65 }}
-                            numberOfLines={1}
-                        >
-                            Hello,
-                        </Text>
-
-                        <Text
-                            className={textStyles.h3}
-                            style={{ color: colors.text }}
-                            numberOfLines={1}
-                        >
-                            {user.firstName ?? "Dashboard"}
-                        </Text>
-                    </View>
-
-                    <View
+            <Gesture scaleAmount={1}>
+                <Pressable
+                    onPress={() => setMood("confused", 3000)}
+                    style={{ width: "100%" }}
+                >
+                    <GomealGlassView
                         style={{
+                            minHeight: 64,
+                            borderRadius: 24,
+                            paddingHorizontal: 14,
+                            paddingVertical: 10,
                             flexDirection: "row",
                             alignItems: "center",
-                            gap: 8,
-                            minHeight: 33,
+                            justifyContent: "space-between",
+                            overflow: "hidden",
                         }}
+                        interactive
+                        glassEffectStyle="clear"
                     >
-                        <View
-                            style={{
-                                width: 100,
-                                height: 33,
-                                paddingHorizontal: 5,
-                                borderRadius: 999,
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: 8,
-                                borderWidth: 2,
-                                borderColor: colors.secondaryCard,
-                                backgroundColor: colors.background,
-                            }}
-                        >
+                        <View style={{ flex: 1, gap: 5, minWidth: 0, justifyContent: "center" }}>
 
-                            <BreadRender dark={dark} bread={user.bread} />
+                            <View>
+                                <Text
+                                    className={textStyles.caption}
+                                    style={{ color: colors.text, opacity: 0.65 }}
+                                    numberOfLines={1}
+                                >
+                                    Hello,
+                                </Text>
+
+                                <Text
+                                    className={textStyles.h3}
+                                    style={{ 
+                                        color: colors.text
+                                    }}
+                                    numberOfLines={1}
+                                >
+                                    {capitalize(user.firstName ?? " ")}
+                                </Text>
+                            </View>
+
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    minHeight: 33,
+                                }}
+                            >
+                                <View
+                                    style={{
+                                        width: 100,
+                                        height: 33,
+                                        paddingHorizontal: 5,
+                                        borderRadius: 999,
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 8,
+                                        borderWidth: 2,
+                                        borderColor: colors.secondaryCard,
+                                        backgroundColor: colors.background,
+                                    }}
+                                >
+
+                                    <BreadRender dark={dark} bread={user.bread} />
+                                    
+                                </View>
+
+                                <DashRewardAnim dark={dark} />
+
+                            </View>
                             
                         </View>
 
-                        <DashRewardAnim dark={dark} />
+                        <DashNotificationCircle dark={dark} onOpenNotification={onOpenNotification} />
 
-                    </View>
-                    
-                </View>
-
-                <DashNotificationCircle dark={dark} onOpenNotification={onOpenNotification} />
-
-            </GomealGlassView>
+                    </GomealGlassView>
+                </Pressable>
+            </Gesture>
 
         </View>
     );

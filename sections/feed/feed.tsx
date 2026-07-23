@@ -25,18 +25,20 @@ import { useSettingsStore } from "@/stores/useSettings";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { FeedCard, MinimumFeedCard } from "@/types/feed.types";
 
+const HEIGHTS = {
+    SMALL: 360,
+    MEDIUM: 340,
+    LARGE: 440,
+    VIDEO: 475,
+};
+
 const { width, height } = Dimensions.get("window");
 
 const skeletons = Array.from({ length: 6 });
+
 const renderSkeletons = () => (
-    <View className="flex-1 flex-row">
-        <View
-            style={{
-                flex: 1,
-                alignItems: "center",
-                gap: 5,
-            }}
-        >
+    <View style={{ paddingTop: 100}} className="flex-1 flex-row">
+        <View style={{ flex: 1, alignItems: "center", gap: 5 }}>
             {skeletons
                 .filter((_, i) => i % 2 === 0)
                 .map((_, i) => (
@@ -44,13 +46,7 @@ const renderSkeletons = () => (
                 ))}
         </View>
 
-        <View
-            style={{
-                flex: 1,
-                alignItems: "center",
-                gap: 5,
-            }}
-        >
+        <View style={{ flex: 1, alignItems: "center", gap: 5 }}>
             {skeletons
                 .filter((_, i) => i % 2 !== 0)
                 .map((_, i) => (
@@ -66,157 +62,70 @@ const Feed: React.FC<{
     setShowProfile?: (open: boolean) => void;
     setShowCook?: (post_id: number) => void;
     setShowSearch: (open: boolean) => void;
-}> = ({ isFocused, setReelOpen, setShowProfile, setShowCook, setShowSearch }) => {
+    isSearchOpen?: boolean;
+    onChromeHidden?: (hidden: boolean) => void;
+    chromeAnim: Animated.Value;
+}> = ({ isFocused, isSearchOpen, setReelOpen, setShowProfile, setShowCook, setShowSearch ,onChromeHidden, chromeAnim }) => {
 
     const { colors } = useTheme();
 
     const posts = useFeed((s) => s.posts);
-
     const loadFeed = useFeed((s) => s.loadFeed);
-
-    const loadNextFeed = useFeed(
-    (s) => s.loadNextFeed
-    );
-
-    const loadingFeed = useFeed(
-    (s) => s.loadingFeed
-    );
-
-    const loadingMoreFeed = useFeed(
-    (s) => s.loadingMoreFeed
-    );
-
-    const hasMoreFeed = useFeed(
-    (s) => s.hasMoreFeed
-    );
-
-    const activeReelPost = useFeed(
-    (s) => s.activeReelPost
-    );
-
-    const setActiveProfile = useFeed(
-    (s) => s.setActiveProfile
-    );
-
-    const setSelectedScope = useFeed(
-    (s) => s.setSelectedScope
-    );
+    const loadNextFeed = useFeed((s) => s.loadNextFeed);
+    const loadingFeed = useFeed((s) => s.loadingFeed);
+    const loadingMoreFeed = useFeed((s) => s.loadingMoreFeed);
+    const hasMoreFeed = useFeed((s) => s.hasMoreFeed);
+    const activeReelPost = useFeed((s) => s.activeReelPost);
+    const setActiveProfile = useFeed((s) => s.setActiveProfile);
+    const setSelectedScope = useFeed((s) => s.setSelectedScope);
 
     const { isVisible, open, close } = useReel();  
+
+    const isReelOpen = !!activeReelPost && isVisible;
+    const isFeedBarHidden = isSearchOpen || isReelOpen;
     
     const foodPreferences = useSettingsStore((state) => state.settings.food);
     const filteredPosts = useMemo(() => {
-        return filterFeedByFoodPreferences(
-            posts,
-            foodPreferences
-        );
+        return filterFeedByFoodPreferences(posts, foodPreferences);
     }, [posts, foodPreferences]);
 
+    // Split into two independent lists. Alternating by index is enough here —
+    // since the columns no longer need to stay height-synced (each scrolls on
+    // its own), there's no reason to do masonry height-balancing anymore.
     const leftPosts = useMemo(
-        () =>
-            filteredPosts.filter(
-            (_, i) => i % 2 === 0
-            ),
+        () => filteredPosts.filter((_, i) => i % 2 === 0) as FeedCard[],
         [filteredPosts]
     );
-
-    const renderLeftItem: ListRenderItem<FeedCard> =
-        useCallback(
-            ({ item }) => (
-            <View style={{ paddingBottom: 100 }}>
-                <Tag
-                card={item}
-                flipEnabled
-                onPressInfo={() =>
-                    setShowCook?.(item.post_id)
-                }
-                onPressProfile={() => {
-                    setActiveProfile(item.post_id);
-                    setShowProfile?.(true);
-                }}
-                onPressMedia={() => {
-                    open(item, () =>
-                    setReelOpen?.(true)
-                    );
-                }}
-                onDietaryPress={(info) => {
-                    setDietaryOverlay({
-                    ...info,
-                    column: "left",
-                    });
-                }}
-                />
-            </View>
-            ),
-            []
-        );
-
     const rightPosts = useMemo(
-        () =>
-            filteredPosts.filter(
-            (_, i) => i % 2 !== 0
-            ),
+        () => filteredPosts.filter((_, i) => i % 2 !== 0) as FeedCard[],
         [filteredPosts]
     );
-    
-    const renderRightItem: ListRenderItem<FeedCard> =
-        useCallback(
-            ({ item }) => (
-            <View style={{ paddingBottom: 100 }}>
-                <Tag
-                card={item}
-                flipEnabled
-                onPressInfo={() =>
-                    setShowCook?.(item.post_id)
-                }
-                onPressProfile={() => {
-                    setActiveProfile(item.post_id);
-                    setShowProfile?.(true);
-                }}
-                onPressMedia={() => {
-                    open(item, () =>
-                    setReelOpen?.(true)
-                    );
-                }}
-                onDietaryPress={(info) => {
-                    setDietaryOverlay({
-                    ...info,
-                    column: "right",
-                    });
-                }}
-                />
-            </View>
-            ),
-            [
-            open,
-            setReelOpen,
-            setShowCook,
-            setActiveProfile,
-            setShowProfile,
-            ]
-        );
 
-    const [dietaryOverlay, setDietaryOverlay] = useState<null | {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        data: any;
-        column?: 'left' | 'right';
-    }>(null);
+    const getCardHeight = (post: FeedCard) => {
+        if (post.info?.dish_media_type === "video") {
+            return HEIGHTS.VIDEO;
+        }
+        const variant = post.post_id % 3;
+        switch (variant) {
+            case 0:
+                return HEIGHTS.SMALL;
+            case 1:
+                return HEIGHTS.MEDIUM;
+            default:
+                return HEIGHTS.LARGE;
+        }
+    };
 
-    const [refreshingColumn, setRefreshingColumn] = useState<"left" | "right" | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
-    const handleRefresh = async (column: "left" | "right") => {
-        if (refreshingColumn) return;
-
-        setRefreshingColumn(column);
-
+    const handleRefresh = async () => {
+        if (refreshing) return;
+        setRefreshing(true);
         try {
             setSelectedScope(null);
             await loadFeed(undefined, null, true, true);
         } finally {
-            setRefreshingColumn(null);
+            setRefreshing(false);
         }
     };
 
@@ -226,6 +135,66 @@ const Feed: React.FC<{
         }
     };
 
+    const feedBarTranslateY = chromeAnim?.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, -80],
+    });
+
+    const chromeHidden = useRef(false);
+    // Anchor-based hysteresis, same idea as before. Now driven by whichever
+    // column the user happens to be touching at a given moment — that's fine,
+    // since only one column receives scroll events per gesture (each FlatList
+    // is its own scroll responder). A column switch mid-gesture just resets
+    // the anchor to that column's current offset, which is a non-issue in
+    // practice since a single touch can't be on two lists at once.
+    const anchorY = useRef(0);
+    const HIDE_THRESHOLD = 20;
+
+    // Which column is currently being touched. Only that column's scroll
+    // events are allowed to drive the chrome hide/show state — otherwise two
+    // independently-scrolling FlatLists fight over the same anchor/hidden
+    // refs and flip chromeHidden back and forth on every frame, which is what
+    // caused the animation glitch upstream in AuthenticatedApp.
+    const activeColumn = useRef<"left" | "right" | null>(null);
+
+    const handleScroll = useCallback((column: "left" | "right") => (e: any) => {
+        if (activeColumn.current !== column) return;
+
+        const offsetY = e.nativeEvent.contentOffset.y;
+
+        if (offsetY < 0) {
+            anchorY.current = 0;
+            return;
+        }
+
+        const delta = offsetY - anchorY.current;
+
+        if (!chromeHidden.current && delta > HIDE_THRESHOLD) {
+            chromeHidden.current = true;
+            anchorY.current = offsetY;
+            onChromeHidden?.(true);
+            return;
+        }
+
+        if (chromeHidden.current && delta < -HIDE_THRESHOLD) {
+            chromeHidden.current = false;
+            anchorY.current = offsetY;
+            onChromeHidden?.(false);
+            return;
+        }
+
+        if (!chromeHidden.current && delta < 0) {
+            anchorY.current = offsetY;
+        }
+        if (chromeHidden.current && delta > 0) {
+            anchorY.current = offsetY;
+        }
+    }, [onChromeHidden]);
+
+    const handleScrollBeginDrag = useCallback((column: "left" | "right") => () => {
+        activeColumn.current = column;
+    }, []);
+
     useEffect(() => {
         if (isFocused === false) {
             close(() => setReelOpen?.(false));
@@ -233,174 +202,122 @@ const Feed: React.FC<{
         }
     }, [isFocused]);
 
+    useEffect(() => {
+        const ids = filteredPosts.map(p => p.post_id);
+        const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+        if (duplicates.length) {
+            console.log("Duplicate post_ids:", duplicates);
+        }
+    }, [filteredPosts]);
+
+    const renderCard = useCallback(
+        ({ item }: { item: FeedCard }) => {
+            const post = item;
+            return (
+                <View style={{ marginBottom: 25 }}>
+                    <Tag
+                        card={post}
+                        flipEnabled
+                        height={getCardHeight(post)}
+                        width={`100%`}
+                        onPressInfo={() => setShowCook?.(post.post_id)}
+                        onPressProfile={() => {
+                            setActiveProfile(post.post_id);
+                            setShowProfile?.(true);
+                        }}
+                        onPressMedia={async () => {
+                            const fullPost = await useFeed.getState().loadPost(post.post_id);
+                            if (!fullPost) return;
+                            useReel.getState().open(fullPost as any, () => {
+                                setReelOpen?.(true);
+                            });
+                        }}
+                    />
+                </View>
+            );
+        },
+        [setShowCook, setActiveProfile, setShowProfile, setReelOpen]
+    );
+
     return (
         <>
-
-            <View style={{height: 75}}>
-                <FeedBar onShowSection={setShowSearch}/>
-            </View>
+            {!isFeedBarHidden && (
+                <Animated.View
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 5,
+                        transform: [{ translateY: feedBarTranslateY }],
+                    }}
+                >
+                    <FeedBar onShowSection={setShowSearch} />
+                </Animated.View>
+            )}
         
             <View
-                style={{ 
-                    flex: 1,
-                    backgroundColor: colors.background,
-                }}
-                className="w-full flex-col"
+                style={{ flex: 1, gap: 1, backgroundColor: colors.background }}
+                className="w-full flex-row"
             >
-
                 {(loadingFeed && !filteredPosts?.length) ? (
                     renderSkeletons()
-                ) : (                
-                    <View className="flex-1 flex-row">
-
-                        {/* Left column */}
-                        <View className="flex-1">
-
-                            {refreshingColumn === "left" && (
-                                <View style={{ alignItems: "center" }}>
-                                    <SpinningLogoImage size={30} />
-                                </View>
-                            )}
-
-                            <FlatList
-                                data={leftPosts}
-                                showsVerticalScrollIndicator={false}
-                                contentContainerStyle={{ alignItems: "center" }}
-                                onEndReached={handleLoadMore}
-                                onEndReachedThreshold={0.7}
-                                refreshControl={
-                                    <RefreshControl
-                                    refreshing={refreshingColumn === "left"}
-                                    onRefresh={() => handleRefresh("left")}
-                                    tintColor="transparent"
-                                    colors={["transparent"]}
-                                    />
-                                }
-                                ListFooterComponent={
-                                    loadingMoreFeed ? <SpinningLogoImage size={30} /> : null
-                                }
-                                renderItem={renderLeftItem}
-                            />
-
-                        </View>
-
-                        {/* Right column */}
-                        <View className="flex-1">
-
-                            {refreshingColumn === "right" && (
-                                <View style={{ alignItems: "center" }}>
-                                    <SpinningLogoImage size={30} />
-                                </View>
-                            )}
-
-                            <FlatList
-                                data={rightPosts}
-                                showsVerticalScrollIndicator={false}
-                                contentContainerStyle={{ alignItems: "center" }}
-                                onEndReached={handleLoadMore}
-                                onEndReachedThreshold={0.7}
-                                refreshControl={
-                                    <RefreshControl
-                                        refreshing={refreshingColumn === "right"}
-                                        onRefresh={() => handleRefresh("right")}
-                                        tintColor="transparent"
-                                        colors={["transparent"]}
-                                    />
-                                }
-                                ListFooterComponent={
-                                    loadingMoreFeed ? <SpinningLogoImage size={30} /> : null
-                                }
-                                renderItem={renderRightItem}
-                            />
-
-                        </View>
-
-                    </View>
+                ) : (
+                    <>
+                        <FlatList
+                            data={leftPosts}
+                            keyExtractor={(item) => item.post_id.toString()}
+                            renderItem={renderCard}
+                            showsVerticalScrollIndicator={false}
+                            style={{ flex: 1 }}
+                            contentContainerStyle={{ paddingTop: 100, paddingHorizontal: 2.5 }}
+                            onScroll={handleScroll("left")}
+                            onScrollBeginDrag={handleScrollBeginDrag("left")}
+                            scrollEventThrottle={16}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.7}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={refreshing}
+                                    onRefresh={handleRefresh}
+                                    tintColor={colors.background === "#000" ? "#fff" : undefined}
+                                />
+                            }
+                        />
+                        <FlatList
+                            data={rightPosts}
+                            keyExtractor={(item) => item.post_id.toString()}
+                            renderItem={renderCard}
+                            showsVerticalScrollIndicator={false}
+                            style={{ flex: 1 }}
+                            contentContainerStyle={{ paddingTop: 100, paddingHorizontal: 2.5 }}
+                            onScroll={handleScroll("right")}
+                            onScrollBeginDrag={handleScrollBeginDrag("right")}
+                            scrollEventThrottle={16}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.7}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={refreshing}
+                                    onRefresh={handleRefresh}
+                                />
+                            }
+                        />
+                    </>
                 )}
-
-                {dietaryOverlay && (
-                    <Modal
-                        visible={!!dietaryOverlay}
-                        transparent
-                        animationType="none"
-                    >
-                        <TouchableOpacity 
-                            style={StyleSheet.absoluteFill} 
-                            activeOpacity={1}
-                            onPress={() => setDietaryOverlay(null)}
-                        >
-                            <View
-                                style={{
-                                    position: "absolute",
-                                    left: dietaryOverlay.column === 'left' ? 5.5 : undefined,
-                                    right: dietaryOverlay.column === 'right' ? 5.5 : undefined,
-                                    bottom: height - dietaryOverlay.y + 35,
-                                    borderRadius: 20,
-                                    opacity: 0.7,
-                                    overflow: "hidden",
-                                    borderColor: colors.card,
-                                    borderWidth: 2,
-                                    width: 350,
-                                    height: 50,
-                                    elevation: 10,
-                                    shadowColor: "#000",
-                                    shadowOpacity: 0.2,
-                                    shadowRadius: 8,
-                                    shadowOffset: { width: 0, height: 2 },
-                                }}
-                            >
-                                <TouchableOpacity
-                                    activeOpacity={1}
-                                    onPress={(e) => e.stopPropagation()}
-                                    style={{ flex: 1, backgroundColor: colors.background }}
-                                >
-                                    <ScrollView
-                                        contentContainerClassName="items-center justify-center"
-                                        showsVerticalScrollIndicator={false}
-                                    >
-                                        <TouchableOpacity activeOpacity={1} style={{width: 300, padding: 10, gap: 10 }} className="items-center justify-center">
-                                            {(Object.keys(dietaryIcons) as (keyof DietaryData)[])
-                                                .filter((key) => dietaryOverlay.data.dietary?.[key] === true)
-                                                .map((key) => {
-                                                        const Icon = dietaryIcons[key]!;
-                                                        return (
-                                                            <View key={key} className="flex-row gap-5 ">
-                                                                <Icon size={15} color={colors.text} />
-                                                                <Text style={{ color: colors.text, fontSize: 12 }}>
-                                                                    {dietaryDescriptions[key]}
-                                                                </Text>
-                                                            </View>
-                                                        );
-                                                })
-                                            }
-                                        </TouchableOpacity>
-                                    </ScrollView>
-                                </TouchableOpacity>
-                            </View>
-                        </TouchableOpacity>
-                    </Modal>
-
-                )}
-                 
             </View>
 
-            <View 
-                style={[
-                    StyleSheet.absoluteFill, 
-                ]}
-            >
+            <View style={[StyleSheet.absoluteFill]}>
                 {activeReelPost && isVisible ? (
                     <Reel
                         initialPost={activeReelPost}
+                        chromeAnim={chromeAnim}
                         onBack={() => close(() => setReelOpen?.(false))}
                     />
                 ) : null}
             </View>
-
-
         </>
     );
-
 };
 
 export default Feed;

@@ -3,9 +3,9 @@ import { CookIcon, MessageIcon, XIcon } from "@/icons/Icon";
 import React, { useEffect, useRef, useState } from "react";
 import { useNotification } from "@/notifications/useNotification";
 import { useTheme } from "@/provider/ThemeProvider";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SpinningLogoImage } from "@/utils/Logo";
-import { CookNotificationCard, LikeNotificationCard, MessageNotificationCard } from "@/notifications/notification.types";
+import { CookNotificationCard, LikeNotificationCard, MessageNotificationCard, TrendNotificationCard } from "@/notifications/notification.types";
 import { FeedLoveIcon } from "@/icons/feed_icon";
 import { formatTime } from "@/utils/time";
 import { AvatarRender } from "../dashboard/Avatar";
@@ -14,6 +14,10 @@ import MessageScreen from "@/sections/messages/messages";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import GomealGlassView from "@/components/GlassComponent";
 import { SectionHeader } from "@/components/SectionComponent";
+import { FEED_CARD_PROFILE_RADIUS } from "@/sections/feed/feedProfile";
+import { GradientHeader } from "@/components/GradientComponent";
+import { BOTTOM_INSETS, BOTTOM_SNAP_POINTS } from "@/types";
+import { useCook } from "@/stores/useCook";
 
 const LikeCard: React.FC<{likes: LikeNotificationCard, dark: boolean}> = ({ likes, dark }) => {
 
@@ -169,7 +173,7 @@ const MessageCard: React.FC<{messages: MessageNotificationCard, dark: boolean, o
                     >
                         <AvatarRender avatar={messages.actor_avatar} size={30} />
                     </View>
-                    <View className="flex-row gap-2">
+                    <View className="flex-col gap-1">
                         <Text
                             className={textStyles.sectionText}
                             numberOfLines={1}
@@ -252,6 +256,85 @@ const CookCard: React.FC<{ cook: CookNotificationCard; dark: boolean }> = ({ coo
     );
 };
 
+const TrendCard: React.FC<{
+    trend: TrendNotificationCard;
+    dark: boolean;
+    onOpenCook?: () => void;
+}> = ({ trend, dark, onOpenCook }) => {
+    const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
+    const openCook = useCook((state) => state.openCook);
+
+    return (
+        <View
+            style={{
+                height: 240,
+                borderRadius: 20,
+                overflow: "hidden",
+                borderWidth: 1,
+                borderColor: colors.secondaryCard,
+            }}
+        >
+            <Pressable
+                onPress={() => {
+                    
+                    openCook(trend.post_id);
+                    onOpenCook?.();
+                }}
+            >
+                <View
+                    style={{
+                        height: 150,
+                    }}
+                >
+                    <Media
+                        uri={trend.dish_media_url}
+                        mediaType={trend.dish_media_type}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                        }}
+                        disableInteraction
+                    />
+                </View>
+            </Pressable>
+
+            <Pressable
+                onPress={() => {
+                    openCook(trend.post_id);
+                    onOpenCook?.();
+                }}
+                style={{
+                    flex: 1,
+                    paddingHorizontal: 14,
+                    paddingVertical: 12,
+                    justifyContent: "flex-start",
+                    alignItems: "flex-start",
+                    gap: 4,
+                }}
+            >
+                <Text className={textStyles.caption}>
+                    Trending
+                </Text>
+
+                <Text
+                    className={textStyles.sectionText}
+                    numberOfLines={2}
+                    style={{ textAlign: "left" }}
+                >
+                    {trend.dish_name}
+                </Text>
+
+                <Text
+                    className={textStyles.small}
+                    style={{ textAlign: "left" }}
+                >
+                    {formatTime(trend.created_at)}
+                </Text>
+            </Pressable>
+        </View>
+    );
+};
+
 const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: boolean}> = ({ onOpen, dark }) => {
 
     const { colors, textStyles} = useTheme(dark ? "dark" : undefined);
@@ -270,6 +353,7 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
         ...(notifications?.like ?? []).map((item) => ({ type: "like" as const, item })),
         ...(notifications?.message ?? []).map((item) => ({ type: "message" as const, item })),
         ...(notifications?.cook ?? []).map((item) => ({ type: "cook" as const, item })),
+        ...(notifications?.trend ?? []).map((item) => ({ type: "trend" as const, item })),
     ].sort(
         (a, b) =>
             new Date(b.item.created_at).getTime() -
@@ -281,17 +365,17 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
     return (
         <>
 
-            <View
-                style={{
+            <GradientHeader
+                baseColor={colors.background}
+                contentStyle={{
                     height: 65,
                     paddingHorizontal: 20,
                     alignItems: "center",
                     flexDirection: "row"
                 }}
-                className="items-start"
             >
-                <Button style={{ backgroundColor: colors.danger }} onPress={() => onOpen?.(false)} background>
-                    <XIcon color={colors.background} />
+                <Button onPress={() => onOpen?.(false)} clearBackground>
+                    <XIcon color={colors.danger} />
                 </Button>
                 
                 <SectionHeader
@@ -301,9 +385,9 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                     dark={dark}
                 />
 
-            </View>
+            </GradientHeader>
 
-            <View style={{ flex: 1, backgroundColor: colors.background, padding: 10, paddingBottom: 125}}>
+            <View style={{ flex: 1, backgroundColor: colors.background, padding: 10}}>
 
                 {loadingNotifications ? (
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -318,7 +402,7 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                 ) : (
                     <FlatList
                         data={notificationData}
-                        contentContainerStyle={{ gap: 10, padding: 5 }}
+                        contentContainerStyle={{ gap: 10, padding: 5, paddingTop: 70, paddingBottom: BOTTOM_INSETS }}
                         showsVerticalScrollIndicator={false}
                         keyExtractor={(entry, i) => `${entry.type}-${entry.item.created_at}-${i}`}
                         renderItem={({ item: entry }) => {
@@ -327,8 +411,8 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                                 return (
                                     <TouchableOpacity activeOpacity={1}>
                                         <LikeCard
-                                        dark={dark}
-                                        likes={entry.item as LikeNotificationCard}
+                                            dark={dark}
+                                            likes={entry.item as LikeNotificationCard}
                                         />
                                     </TouchableOpacity>
                                 );
@@ -337,12 +421,12 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                                 return (
                                     <TouchableOpacity activeOpacity={1}>
                                         <MessageCard
-                                        dark={dark}
-                                        messages={entry.item as MessageNotificationCard}
-                                        onOpenMessageSection={() => {
-                                            setActiveConversationId(entry.item.conversation_id);
-                                            messageSheetRef.current?.expand();
-                                        }}
+                                            dark={dark}
+                                            messages={entry.item as MessageNotificationCard}
+                                            onOpenMessageSection={() => {
+                                                setActiveConversationId(entry.item.conversation_id);
+                                                messageSheetRef.current?.expand();
+                                            }}
                                         />
                                     </TouchableOpacity>
                                 );
@@ -350,6 +434,16 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                                 return (
                                     <TouchableOpacity activeOpacity={1}>
                                         <CookCard dark={dark} cook={entry.item as CookNotificationCard} />
+                                    </TouchableOpacity>
+                                );
+                            case "trend":
+                                return (
+                                    <TouchableOpacity activeOpacity={1}>
+                                        <TrendCard
+                                            dark={dark}
+                                            trend={entry.item as TrendNotificationCard}
+                                            onOpenCook={() => onOpen(false)}
+                                        />
                                     </TouchableOpacity>
                                 );
                             default:
@@ -363,8 +457,7 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
             <BottomSheet
                 ref={messageSheetRef}
                 index={-1}
-                bottomInset={125}
-                snapPoints={[535]}
+                snapPoints={BOTTOM_SNAP_POINTS}
                 enablePanDownToClose={false}
                 enableContentPanningGesture={false}
                 enableHandlePanningGesture={false}
@@ -372,8 +465,13 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                 backgroundStyle={{ backgroundColor: "transparent", borderRadius: 40 }}
                 handleComponent={() => null}
             >
-                <GomealGlassView glassEffectStyle="clear" style={{height: 525, marginHorizontal: 10, borderRadius: 50}}>
-
+                <View 
+                    style={{ 
+                        height: 610,  
+                        borderTopLeftRadius: FEED_CARD_PROFILE_RADIUS + 10,
+                        borderTopRightRadius: FEED_CARD_PROFILE_RADIUS + 10,
+                    }}
+                >
                     <View
                         style={{
                         ...StyleSheet.absoluteFillObject, 
@@ -385,7 +483,7 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                     
                     <BottomSheetView
                         style={{
-                            height: 500,
+                            height: 450,
                             marginTop: 10,
                             marginHorizontal: 10,
                             overflow: "hidden",
@@ -395,11 +493,16 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                         }}
                     >
                         {activeConversationId && (
-                            <MessageScreen conversation_id={activeConversationId} onClose={() => messageSheetRef.current?.close()} />
+                            <MessageScreen 
+                                conversation_id={activeConversationId} 
+                                onClose={() => messageSheetRef.current?.close()} 
+                                showX={true}
+                                showBack={false}    
+                            />
                         )}
                     </BottomSheetView>
 
-                </GomealGlassView>
+                </View>
 
             </BottomSheet>
 

@@ -1,13 +1,15 @@
-import { Button } from "@/components/ButtonComponent";
-import { BackIcon, ServingsIcon, SmsIcon, TimerIcon, XIcon, CookIcon, CookingIcon, CookedIcon } from "@/icons/Icon";
+import { Button, ExpandingButton } from "@/components/ButtonComponent";
+import { BackIcon, ServingsIcon, SmsIcon, TimerIcon, XIcon, CookIcon, CookingIcon, CookedIcon, InfoIcon, ReportIcon, MoreIcon } from "@/icons/Icon";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
-import { Dimensions, StyleSheet, Text, View, ScrollView, Pressable, useWindowDimensions } from "react-native";
+import { Dimensions, Animated as AnimatedRN, StyleSheet, Text, View, ScrollView, Pressable, useWindowDimensions, TouchableOpacity } from "react-native";
 import Animated, {
+    Easing,
   Extrapolation,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { Media } from "@/media/media";
@@ -28,16 +30,28 @@ import { useAvatarMood } from "@/dashboard/store/useAvatar";
 import { setFeedActionCount } from "@/api/feed.api";
 import { FeedActionType } from "@/types/feed.types";
 import { useReward } from "@/dashboard/store/useReward";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useReport } from "@/stores/useReport";
+import { FEED_CARD_PROFILE_RADIUS } from "../feed/feedProfile";
+import { BOTTOM_HEIGHT, BOTTOM_INSETS, BOTTOM_SNAP_POINTS } from "@/types";
+import { useOverlay } from "@/stores/useOverlay";
+import { DietaryRender, DifficultyRender, NutritionRender } from "@/utils/food";
+import { capitalize } from "@/utils/text";
+import { NAV_SIZE } from "../Navigate";
+import { GradientHeader } from "@/components/GradientComponent";
+import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
 
 type CookMainScreenProps = {
   post_id: number;
   dark?: boolean;
   onClose?: () => Promise<void> | void;
+  chromeAnim: AnimatedRN.Value
 };
 
 export const CookMainScreen: React.FC<CookMainScreenProps> = ({
     post_id,
     dark = false,
+    chromeAnim,
     onClose
 }) => {
 
@@ -45,11 +59,12 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
     const { width, height } = useWindowDimensions();
 
     const { reward } = useReward();
+    const { reportTarget, loadingReport } = useReport();
+
+    const { openOverlay } = useOverlay();
 
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
     const { selectedPost, loadingPost, clearSelectedPost, updatePostEverywhere } = useFeed();
-
-    //console.log(selectedPost)
 
     const { closeCook, cookTime, servings, setCookPost } = useCook();
     const setMood = useAvatarMood((s) => s.setMood);
@@ -64,6 +79,31 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
 
     const [descriptionSectionHeight, setDescriptionSectionHeight] = useState(0);
     const shownDescription = !readMore && isLong ? description.slice(0, limit).trim() : description;
+
+    const insets = useSafeAreaInsets();
+    const [showMenuRow, setShowMenuRow] = useState(false);
+    const [isChromeHidden, setIsChromeHidden] = useState(false);
+
+    const messageSheetAnimatedIndex = useSharedValue(-1);
+
+    const headerAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(
+            messageSheetAnimatedIndex.value,
+            [0, 1],
+            [1, 0],
+            Extrapolation.CLAMP
+        ),
+        transform: [
+            {
+                translateY: interpolate(
+                    messageSheetAnimatedIndex.value,
+                    [0, 1],
+                    [0, -20],
+                    Extrapolation.CLAMP
+                ),
+            },
+        ],
+    }));
 
     // ── star state ──────────────────────────────────────────────────────────
     const userActions: FeedActionType[] = selectedPost?.user_actions ?? [];
@@ -164,16 +204,22 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
 
     // ── bottom sheet snap ───────────────────────────────────────────────────
     const collapsedSnapPoint = descriptionSectionHeight
-        ? Math.min(descriptionSectionHeight + 25, height * 0.895)
+        ? Math.min(descriptionSectionHeight + NAV_SIZE, height * 0.895)
         : height * 0.4;
 
     const snapPoints = useMemo(
-        () => [collapsedSnapPoint, height * 0.995],
-        [collapsedSnapPoint, height]
+        () => [
+            collapsedSnapPoint,
+            isChromeHidden
+                ? height - DASHBOARD_HEIGHT
+                : height - DASHBOARD_HEIGHT - (BOTTOM_INSETS * 2 / 3),
+        ],
+        [collapsedSnapPoint, height, isChromeHidden]
     );
 
     const animatedSheetPosition = useSharedValue(height);
 
+    // ── Go prev section and report ───────────────────────────────────────────────────
     const handleBack = async () => {
         clearSelectedPost();
 
@@ -185,6 +231,13 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
         await closeCook();
     };
 
+    const handleReport = async () => {
+        if (!selectedPost?.post_id || loadingReport) return;
+        await reportTarget(selectedPost.post_id, "post");
+        setShowMenuRow(false);
+        await handleBack(); 
+    };
+
     const imageAnimatedStyle = useAnimatedStyle(() => {
         return {
             height: animatedSheetPosition.value + 40,
@@ -192,6 +245,18 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
     });
 
     const didSnapInitial = useRef(false);
+
+    useEffect(() => {
+        if (!chromeAnim) return;
+
+        const currentValue = (chromeAnim as any).__getValue();
+        setIsChromeHidden(currentValue >= 0.99);
+
+        const id = chromeAnim.addListener(({ value }) => {
+            setIsChromeHidden(value >= 0.99);
+        });
+        return () => chromeAnim.removeListener(id);
+    }, [chromeAnim]);
 
     useEffect(() => {
         if (descriptionSectionHeight && !didSnapInitial.current) {
@@ -207,22 +272,27 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
 
     // ── render loading ───────────────────────────────────────────────────────────────
     if (loadingPost || !selectedPost) {
-        return (
-            <View
-                style={{
-                    flex: 1,
-                    backgroundColor: colors.background,
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <SpinningLogoImage size={50} />
-            </View>
-        );
-    };
+        return <EmptyCookScreen dark={dark} chromeHidden={(chromeAnim as any).__getValue() >= 0.99}/>;
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
+
+            {showMenuRow && (
+                <Pressable
+                    style={{
+                        position: "absolute",
+                        top: 70,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 2,
+                        elevation: 2,
+                        backgroundColor: "transparent",
+                    }}
+                    onPress={() => setShowMenuRow(false)}
+                />
+            )}
 
             <Animated.View
                 style={[
@@ -237,7 +307,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                         borderTopRightRadius: 30,
                         borderBottomLeftRadius: 0,
                         borderBottomRightRadius: 0,
-                        borderWidth: 3,
+                        borderWidth: isChromeHidden ? 0 : 3,
                         borderColor: colors.secondaryCard,
                         backgroundColor: colors.background,
                     },
@@ -260,63 +330,167 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
             </Animated.View>
 
             {/* ── Header: X | dish name | like ── */}
-            <View
-                style={{
-                    position: "absolute",
-                    top: 5,
-                    left: 15,
-                    right: 15,
-                    height: 50,
-                    alignItems: "center",
-                    flexDirection: "row",
-                    overflow: "hidden",
-                    gap: 8,
-                }}
+            <Animated.View
+                style={[
+                    {
+                        position: "absolute",
+                        top: isChromeHidden ? insets.top : 5,
+                        height: 60,
+                        paddingHorizontal: 10,
+                        left: 15,
+                        right: 15,
+                        alignItems: "center",
+                        flexDirection: "row",
+                        gap: 8,
+                        zIndex: 3,
+                        elevation: 3,
+                    },
+                    headerAnimatedStyle,
+                ]}
             >
                 {/* Close */}
-                <Button style={{ backgroundColor: colors.danger }} onPress={handleBack} background>
-                    <XIcon color={`white`} size={25} />
+                <Button onPress={handleBack} clearBackground>
+                    <XIcon color={colors.danger} size={25} />
                 </Button>
 
                 {/* Dish name — takes remaining space */}
-                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <SectionHeader
-                        title={selectedPost?.info?.dish_name}
-                        titleStyle={{ flexShrink: 1 }}
-                        titleClassName={textStyles.h3}
-                        showBackground
-                        dark={dark}
-                    />
-                </View>
-
-                {/* star */}
-                <Button
+                <View 
                     style={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: 999,
-                        borderWidth: 2,
-                        backgroundColor: colors.secondaryCard,
-                        borderColor: colors.background,
+                        flex: 1,
                         justifyContent: "center",
-                        alignItems: "center",
+                        alignItems: "flex-start",
+                        paddingVertical: 3,
+                        paddingHorizontal: 10,
+                        borderRadius: 20,
+                        borderWidth: 2,
+                        borderColor: colors.secondaryCard,
+                        backgroundColor: colors.card
                     }}
-                    onPress={handleStar}
                 >
-                    <FeedStarIcon
-                        color={colors.text}
-                        fillColor="yellow"
-                        starred={isStarred}
-                        size={35}
-                    />
-                </Button>
-            </View>
+                    <Text
+                        className={textStyles.h3}
+
+                    >
+                        {selectedPost?.info?.dish_name}
+                    </Text>
+                </View>
+        
+                {selectedPost?.user_sub !== user?.sub && (
+                    <>
+                        {/* star */}
+                        <Button
+                            style={{
+                                width: 50,
+                                height: 50,
+                                borderRadius: 999,
+                                justifyContent: "center",
+                                alignItems: "center",
+                            }}
+                            clearBackground
+                            onPress={handleStar}
+                        >
+                            <FeedStarIcon
+                                color={"white"}
+                                fillColor="yellow"
+                                starred={isStarred}
+                                size={35}
+                            />
+                        </Button>
+                    
+                        {/* more menu */}
+                        <ExpandingButton
+                            expanded={showMenuRow}
+                            onPress={() => setShowMenuRow(true)}
+                            expandedChildren={
+                                <View
+                                    style={{
+                                        gap: 5,
+                                        overflow: "hidden",
+                                        minWidth: 150,
+                                    }}
+                                >
+                                    <Button
+                                        onPress={() => {
+                                            setShowMenuRow(false);
+                                            openOverlay({
+                                                title: "Info",
+                                                custom: (
+                                                    <View style={{ flex: 1}}>
+                                                        <GradientHeader
+                                                            baseColor={colors.background}
+                                                        >
+                                                            <Text className={textStyles.body} style={{ color: colors.secondaryText }}>
+                                                                {`Please read the nutritional, level of difficulty and dietary specifications of ${capitalize(selectedPost?.firstName ?? "")} ${capitalize(selectedPost?.lastName ?? "")}'s ${selectedPost?.info?.dish_name}`}
+                                                            </Text>
+                                                        </GradientHeader>
+                                                        <ScrollView style={{ paddingTop: 80 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 20 }}>
+                                                            <DifficultyRender difficulty={selectedPost?.info?.dish_difficulty} dark={dark} />
+                                                            <NutritionRender nutrition={selectedPost?.nutrition ?? []} dark={dark} />
+                                                            <DietaryRender dietary={selectedPost?.dietary ?? []} dark={dark} />
+                                                        </ScrollView>
+                                                    </View>
+                                                ),
+                                            });
+                                        }}
+                                        style={{
+                                            width: "auto",
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            paddingHorizontal: 16,
+                                            paddingVertical: 12,
+                                            backgroundColor: colors.background
+                                        }}
+                                    >
+                                        <Text style={{ color: colors.text, fontSize: 16 }}>Info</Text>
+                                        <InfoIcon color={colors.text} size={18} />
+                                    </Button>
+
+                                    <Button
+                                        onPress={handleReport}
+                                        disabled={loadingReport}
+                                            style={{
+                                            width: "auto",
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            paddingHorizontal: 16,
+                                            paddingVertical: 12,
+                                            backgroundColor: colors.background
+                                        }}
+                                    >
+                                        <Text style={{ color: colors.danger, fontSize: 16 }}>Report</Text>
+                                        {loadingReport ? (
+                                            <SpinningLogoImage size={18} />
+                                        ) : (
+                                            <ReportIcon color={colors.danger} size={18} />
+                                        )}
+                                    </Button>
+                                </View>
+                            }
+                            expandedStyle={{ borderRadius: 20 }}
+                            style={{
+                                width: 50,
+                                height: 50,
+                                marginTop: showMenuRow ? 50 : 0,
+                                borderRadius: 999,
+                                justifyContent: "center",
+                                alignItems: "center",
+                            }}
+                            clearBackground
+                        >
+                            <MoreIcon color={"white"} size={18} rotate={90} />
+                        </ExpandingButton>
+                    </>
+                )}
+
+            </Animated.View>
 
             <BottomSheet
                 ref={sectionSheetRef}
                 index={0}
-                bottomInset={125}
-                style={{ zIndex: 3 }}
+                bottomInset={isChromeHidden ? 0 : BOTTOM_INSETS}
+                style={{ zIndex: 10 }}
                 snapPoints={snapPoints}
                 enableDynamicSizing={false}
                 enableContentPanningGesture
@@ -326,7 +500,12 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                     backgroundColor: colors.background, 
                     borderRadius: 30,
                 }}
-                handleComponent={() => null}
+                handleIndicatorStyle={{
+                    backgroundColor: colors.secondaryCard,
+                    width: 50,
+                    height: 8,
+                    borderRadius: 999,
+                }}
             >
                 <BottomSheetScrollView
                     nestedScrollEnabled={true}
@@ -379,14 +558,14 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                                 >
                                     <Pressable onPress={() => setReadMore((prev) => !prev)}>
                                         <Text
-                                            className={textStyles.sectionText}
+                                            className={textStyles.body}
                                             style={{ fontSize: 13, fontWeight: "500" }}
                                         >
                                             {shownDescription}
                                             {isLong && (
                                                 <Text
                                                     className={textStyles.small}
-                                                    style={{ color: colors.button, fontSize: 13, fontWeight: "700" }}
+                                                    style={{ color: colors.button, fontWeight: "700" }}
                                                 >
                                                     {readMore ? "  Show less..." : "  Read more..."}
                                                 </Text>
@@ -577,13 +756,19 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
             <BottomSheet
                 ref={messageSheetRef}
                 index={-1}
-                bottomInset={125}
-                snapPoints={[525]}
+                snapPoints={BOTTOM_SNAP_POINTS}
+                animatedIndex={messageSheetAnimatedIndex}
                 enablePanDownToClose
                 backgroundStyle={{ backgroundColor: "transparent", borderRadius: 40 }}
                 handleComponent={() => null}
             >
-                <GomealGlassView glassEffectStyle="clear" style={{ height: 520, marginHorizontal: 10, borderRadius: 50 }}>
+                <View  
+                    style={{ 
+                        flex: 1, 
+                        borderTopLeftRadius: FEED_CARD_PROFILE_RADIUS + 10,
+                        borderTopRightRadius: FEED_CARD_PROFILE_RADIUS + 10,
+                    }}
+                >
                     <View
                         style={{
                             ...StyleSheet.absoluteFillObject,
@@ -594,7 +779,7 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                     />
                     <BottomSheetView
                         style={{
-                            height: 500,
+                            height: isChromeHidden? BOTTOM_HEIGHT - NAV_SIZE : 450,
                             marginTop: 10,
                             marginHorizontal: 10,
                             overflow: "hidden",
@@ -604,12 +789,324 @@ export const CookMainScreen: React.FC<CookMainScreenProps> = ({
                         }}
                     >
                         {selectedPost && (
-                            <MessageScreen receiver_sub={selectedPost?.user_sub} onClose={() => messageSheetRef.current?.close()} />
+                            <MessageScreen receiver_sub={selectedPost?.user_sub} onClose={() => messageSheetRef.current?.close()} showBack dark={dark}/>
                         )}
                     </BottomSheetView>
-                </GomealGlassView>
+                </View>
             </BottomSheet>
 
+        </View>
+    );
+};
+
+const EmptyCookScreen = ({
+    dark,
+    chromeHidden = false,
+}: {
+    dark?: boolean;
+    chromeHidden?: boolean;
+}) => {
+    const { colors } = useTheme(dark ? "dark" : undefined);
+    const { height } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
+
+    const opacity = useRef(new AnimatedRN.Value(0.45)).current;
+
+    useEffect(() => {
+        const animation = AnimatedRN.loop(
+            AnimatedRN.sequence([
+                AnimatedRN.timing(opacity, {
+                    toValue: 0.9,
+                    duration: 700,
+                    useNativeDriver: true,
+                }),
+                AnimatedRN.timing(opacity, {
+                    toValue: 0.45,
+                    duration: 700,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+
+        animation.start();
+
+        return () => animation.stop();
+    }, []);
+
+    const bone = (
+        width: number | `${number}%`,
+        height: number,
+        radius = 8
+    ) => (
+        <AnimatedRN.View
+            style={{
+                width,
+                height,
+                borderRadius: radius,
+                backgroundColor: colors.card,
+                opacity,
+            }}
+        />
+    );
+
+    const imageHeight = height * 0.45;
+
+    return (
+        <View
+            style={{
+                flex: 1,
+                backgroundColor: colors.background,
+            }}
+        >
+            {/* Media */}
+            <View
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: imageHeight,
+                    overflow: "hidden",
+                    borderTopLeftRadius: 30,
+                    borderTopRightRadius: 30,
+                    borderWidth: chromeHidden ? 0 : 3,
+                    borderColor: colors.secondaryCard,
+                }}
+            >
+                {bone("100%", imageHeight, 0)}
+            </View>
+
+            {/* Header */}
+            <View
+                style={{
+                    position: "absolute",
+                    top: chromeHidden ? insets.top : 5,
+                    left: 15,
+                    right: 15,
+                    height: 60,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                    zIndex: 5,
+                }}
+            >
+                {bone(40, 40, 999)}
+
+                <View
+                    style={{
+                        flex: 1,
+                        alignItems: "center",
+                    }}
+                >
+                    {bone("55%", 24, 10)}
+                </View>
+
+                {bone(40, 40, 999)}
+                {bone(40, 40, 999)}
+            </View>
+
+            {/* Sheet */}
+            <View
+                style={{
+                    position: "absolute",
+                    top: imageHeight - 25,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: colors.background,
+                    borderTopLeftRadius: 30,
+                    borderTopRightRadius: 30,
+                }}
+            >
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{
+                        paddingTop: 20,
+                        paddingHorizontal: 15,
+                        paddingBottom: chromeHidden ? 30 : 150,
+                    }}
+                >
+                    {/* Handle */}
+                    <View
+                        style={{
+                            alignItems: "center",
+                            marginBottom: 20,
+                        }}
+                    >
+                        {bone(60, 5, 999)}
+                    </View>
+
+                    {/* Description */}
+                    <View>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 10,
+                                marginBottom: 15,
+                            }}
+                        >
+                            {bone(22, 22, 999)}
+                            {bone(110, 16, 6)}
+                        </View>
+
+                        <View
+                            style={{
+                                minHeight: 150,
+                                borderTopWidth: 2,
+                                borderBottomWidth: 2,
+                                borderColor: colors.secondaryCard,
+                                paddingVertical: 12,
+                            }}
+                        >
+                            <View
+                                style={{
+                                    gap: 10,
+                                    paddingHorizontal: 5,
+                                }}
+                            >
+                                {bone("95%", 12)}
+                                {bone("85%", 12)}
+                                {bone("70%", 12)}
+                            </View>
+
+                            {/* Time / Servings */}
+                            <View
+                                style={{
+                                    height: 75,
+                                    flexDirection: "row",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    gap: 20,
+                                }}
+                            >
+                                {[1, 2].map((item) => (
+                                    <View
+                                        key={item}
+                                        style={{
+                                            width: 115,
+                                            height: 60,
+                                            borderRadius: 15,
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            paddingHorizontal: 10,
+                                            gap: 10,
+                                        }}
+                                    >
+                                        {bone(40, 40, 999)}
+                                        {bone(40, 12)}
+                                    </View>
+                                ))}
+                            </View>
+
+                            {/* Profile */}
+                            <View
+                                style={{
+                                    width: "100%",
+                                    height: 75,
+                                    paddingHorizontal: 10,
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        gap: 12,
+                                    }}
+                                >
+                                    {bone(32, 32, 999)}
+
+                                    <View
+                                        style={{
+                                            flex: 1,
+                                            gap: 6,
+                                        }}
+                                    >
+                                        {bone("50%", 14)}
+                                        {bone("35%", 10)}
+                                    </View>
+
+                                    {bone(40, 40, 12)}
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Ingredients */}
+                    <View
+                        style={{
+                            minHeight: 210,
+                            borderBottomWidth: 2,
+                            borderColor: colors.secondaryCard,
+                            paddingVertical: 15,
+                            gap: 12,
+                        }}
+                    >
+                        {bone(120, 18)}
+
+                        {[1, 2, 3, 4].map((item) => (
+                            <View
+                                key={item}
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    gap: 12,
+                                }}
+                            >
+                                {bone(36, 36, 10)}
+                                {bone("65%", 12)}
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Steps */}
+                    <View
+                        style={{
+                            minHeight: 350,
+                            paddingVertical: 15,
+                            gap: 16,
+                        }}
+                    >
+                        {bone(90, 18)}
+
+                        {[1, 2, 3].map((item) => (
+                            <View
+                                key={item}
+                                style={{
+                                    gap: 8,
+                                }}
+                            >
+                                {bone("40%", 12)}
+                                {bone("95%", 60, 12)}
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Cooking Button */}
+                    <View
+                        style={{
+                            alignItems: "center",
+                            marginVertical: 20,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 150,
+                                height: 60,
+                                borderRadius: 25,
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 10,
+                            }}
+                        >
+                            {bone(20, 20, 999)}
+                            {bone(60, 14)}
+                        </View>
+                    </View>
+                </ScrollView>
+            </View>
         </View>
     );
 };

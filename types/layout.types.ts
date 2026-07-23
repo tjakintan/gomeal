@@ -1,11 +1,20 @@
 import { ReactNode } from "react";
 import { GlassEffectStyleConfig } from 'expo-glass-effect';
 import { GlassStyle } from 'expo-glass-effect';
-import { ImageSourcePropType, StyleProp, ViewStyle, ImageStyle } from "react-native";
+import { Dimensions, ImageSourcePropType, StyleProp, ViewStyle, ImageStyle } from "react-native";
+import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
+import { NAV_SIZE } from "@/sections/Navigate";
+import { ViewProps } from "react-native-svg/lib/typescript/fabric/utils";
+
+const { height } = Dimensions.get("window");
 
 export const _DEFAULT_ICON_WIDTH = 25
 export const _DEFAULT_ICON_HEIGHT = 25
 export const _DEFAULT_TAG_RADIUS = 20
+
+export const BOTTOM_HEIGHT = height - 75;
+export const BOTTOM_SNAP_POINTS = [BOTTOM_HEIGHT];
+export const BOTTOM_INSETS = DASHBOARD_HEIGHT + NAV_SIZE + 50;
 
 export const buttonCornerRadius = 10
 
@@ -23,19 +32,19 @@ export type ThemePalette = {
 
 //.Don't change order
 export const SECTION_INDEX = {
-    user: 0,
-    feed: 1,
-    post: 2,
-    leaderboard: 3,
-    settings: 4,
+  feed: 0,
+  leaderboard: 1,
+  post: 2,
+  settings: 3,
+  user: 4,
 } as const;
 
 export const INDEX_SECTION: Record<SectionIndex, Sections> = {
-    0: "user",
-    1: "feed",
-    2: "post",
-    3: "leaderboard",
-    4: "settings",
+  0: "feed",
+  1: "leaderboard",
+  2: "post",
+  3: "settings",
+  4: "user",
 };
 
 export function getPrevSectionIndex(i: SectionIndex): SectionIndex {
@@ -93,10 +102,10 @@ export type SettingsLayoutItem = {
   render: () => React.ReactNode;
 };
 
-export type GomealGlassViewProps = {
-    style?: StyleProp<ViewStyle>;
-    children: ReactNode;
-    glassEffectStyle?: GlassStyle | GlassEffectStyleConfig | undefined
+export type GomealGlassViewProps = ViewProps & {
+  children: ReactNode;
+  interactive?: boolean;
+  glassEffectStyle?: GlassStyle | GlassEffectStyleConfig;
 };
 
 export type PostSectionProps = {
