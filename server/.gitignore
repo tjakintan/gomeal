@@ -1,8 +1,15 @@
-# Contains what shouldn't be seen by you --FUCK--
-
-#
 .env
+.env.local
+.env.*.local
 
 node_modules/
 
-app/keys
+app/keys/
+*.p8
+*.pem
+
+*.log
+.DS_Store
+dist/
+build/
+*.tsbuildinfo
