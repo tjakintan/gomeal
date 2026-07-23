@@ -6,11 +6,11 @@ import fs from "fs";
 import path from "path";
 import { PushTokenPlatform, PushTokenRow } from "@/types/notification.types";
 
-const APNS_KEY_ID = "58YXF8X388";
-const APNS_TEAM_ID = "UGQD4SYSL4";
-const APNS_BUNDLE_ID = "com.gomeal.mobile";
+const APNS_KEY_ID = process.env.APNS_KEY_ID!;
+const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
+const APNS_BUNDLE_ID = process.env.APNS_BUNDLE_ID!;
 const APNS_HOST = process.env.DEV === "true" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com";
-const APNS_KEY_PATH = path.join(process.cwd(), "app/keys/AuthKey_58YXF8X388.p8");
+const APNS_KEY_PATH = path.join(process.cwd(), "app/keys/AuthKey_" + APNS_KEY_ID + ".p8");
 
 let apnsToken: { token: string; generatedAt: number } | null = null;
 
