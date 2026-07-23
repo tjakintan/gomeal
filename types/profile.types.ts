@@ -6,6 +6,8 @@ export type Profile = {
     email: string;
     age: number;
     profile_name: string;
+    bio?: string | null;
+    website?: string | null;
     firstName?: string;
     lastName?: string;
     avatar?: Avatar;
@@ -15,13 +17,19 @@ export type Profile = {
     badge: BadgeLevel;
     bread: number;
     date_joined: string;
+    tag_color?: string | null;
 };
 
 export type UpdateUserProfile = {
     profile_name?: string;
     firstName?: string;
     lastName?: string;
-    dob?: string | null;
+    dob?: string;
+    bio?: string;
+    website?: string;
+    avatar?: Avatar;
+    profile_img_url?: string | null;
+    tag_color?: string | null;
 };
 
 export type MinimumProfile = {
@@ -32,7 +40,22 @@ export type MinimumProfile = {
     firstName?: string;
     lastName?: string;
     dob?: string | null;
+    bio?: string | null;
+    website?: string | null;
+    profile_img_url?: string | null;
+     tag_color?: string | null;
 };
+
+export type UltraMinimumProfile = {
+    sub: string;
+    badge: BadgeLevel;
+    avatar: Avatar;
+    profile_name: string;
+    firstName?: string;
+    lastName?: string;
+    profile_img_url?: string | null;
+};
+
 
 export type ProfileStats = {
     num_posts: number;

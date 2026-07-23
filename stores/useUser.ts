@@ -8,10 +8,8 @@ type UserStore = {
   setUser: (user: User) => void;
   clearUser: () => void;
   updateUser: (fields: Partial<User>) => void;
-  setAvatar: (config: Avatar) => void;
   updateAvatar: (fields: Partial<Avatar>) => void;
   updateTrait: (trait: keyof Omit<Avatar, "style" | "seed">, value: string | number | undefined) => void;
-  clearAvatar: () => void;
 };
 
 export const useUser = create<UserStore>()(
@@ -21,18 +19,35 @@ export const useUser = create<UserStore>()(
       setUser: (user) => set({ user }),
       clearUser: () => set({ user: null }),
       updateUser: (fields) => set((s) => s.user ? { user: { ...s.user, ...fields } } : s),
-      setAvatar: (config) => set((s) => s.user ? { user: { ...s.user, avatar: config } } : s),
       updateAvatar: (fields) =>
-        set((s) => s.user?.avatar
-          ? { user: { ...s.user, avatar: { ...s.user.avatar, ...fields } } }
-          : s
+        set((s) =>
+          s.user?.avatar
+            ? {
+                user: {
+                  ...s.user,
+                  avatar: {
+                    ...s.user.avatar,
+                    ...fields,
+                  },
+                },
+              }
+            : s
         ),
+
       updateTrait: (trait, value) =>
-        set((s) => s.user?.avatar
-          ? { user: { ...s.user, avatar: { ...s.user.avatar, [trait]: value } } }
-          : s
+        set((s) =>
+          s.user?.avatar
+            ? {
+                user: {
+                  ...s.user,
+                  avatar: {
+                    ...s.user.avatar,
+                    [trait]: value,
+                  },
+                },
+              }
+            : s
         ),
-      clearAvatar: () =>  set((s) => s.user ? { user: { ...s.user, avatar: undefined } } : s),
     }),
     {
       name: "user",

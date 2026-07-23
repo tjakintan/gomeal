@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { View, Text } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { View, Text, ViewStyle, Animated } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useProfile } from "@/stores/useProfile";
@@ -7,13 +7,14 @@ import { SectionHeader } from "@/components/SectionComponent";
 import { BadgeRender } from "@/dashboard/Avatar";
 import { MinTag } from "@/tags/MinTag";
 import { MinimumFeedCard, UserActionedPostsType } from "@/types/feed.types";
-import { EggsIcon, LikeIcon, TagIcon, CookIcon, ShareIcon, GridIcon, LikeOutlineIcon, StarIcon, ShareOutlineIcon, InfoIcon, DeleteIcon } from "@/icons/Icon";
+import { EggsIcon, LikeIcon, TagIcon, CookIcon, ShareIcon, GridIcon, LikeOutlineIcon, StarIcon, ShareOutlineIcon, DeleteIcon, StatsIcon, PostIcon } from "@/icons/Icon";
 import { FeedLoveIcon, FeedStarIcon } from "@/icons/feed_icon";
 import { Button } from "@/components/ButtonComponent";
 import { formatCount } from "@/utils/time";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { useCook } from "@/stores/useCook";
 import { useReward } from "@/dashboard/store/useReward";
+import { BOTTOM_INSETS } from "@/types";
 
 type ProfileItem = {
     label: string;
@@ -91,44 +92,43 @@ export function Profile() {
     ];
 
     return (
-        <ScrollView
+        <View
             style={{ flex: 1, width: "100%" }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ gap: 20, paddingVertical: 10 }}
         >
-            <View
-                style={{ 
-                    borderRadius: 30,  
-                    padding: 10, 
-                    gap: 10,
-                }}
-                className="w-full"
-            >
-                <SectionHeader 
-                    title="Stats" 
-                    titleClassName={textStyles.h3}
-                    showBackground
-                    leftIcon={<InfoIcon size={25} color={colors.text} />}
-                />
+            <View style={{ flex: 1}}>
+                <View
+                    style={{ 
+                        borderRadius: 30,  
+                        gap: 10,
+                    }}
+                    className="w-full"
+                >
+                    <SectionHeader 
+                        title="Stats" 
+                        titleClassName={textStyles.h3}
+                        subtitle="Stats you've accumulated while using gomeal"
+                        showDivider
+                        leftIcon={<StatsIcon size={25} color={colors.text} />}
+                    />
 
-                <View className="flex-row gap-5">
-                    {statItems.map((column, columnIndex) => (
-                        <View
-                            key={`stats-column-${columnIndex}`}
-                            className={`flex-col gap-2`}
-                        >
-                            {column.map((item) => (
-                                <DetailPill key={item.label} {...item} />
-                            ))}
-                        </View>
-                    ))}
+                    <View style={{ padding: 10}} className="flex-row gap-5">
+                        {statItems.map((column, columnIndex) => (
+                            <View
+                                key={`stats-column-${columnIndex}`}
+                                className={`flex-col gap-2`}
+                            >
+                                {column.map((item) => (
+                                    <DetailPill key={item.label} {...item} />
+                                ))}
+                            </View>
+                        ))}
+                    </View>
+
                 </View>
 
+                <ProfilePostSection />
             </View>
-
-            <ProfilePostSection />
-
-        </ScrollView>
+        </View>
     );
 };
 
@@ -151,11 +151,16 @@ function ProfilePostSection() {
         <View
             style={{
                 minHeight: 200,
-                margin: 5,
-                borderTopWidth: 2,
-                borderColor: colors.secondaryCard,
             }}
         >
+            <SectionHeader 
+                title="Posts" 
+                titleClassName={textStyles.h3}
+                subtitle="Posts that you've been interacting with, swipe down to refresh. To remove a post click the trash icon"
+                showDivider
+                leftIcon={<PostIcon size={25} color={colors.text} />}
+            />
+
             <View
                 style={{
                     flexDirection: "row",
@@ -296,55 +301,11 @@ function ProfilePostSection() {
                                                 height: 150,
                                             }}
                                             containerStyle={{
-                                                borderRadius: active === "post_made" ? 10 : 25
+                                                borderRadius: 15
                                             }}
                                         />
 
                                     </Button>
-
-                                    {active === "post_made" && (
-                                        <View
-                                            style={{
-                                                gap: 2,
-                                                flexDirection: "column",
-                                                justifyContent: "space-between"
-                                            }}
-                                            className="w-full"
-                                        >
-
-                                            <View style={{ marginHorizontal: 5 }} className="flex-row items-end gap-4">
-                                                <Text className={textStyles.bodyMedium}>
-                                                    Cooks:
-                                                </Text>
-                                                <Text className={textStyles.sectionText}>
-                                                    {formatCount(post?.action_counts?.post_cook)}
-                                                </Text>
-                                            </View>
-
-                                            <View style={{ height: 1, width: "80%", alignSelf: "center", backgroundColor: colors.background }} />
-
-                                            <View style={{ marginHorizontal: 5 }} className="flex-row items-end gap-4">
-                                                <Text className={textStyles.bodyMedium}>
-                                                    Likes:
-                                                </Text>
-                                                <Text className={textStyles.sectionText}>
-                                                    {formatCount(post?.action_counts?.post_love)}
-                                                </Text>
-                                            </View>
-
-                                            <View style={{ height: 1, width: "80%", alignSelf: "center", backgroundColor: colors.background }} />
-
-                                            <View style={{ marginHorizontal: 5 }} className="flex-row items-end gap-4">
-                                                <Text className={textStyles.bodyMedium}>
-                                                    Star:
-                                                </Text>
-                                                <Text className={textStyles.sectionText}>
-                                                    {formatCount(post?.action_counts?.post_star)}
-                                                </Text>
-                                            </View>
-
-                                        </View>
-                                    )}
 
                                 </View>
                             );
@@ -370,3 +331,4 @@ function ProfilePostSection() {
         </View>
     );
 };
+

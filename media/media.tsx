@@ -146,35 +146,23 @@ export const Media: React.FC<FormatMediaProps> = ({
                     pointerEvents="box-none"
                 >
 
-                    {muteControl === "center" && (
-                        <>
-                            {manuallyPaused && (
-                                <Pressable
-                                    onPress={handleVideoTap}
-                                    style={{
-                                        position: "absolute",
-                                        top: "50%",
-                                        left: "50%",
-                                        transform: [
-                                            { translateX: -(iconSize / 2) },
-                                            { translateY: -(iconSize / 2) },
-                                        ],
-                                        height: iconSize,
-                                        width: iconSize,
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <VideoPauseIcon color={colors.text} size={iconSize} />
-                                </Pressable>
-                            )}
-
+                    {muteControl === "center" && manuallyPaused && (
+                        <View
+                            style={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: [
+                                    { translateX: -(iconSize / 2) },
+                                    { translateY: -(iconSize) },   
+                                ],
+                                alignItems: "center",
+                                gap: 8,
+                            }}
+                        >
                             <Pressable
                                 onPress={handleVideoMuteToggle}
                                 style={{
-                                    position: "absolute",
-                                    top: 12,
-                                    right: 12,
                                     height: iconSize,
                                     width: iconSize,
                                     alignItems: "center",
@@ -187,7 +175,21 @@ export const Media: React.FC<FormatMediaProps> = ({
                                     <VideoMuteIcon color={colors.text} size={iconSize / 2} />
                                 )}
                             </Pressable>
-                        </>
+
+                            <Pressable
+                                onPress={handleVideoTap}
+                                style={{
+                                    height: iconSize,
+                                    width: iconSize,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    opacity: manuallyPaused ? 1 : 0,  
+                                    pointerEvents: manuallyPaused ? "auto" : "none",
+                                }}
+                            >
+                                <VideoPauseIcon color={colors.text} size={iconSize} />
+                            </Pressable>
+                        </View>
                     )}
 
                     {muteControl === "row" && (

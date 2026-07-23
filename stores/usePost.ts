@@ -11,7 +11,7 @@ import {
   Unit,
 } from "@/types/food.types";
 import { uploadMediaToS3, submitPost } from "@/api/post.api";
-import * as FileSystem from 'expo-file-system';
+import { useProfile } from "./useProfile";
 
 const normalizeIngredientName = (name: string) => {
   return name

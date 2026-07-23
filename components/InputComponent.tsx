@@ -113,15 +113,17 @@ export const Input = forwardRef<TextInput, InputProps>(({
   return (
     <View style={{ width: "100%" }}>
       
-      {label && (
-        <View className="items-start justify-center pb-2">
+     {label && (
+        <View className="items-start justify-center">
           <Text
             className={textStyles.caption}
             style={{
               paddingHorizontal: 10,
               paddingVertical: 5,
+              marginBottom: 3,
               backgroundColor: colors.secondaryCard,
               borderRadius: 15,
+              color: colors.danger,
             }}
           >
             {label}
@@ -136,15 +138,12 @@ export const Input = forwardRef<TextInput, InputProps>(({
           alignItems: multiline ? "flex-start" : "center",
           justifyContent: "center",
           opacity: disabled ? 0.5 : 1,
-          paddingHorizontal: 3,
-          borderColor: colors.secondaryCard,
-          borderRadius: 15,
           gap: 10
         }}
       >
 
         {leftIcon && (
-          <Button onPress={onIconPress}>{leftIcon}</Button>
+          <Button onPress={onIconPress} clearBackground>{leftIcon}</Button>
         )}
 
         <FocusBox
@@ -197,7 +196,7 @@ export const Input = forwardRef<TextInput, InputProps>(({
         </FocusBox>
 
         {rightIcon && (
-          <Button onPress={onIconPress}>{rightIcon}</Button>
+          <Button onPress={onIconPress} clearBackground>{rightIcon}</Button>
         )}
 
         {children}
@@ -325,6 +324,7 @@ export const DigitsInput: React.FC<DigitsInputProps> = ({
             style={{
               paddingHorizontal: 10,
               paddingVertical: 5,
+              marginBottom: 3,
               backgroundColor: colors.secondaryCard,
               borderRadius: 15,
               color: colors.danger,
@@ -607,6 +607,7 @@ export const DobInput: React.FC<DobInputProps> = ({
             style={{
               paddingHorizontal: 10,
               paddingVertical: 5,
+              marginBottom: 3,
               backgroundColor: colors.secondaryCard,
               borderRadius: 15,
               color: colors.danger,

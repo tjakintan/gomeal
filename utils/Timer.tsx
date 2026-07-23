@@ -70,7 +70,7 @@ const PickerColumn: React.FC<PickerColumnProps> = ({ max, value, label, onChange
     };
 
     const snapToNearest = (y: number, vy = 0) => {
-        // gs.vy is px/ms — scale for natural flick distance
+        // gs.vy is px/ms — scales for natural flick distance
         const flicked = y + vy * 120;
         const idx     = Math.round(-flicked / ITEM_H);
         const clamped = Math.max(0, Math.min(maxRef.current - 1, idx));

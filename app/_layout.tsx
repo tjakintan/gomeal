@@ -13,6 +13,7 @@ import { useSearch } from "@/stores/useSearch";
 import BootScreen from "./boot";
 import { startCacheSweep, stopCacheSweep, sweepStaleCaches } from "@/stores/cache";
 import { pauseSocket, resumeSocket } from "@/api/socket";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 const withTimeout = <T,>(
   promise: Promise<T>,
@@ -157,12 +158,15 @@ function LayoutContent() {
 
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <FontProvider>
-        <ThemeProvider>
-          <LayoutContent />
-        </ThemeProvider>
-      </FontProvider>
-    </QueryClientProvider>
+    <KeyboardProvider>
+      
+        <QueryClientProvider client={queryClient}>
+          <FontProvider>
+            <ThemeProvider>
+                <LayoutContent />
+            </ThemeProvider>
+          </FontProvider>
+        </QueryClientProvider>
+    </KeyboardProvider>
   );
 }

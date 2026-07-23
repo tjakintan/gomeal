@@ -56,3 +56,25 @@ export const emitTypingStart = (conversation_id: number): void => {
 export const emitTypingStop = (conversation_id: number): void => {
     socketEmit("typing-stop", { conversation_id });
 };
+
+export const deleteConversationApi = async (conversation_id: number): Promise<boolean> => {
+    if (!conversation_id) return false;
+
+    const res = await socketEmit<{ success: boolean }>("delete-conversation", { conversation_id });
+    return res?.success ?? false;
+};
+
+export const deleteMessageApi = async (
+    message_id: number,
+    conversation_id: number
+): Promise<boolean> => {
+
+    if (!message_id || !conversation_id) return false;
+
+    const res = await socketEmit<{ success: boolean }>(
+        "delete-message",
+        { message_id, conversation_id }
+    );
+
+    return res?.success ?? false;
+};

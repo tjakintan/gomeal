@@ -45,6 +45,21 @@ export const DEFAULT_AVATAR = {
     hairProbability: 0,
 };
 
+export const DEFAULT_AVATAR_BASE: Avatar = {
+    style: "toon-head",
+    seed: "default-seed",
+    hair: DEFAULT_AVATAR.hair[2],
+    hairColor: DEFAULT_AVATAR.hairColor[0],
+    eyes: DEFAULT_AVATAR.eyes[3],
+    mouth: DEFAULT_AVATAR.mouth[4],
+    skinColor: DEFAULT_AVATAR.skinColor[1],
+    clothes: DEFAULT_AVATAR.clothes[3],
+    clothesColor: DEFAULT_AVATAR.clothesColor[0],
+    beard: DEFAULT_AVATAR.beard[0],
+    beardProbability: DEFAULT_AVATAR.beardProbability,
+    hairProbability: DEFAULT_AVATAR.hairProbability,
+};
+
 export const useAvatar = (initialSeed: string) => {
     
     const [avatar, setAvatar] = useState<Avatar>({
@@ -52,9 +67,9 @@ export const useAvatar = (initialSeed: string) => {
         seed: initialSeed,
         hair: DEFAULT_AVATAR.hair[2],
         hairColor: DEFAULT_AVATAR.hairColor[0],
-        eyes: DEFAULT_AVATAR.eyes[1],
+        eyes: DEFAULT_AVATAR.eyes[3],
         mouth: DEFAULT_AVATAR.mouth[4],
-        skinColor: DEFAULT_AVATAR.skinColor[0],
+        skinColor: DEFAULT_AVATAR.skinColor[1],
         clothes: DEFAULT_AVATAR.clothes[3],
         clothesColor: DEFAULT_AVATAR.clothesColor[0],
         beard: DEFAULT_AVATAR.beard[0],
@@ -72,19 +87,21 @@ export const useAvatar = (initialSeed: string) => {
         }));
     };
 
-    const getSvg = () => {
+    const getSvg = (override?: Partial<Avatar>, baseAvatar: Avatar = avatar) => {
+        const previewAvatar = { ...baseAvatar, ...override };
+
         return createAvatar(toonHead, {
-            seed: avatar.seed,
-            hair: avatar.hair ? [avatar.hair as Hair] : DEFAULT_AVATAR.hair,
-            hairColor: avatar.hairColor ? [avatar.hairColor as HairColor] : DEFAULT_AVATAR.hairColor,
-            eyes: avatar.eyes ? [avatar.eyes as Eyes] : DEFAULT_AVATAR.eyes,
-            mouth: avatar.mouth ? [avatar.mouth as Mouth] : DEFAULT_AVATAR.mouth,
-            skinColor: avatar.skinColor ? [avatar.skinColor as SkinColor] : DEFAULT_AVATAR.skinColor,
-            clothes: avatar.clothes ? [avatar.clothes as Clothes] : DEFAULT_AVATAR.clothes,
-            clothesColor: avatar.clothesColor ? [avatar.clothesColor as ClothesColor] : DEFAULT_AVATAR.clothesColor,
-            beard: avatar.beard ? [avatar.beard as Beard] : DEFAULT_AVATAR.beard,
-            beardProbability: avatar.beardProbability ?? DEFAULT_AVATAR.beardProbability,
-            hairProbability: avatar.hairProbability ?? DEFAULT_AVATAR.hairProbability,
+            seed: previewAvatar.seed,
+            hair: previewAvatar.hair ? [previewAvatar.hair as Hair] : DEFAULT_AVATAR.hair,
+            hairColor: previewAvatar.hairColor ? [previewAvatar.hairColor as HairColor] : DEFAULT_AVATAR.hairColor,
+            eyes: previewAvatar.eyes ? [previewAvatar.eyes as Eyes] : DEFAULT_AVATAR.eyes,
+            mouth: previewAvatar.mouth ? [previewAvatar.mouth as Mouth] : DEFAULT_AVATAR.mouth,
+            skinColor: previewAvatar.skinColor ? [previewAvatar.skinColor as SkinColor] : DEFAULT_AVATAR.skinColor,
+            clothes: previewAvatar.clothes ? [previewAvatar.clothes as Clothes] : DEFAULT_AVATAR.clothes,
+            clothesColor: previewAvatar.clothesColor ? [previewAvatar.clothesColor as ClothesColor] : DEFAULT_AVATAR.clothesColor,
+            beard: previewAvatar.beard ? [previewAvatar.beard as Beard] : DEFAULT_AVATAR.beard,
+            beardProbability: previewAvatar.beardProbability ?? DEFAULT_AVATAR.beardProbability,
+            hairProbability: previewAvatar.hairProbability ?? DEFAULT_AVATAR.hairProbability,
             rearHairProbability: 0,
         });
     };

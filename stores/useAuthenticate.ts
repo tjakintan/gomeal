@@ -334,10 +334,7 @@ export const useOnboarding = create<OnboardingState>((set, get) => ({
             });
 
             const personalStep = ONBOARD_USER_SECTIONS.indexOf("Personal");
-
-            set({
-                step: personalStep >= 0 ? personalStep : 1,
-            });
+            set({ step: personalStep >= 0 ? personalStep : 1 });
 
             return true;
         } catch (err) {

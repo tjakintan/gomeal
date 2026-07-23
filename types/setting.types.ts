@@ -1,4 +1,3 @@
-import { NotificationSettings as NotificationSettingsType } from "@/notifications/notification.types";
 import { DietaryData } from "./index"
 
 export const ACCENT_COLORS = {
@@ -25,11 +24,26 @@ export type FoodPreferences = {
 
 // Feed Controls
 export type FeedControls = {
-    autoPlayVideos: boolean
+    autoPlayVideos: boolean;
+    allowFeedColors: boolean
 }
 
 // Notificatioations boolean controls (off | on)
-export type NotificationSettings = NotificationSettingsType;
+export type NotificationSettings = {
+    likes: boolean;
+    messages: boolean;
+    cook: boolean;
+    cookingReminderTime: string | null;
+    timezone: string;
+};
+
+export const defaultNotificationSettings: NotificationSettings = {
+    likes: true,
+    messages: true,
+    cook: true,
+    cookingReminderTime: "08:00",
+    timezone: "UTC",
+};
 
 // Application Settings
 export type AppSettings = {

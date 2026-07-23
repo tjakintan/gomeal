@@ -1,4 +1,4 @@
-import { MinimumProfile } from "./profile.types";
+import { UltraMinimumProfile } from "./profile.types";
 
 export const CONVERSATION_CACHE_TTL_MS = 10_000;
 
@@ -17,7 +17,7 @@ export interface Conversation {
 
 export interface InboxConversation {
     conversation: DirectConversation;
-    other_user: MinimumProfile;
+    other_user: UltraMinimumProfile;
     last_message?: Message;
     unread_count: number;
 };

@@ -1,6 +1,6 @@
 import { Input } from "@/components/InputComponent";
 import { SectionHeader } from "@/components/SectionComponent";
-import { SearchIcon } from "@/icons/Icon";
+import { MoreIcon, SearchIcon, ShareHeaderIcon } from "@/icons/Icon";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useReel } from "@/stores/useReel";
 import { SpinningLogoImage } from "@/utils/Logo";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ButtonComponent";
 import { useSearch } from "@/stores/useSearch";
 import { AvatarRender } from "@/dashboard/Avatar";
 import { useMessage } from "@/stores/useMessage";
-import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
+import { Share } from "react-native";
 import { useAvatarMood } from "@/dashboard/store/useAvatar";
 
 const FeedShare: React.FC<{post_id: number}> = ({ post_id }) => {
@@ -64,8 +64,29 @@ const FeedShare: React.FC<{post_id: number}> = ({ post_id }) => {
         const url = `https://www.snapchat.com/share?link=${encodeURIComponent(shareUrl)}`;
         await Linking.openURL(url);
     };
+    const shareMore = async () => {
+        try {
+            const result = await Share.share({
+                message: `Check this out on GoMeal: ${shareUrl}`,
+                url: shareUrl, 
+                title: "Share GoMeal Post",
+            });
+
+            if (result.action === Share.sharedAction) {
+                updateCounts(post_id, "post_share", 1);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const shareActions = [
+        {
+            key: "more",
+            label: "More",
+            icon: <MoreIcon size={28} color={colors.text}/>,
+            onPress: shareMore,
+        },
         {
             key: "copy",
             label: "Copy",
@@ -80,6 +101,7 @@ const FeedShare: React.FC<{post_id: number}> = ({ post_id }) => {
             icon: <SmsIcon  size={28} />,
             onPress: shareSMS,
         },
+        
         {
             key: "whatsapp",
             label: "WhatsApp",
@@ -112,16 +134,24 @@ const FeedShare: React.FC<{post_id: number}> = ({ post_id }) => {
     }, [search])
 
     return (
-        <View style={{...StyleSheet.absoluteFillObject }}>
+        <View style={{...StyleSheet.absoluteFillObject, }}>
 
-            <View style={{ paddingHorizontal: 10, }}>
+            <View style={{ }}>
 
                 <SectionHeader
                     title="share"
                     titleStyle={{ color: colors.text}}
+                    titleClassName={textStyles.h3}
+                    leftIcon={<ShareHeaderIcon color={colors.button} />}
+                    dark
                 />
 
-                <View className="">
+                <View 
+                    style={{
+                        paddingHorizontal: 15,
+                        paddingTop: 5,
+                    }}
+                >
                     <Input
                         bottomSheet
                         multiline={false}

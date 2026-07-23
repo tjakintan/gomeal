@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
 import Svg, { Path, Line } from "react-native-svg";
 import { Button } from "@/components/ButtonComponent";
-import { View, Text, FlatList, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, FlatList, Image, Pressable, StyleSheet, Linking } from "react-native";
 import { MediaType, PostSectionInfoProps } from "@/types";
 import * as ImagePicker from "expo-image-picker";
 import { usePost } from "@/stores/usePost";
@@ -14,6 +14,11 @@ import * as MediaLibrary from "expo-media-library";
 import { SectionHeader } from "@/components/SectionComponent";
 import { Media } from "@/media/media";
 import { Camera } from "expo-camera";
+import { SpinningLogoImage } from "@/utils/Logo";
+import { useOverlay } from "@/stores/useOverlay";
+import PermissionContent from "@/components/PermissionComponent";
+
+
 
 const DishMedia: React.FC<PostSectionInfoProps> = ({
   isFocused,
@@ -25,9 +30,10 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
 }) => {
 
     const { colors } = useTheme("dark");
+    const { openOverlay, closeOverlay} = useOverlay();
+
     const { info, setMedia, } = usePost();
     const [uri, setUri] = useState<{ uri: string; type: MediaType } | null>(null);
-    const [cameraPermission, setCameraPermission] = useState<"granted" | "denied" | "pending">("pending");
 
     type AssetWithLocalUri = MediaLibrary.Asset & { localUri: string };
     const [cameraRollMedia, setCameraRollMedia] = useState<AssetWithLocalUri[]>([]);
@@ -64,20 +70,61 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
         }
     };
 
-    const openCamera = async () => {
-        const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    //----- camera ----------------------------
+    const requestCameraPermission = async () => {
+    const cameraPermission = await ImagePicker.getCameraPermissionsAsync();
+    const microphonePermission = await Camera.getMicrophonePermissionsAsync();
 
-        if (cameraPermission.status !== "granted") {
-            return;
-        }
+    if (cameraPermission.granted && microphonePermission.granted) {
+        await openCamera();
+        return;
+    }
 
-        if (mediaSource !== "step_image") {
-            const micPermission = await Camera.requestMicrophonePermissionsAsync();
-
-            if (micPermission.status !== "granted") {
-                return;
+    openOverlay({
+        custom: (
+        <PermissionContent
+            title="Allow GoMeal to access your camera & microphone"
+            description={
+            cameraPermission.canAskAgain && microphonePermission.canAskAgain
+                ? "Camera access lets you take meal photos and record cooking videos. Microphone access lets your videos include audio. You can change these permissions later in Settings."
+                : "Camera and/or microphone access has been disabled. Please enable Camera and Microphone access for GoMeal in Settings."
             }
-        }
+            continueText={
+            cameraPermission.canAskAgain && microphonePermission.canAskAgain
+                ? "Continue"
+                : "Open Settings"
+            }
+            onContinue={async () => {
+            if (
+                cameraPermission.canAskAgain &&
+                microphonePermission.canAskAgain
+            ) {
+                const cameraResult =
+                await ImagePicker.requestCameraPermissionsAsync();
+
+                const microphoneResult =
+                await Camera.requestMicrophonePermissionsAsync();
+
+                if (
+                !cameraResult.granted ||
+                !microphoneResult.granted
+                ) {
+                return;
+                }
+
+                closeOverlay();
+                await openCamera();
+            } else {
+                closeOverlay();
+                Linking.openSettings();
+            }
+            }}
+        />
+        ),
+    });
+    };
+
+    const openCamera = async () => {
 
         const result = await ImagePicker.launchCameraAsync({
             mediaTypes: mediaSource === "step_image"
@@ -93,15 +140,52 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
                 uri: result.assets[0].uri,
                 type: result.assets[0].type === "video" ? "video" : "image",
             });
+
+            fetchLastThree()
         }
     };
 
-    const openGallery = async () => {
-        const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    //----- gallery ----------------------------
+    const requestGalleryPermission = async () => {
 
-        if (mediaPermission.status !== "granted") {
+        const permission = await ImagePicker.getMediaLibraryPermissionsAsync();
+
+        if (permission.granted) {
+            await openGallery();
             return;
         }
+
+        openOverlay({
+            custom: (
+                <PermissionContent
+                    title="Allow GoMeal to access your photos"
+                    description={
+                        permission.canAskAgain
+                            ? "Photo Library access lets you choose meal photos and cooking videos to share. You can change this access later in Settings."
+                            : "Photo Library access has been disabled. Enable Photos access for GoMeal in Settings to choose meal photos and cooking videos."
+                    }
+                    continueText={
+                        permission.canAskAgain ? "Continue" : "Open Settings"
+                    }
+                    onContinue={async () => {
+
+                        if (permission.canAskAgain) {
+
+                            const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+                            if (!result.granted) return;
+                            await openGallery();
+                        } else {
+                            Linking.openSettings();
+                        }
+                        closeOverlay();
+                    }}
+                />
+            ),
+        });
+    };
+
+    const openGallery = async () => {
 
         await fetchLastThree();
 
@@ -125,6 +209,12 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
     useEffect(() => {
         fetchLastThree();
     }, []);
+
+    useEffect(() => {
+        if (isFocused) {
+            fetchLastThree();
+        }
+    }, [isFocused]);
 
     useEffect(() => {
         if (uri) {
@@ -172,7 +262,7 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
                                 borderWidth: 1, 
                                 justifyContent:"center"
                             }} 
-                            onPress={openCamera}
+                            onPress={requestCameraPermission}
                         >
                             {info.dish_media_url && (
                                 <Media
@@ -246,7 +336,7 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
                                 </Pressable>
                             ))}
 
-                            <Button onPress={openGallery} style={{height: 90, width: 90, borderRadius: 0, paddingLeft: 5}}>
+                            <Button onPress={requestGalleryPermission} style={{height: 90, width: 90, borderRadius: 0, paddingLeft: 5}}>
                                 <GalleryIcon color={colors.text} size={35}/>
                             </Button>
                             

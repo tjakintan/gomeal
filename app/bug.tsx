@@ -8,10 +8,11 @@ import { useTheme } from "@/provider/ThemeProvider";
 import { useUser } from "@/stores/useUser";
 import { Input } from "@/components/InputComponent";
 import { Button } from "@/components/ButtonComponent";
-import GomealGlassView from "@/components/GlassComponent";
 import { apiFetch } from "@/api/api";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { XIcon } from "@/icons/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 type Options = {
     enabled?: boolean;
@@ -19,7 +20,6 @@ type Options = {
 };
 
 type BugReportScreenProps = {
-    visible: boolean;
     section: string;
     dark: boolean;
     onClose: () => void;
@@ -110,27 +110,16 @@ export function useActivateBugReport({ enabled = true, onShake }: Options) {
 }
 
 export const BugReportScreen: React.FC<BugReportScreenProps> = ({
-    visible,
     section,
     dark,
     onClose,
 }) => {
 
-    const sheetRef = useRef<BottomSheet>(null);
+    const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
 
     const [message, setMessage] = useState("");
     const [sending, setSending] = useState(false);
-
-    useEffect(() => {
-        if (visible) {
-            requestAnimationFrame(() => {
-                sheetRef.current?.expand();
-            });
-        } else {
-            sheetRef.current?.close();
-        }
-    }, [visible]);
 
     const closeBugReport = () => {
         if (sending) return;
@@ -162,191 +151,123 @@ export const BugReportScreen: React.FC<BugReportScreenProps> = ({
     };
 
     return (
-        <BottomSheet
-            ref={sheetRef}
-            index={-1}
-            snapPoints={[425]}
-            enableDynamicSizing={false}
-            enablePanDownToClose={false}
-            enableContentPanningGesture={false}
-            enableHandlePanningGesture={false}
-            keyboardBehavior="interactive"
-            keyboardBlurBehavior="restore"
-            android_keyboardInputMode="adjustResize"
-            onClose={closeBugReport}
-            backgroundStyle={{
-                backgroundColor: "transparent",
-                borderRadius: BUG_REPORT_RADIUS + 10,
+        <KeyboardAwareScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+                flexGrow: 1,
+                gap: 10,
+                justifyContent: "center",
+                paddingBottom: insets.bottom,
             }}
-            handleComponent={() => null}
-            containerStyle={{
-                zIndex: 1000,
-                elevation: 1000,
-            }}
+            extraKeyboardSpace={0}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
         >
+    
+            {/* Category */}
+            <View style={{ gap: 8, width: "100%" }}>
+                <Text
+                    className={textStyles.bodyMedium}
+                    style={{ color: colors.text }}
+                >
+                    Support Category
+                </Text>
 
-            <GomealGlassView
-                glassEffectStyle="clear"
-                style={{
-                    height: 405,
-                    marginHorizontal: 5,
-                    borderRadius: BUG_REPORT_RADIUS + 10,
-                }}
-            >
                 <View
                     style={{
-                        ...StyleSheet.absoluteFillObject,
-                        opacity: 0.85,
+                        height: 44,
+                        borderRadius: 12,
+                        paddingHorizontal: 14,
+                        justifyContent: "center",
                         backgroundColor: colors.secondaryCard,
-                        borderRadius: BUG_REPORT_RADIUS + 10,
-                    }}
-                />
-
-                <BottomSheetView
-                    style={{
-                        height: 385,
-                        marginTop: 10,
-                        marginHorizontal: 10,
-                        padding: 16,
-                        gap: 16,
-                        overflow: "hidden",
-                        alignSelf: "center",
-                        backgroundColor: colors.background,
-                        borderRadius: BUG_REPORT_RADIUS,
                     }}
                 >
-                    <View
-                        style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        }}
+                    <Text
+                        className={textStyles.caption}
+                        style={{ color: colors.text }}
                     >
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                            <View
-                                style={{
-                                    width: 34,
-                                    height: 34,
-                                    borderRadius: 12,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: colors.secondaryCard,
-                                }}
-                            >
-                                <MaterialCommunityIcons
-                                    name="bug-outline"
-                                    size={18}
-                                    color={colors.text}
-                                />
-                            </View>
+                        {section || "Bug Report"}
+                    </Text>
+                </View>
+            </View>
 
-                            <Text className={textStyles.h3}>
-                                Bug Report
-                            </Text>
-                        </View>
+            {/* Description */}
+            <View style={{  width :"100%", gap: 8 }}>
+                <Text
+                    className={textStyles.bodyMedium}
+                    style={{ color: colors.text }}
+                >
+                    Bug Description
+                </Text>
 
-                        <Button background onPress={closeBugReport}>
-                            <XIcon color={colors.text} />
-                        </Button>
+                <Input
+                    multiline
+                    value={message}
+                    onChangeText={setMessage}
+                    placeholder="Describe what happened..."
+                    style={{
+                        flex: 1,
+                        textAlignVertical: "top",
+                        backgroundColor: colors.secondaryCard,
+                    }}
+                    containerStyle={{
+                        height: 150
+                    }}
+                />
+            </View>
 
-                    </View>
+            {/* Footer */}
+            <View
+                style={{
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 12,
+                    width: "100%",
+                }}
+            >
 
-                    <View style={{ gap: 8 }}>
-                        <Text className={textStyles.bodyMedium} style={{ color: colors.text }}>
-                            Support Category
-                        </Text>
-
-                        <View
-                            style={{
-                                height: 42,
-                                paddingHorizontal: 12,
-                                borderRadius: 12,
-                                backgroundColor: colors.secondaryCard,
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                            }}
+                <Button
+                    onPress={submitBugReport}
+                    disabled={sending || !message.trim()}
+                    background={!sending}
+                    style={{
+                        width: 200,
+                        height: 60,
+                        opacity: sending || !message.trim() ? 0.45 : 1,
+                    }}
+                >
+                    {sending ? (
+                        <SpinningLogoImage size={30} />
+                    ) : (
+                        <Text
+                            className={textStyles.h3}
+                            style={{ color: colors.text }}
                         >
-                            <Text className={textStyles.caption} style={{ color: colors.text }}>
-                                {section || "Bug report"}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={{ gap: 8, flex: 1 }}>
-                        <Text className={textStyles.bodyMedium} style={{ color: colors.text }}>
-                            Bug Description
+                            Submit
                         </Text>
+                    )}
+                </Button>
 
-                        <Input
-                            bottomSheet
-                            multiline
-                            value={message}
-                            onChangeText={setMessage}
-                            placeholder="What went wrong?"
-                            style={{
-                                minHeight: 98,
-                                maxHeight: 120,
-                                backgroundColor: colors.secondaryCard
-                            }}
-                        />
-                    </View>
-
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 12,
-                            width: "100%",
-                        }}
+                <Button
+                    onPress={closeBugReport}
+                    style={{
+                        width: 200,
+                        height: 55,
+                        backgroundColor: colors.danger,
+                    }}
+                    background
+                >
+                    <Text
+                        className={textStyles.h3}
+                        style={{ color: colors.text }}
                     >
-                        <Button
-                            onPress={closeBugReport}
-                            style={{
-                                height: 42,
-                                paddingHorizontal: 18,
-                                borderRadius: 12,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                backgroundColor: colors.secondaryCard,
-                            }}
-                        >
-                            <Text className={textStyles.caption} style={{ color: colors.text }}>
-                                Cancel
-                            </Text>
-                        </Button>
+                        Cancel
+                    </Text>
+                </Button>
 
-                        <View style={{ flex: 1 }}>
-                            <Button
-                                onPress={submitBugReport}
-                                disabled={sending || !message.trim()}
-                                style={{
-                                    width: "100%",
-                                    height: 42,
-                                    borderRadius: 12,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    opacity: sending || !message.trim() ? 0.45 : 1,
-                                }}
-                                background={sending ? false : true}
-                            >
-                                {sending ? (
-                                    <SpinningLogoImage size={30} />
-                                ) : (
-                                    <Text className={textStyles.caption} style={{ color: colors.background }}>
-                                        Submit
-                                    </Text>
-                                )}
-                            </Button>
-                        </View>
 
-                    </View>
+            </View>
 
-                </BottomSheetView>
-                
-            </GomealGlassView>
-
-        </BottomSheet>
+        </KeyboardAwareScrollView>
     );
 };

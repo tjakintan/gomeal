@@ -19,7 +19,7 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
@@ -33,7 +33,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>4</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationQueriesSchemes</key>
@@ -50,24 +50,26 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow GoMeal to access your camera</string>
+	<string>GoMeal uses your camera to take meal photos and videos to share as posts and recipe steps.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Allow GoMeal to access your microphone</string>
+	<string>GoMeal uses your microphone to record audio when capturing meal videos for posts and recipe steps.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to access your device motion</string>
+	<string>GoMeal uses motion data to detect device orientation when capturing meal photos and videos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Allow GoMeal to save photos</string>
+	<string>GoMeal saves edited meal photos and videos to your photo library after you post them.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Allow GoMeal to access your photos</string>
+	<string>GoMeal uses your photo library so you can select meal photos and videos to share as posts and recipe steps.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>NSUserActivityTypes</key>
 	<array>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
+		<string>GoMeal uses motion data to detect device orientation when capturing meal photos and videos.</string>
 	</array>
 	<key>RCTNewArchEnabled</key>
 	<true/>
-	<key>UIBackgroundModes</key>
+	<key>UIAppFonts</key>
 	<array>
-		<string>audio</string>
+		<string>LuckiestGuy-Regular</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
@@ -95,11 +97,5 @@
 	<string>Automatic</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
-	<key>UIAppFonts</key>
-	<array>
-		<string>LuckiestGuy-Regular</string>
-	</array>
 </dict>
 </plist>

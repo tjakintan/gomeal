@@ -23,6 +23,8 @@ export type User = {
   lastName?: string;
   dob?: string | null;
   profile_name: string;
+  bio?: string | null;
+  website?: string | null;
   profile_img_url?: string | null;
   avatar?: Avatar;
   status?: string;
@@ -30,6 +32,7 @@ export type User = {
   xp: number;
   level: number;
   badge: BadgeLevel;
+  tag_color?: string | null;
 };
 
 export type ActionType =

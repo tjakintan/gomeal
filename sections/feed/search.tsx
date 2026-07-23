@@ -1,22 +1,24 @@
 import { Button } from "@/components/ButtonComponent";
-import { BackIcon, MessageIcon, ChefIcon, ShrimpIcon, FireIcon, XIcon } from "@/icons/Icon";
+import { ChefIcon, ShrimpIcon, FireIcon, XIcon } from "@/icons/Icon";
 import React, { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
-import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { AvatarRender } from "@/dashboard/Avatar";
 import { Media } from "@/media/media";
-import MessageScreen from "@/sections/messages/messages";
+import MasonryList from '@react-native-seoul/masonry-list';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from "@gorhom/bottom-sheet";
-import { FullPost } from "@/types/feed.types";
 import { useFeed } from "@/stores/useFeed";
 import { useSearch } from "@/stores/useSearch";
 import { Input } from "@/components/InputComponent";
 import { SectionHeader } from "@/components/SectionComponent";
 import { MinTag } from "@/tags/MinTag";
 import GomealGlassView from "@/components/GlassComponent";
-import FeedProfile from "./feedProfile";
+import FeedProfile, { FEED_CARD_PROFILE_RADIUS } from "./feedProfile";
 import { useCook } from "@/stores/useCook";
+import { MinimumFeedCard } from "@/types/feed.types";
+import { BOTTOM_INSETS, BOTTOM_SNAP_POINTS } from "@/types";
+import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
 
 export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) => {
 
@@ -25,6 +27,11 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
     const profileSheetRef = useRef<BottomSheet>(null);
     const [stopBottomSheet, setStopBottomSheet] = useState(false);
+
+    const SCREEN_WIDTH = Dimensions.get("window").width;
+    const NUM_COLUMNS = 3;
+    const GAP = 1;
+    const ITEM_SIZE = (SCREEN_WIDTH - GAP * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
 
     const { openCook } = useCook();
     const { activeProfile, setActiveProfile, clearActiveProfile } = useFeed();
@@ -69,7 +76,7 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
     return (
 
-        <View style={{...StyleSheet.absoluteFillObject, backgroundColor: colors.background, paddingBottom: 125}}>
+        <View style={{...StyleSheet.absoluteFillObject, backgroundColor: colors.background }}>
 
             <View 
                 style={{
@@ -88,11 +95,10 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                     }}
                 >
                     <Button
-                        style={{ height: 40, width: 40, backgroundColor: colors.danger }}
                         onPress={handleBack}
-                        background
+                        clearBackground
                     >
-                        <XIcon color={colors.background} />
+                        <XIcon color={colors.danger} />
                     </Button>
 
                     <View style={{ width: 300, flexShrink: 1 }}>
@@ -101,6 +107,9 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                             value={search}
                             onChangeText={setSearch}
                             placeholder="Searching... "
+                            containerStyle={{
+                                borderRadius: 30
+                            }}
                         />
                     </View>
 
@@ -116,81 +125,110 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
                     <>
 
-                        <ScrollView
-                            style={{ flex: 1 }}
-                            showsVerticalScrollIndicator={false}
+                        <View
+                            style={{ flex: 1,}}
                         >
 
                             {showUsers && (
-                                <View
-                                    style={{
-                                        gap: 5,
-                                        maxHeight: 300,
-                                        paddingVertical: 5,
-                                        paddingHorizontal: 20,
-                                    }}
-                                    className="w-full"
-                                >
-                                    {users.map((user, index) => (
-                                        <Button
-                                            key={index}
-                                            style={{
-                                                gap: 10,
-                                                width: "100%",
-                                                borderRadius: 0,
-                                                borderBottomWidth: 1,
-                                                borderColor: colors.text,
-                                                flexDirection: "row",
-                                                justifyContent: "flex-start",
-                                            }}
-                                            onPress={async () => {
-                                                setActiveProfile(undefined, user?.sub);
-                                                profileSheetRef.current?.expand()
-                                            }}
-                                        >
-                                            <AvatarRender avatar={user?.avatar} background />
-
-                                            <View
-                                                style={{
-                                                    alignItems: "flex-start",
-                                                    justifyContent: "flex-end",
-                                                    flexDirection: "column",
-                                                }}
-                                            >
-                                                <Text className={textStyles.caption} numberOfLines={1}>
-                                                    {user?.profile_name}
-                                                </Text>
-                                                <Text className={textStyles.small} numberOfLines={1}>
-                                                    {user?.firstName} {user?.lastName}
-                                                </Text>
-                                            </View>
-                                        </Button>
-                                    ))}
-                                </View>
-                            )}
-
-                            {showPosts && (
                                 <ScrollView
-                                    contentContainerStyle={{
-                                        padding: 5,
-                                        gap: 5,
-                                        flexDirection: "row",
-                                        flexWrap: "wrap",
-                                        justifyContent: "center",
-                                    }}
+                                    style={{ flex: 1, paddingBottom: 125}}
                                     showsVerticalScrollIndicator={false}
                                 >
-                                    {posts.map((post, index) => (
-                                        <MinTag
-                                            key={index}
-                                            minCard={post}
-                                            onPress={() => openCook(post.post_id)}
-                                        />
-                                    ))}
+                                    <View
+                                        style={{
+                                            gap: 5,
+                                            maxHeight: 300,
+                                            paddingVertical: 5,
+                                            paddingHorizontal: 20,
+                                        }}
+                                        className="w-full"
+                                    >
+                                        {users.map((user, index) => (
+                                            <Button
+                                                key={index}
+                                                style={{
+                                                    gap: 10,
+                                                    width: "100%",
+                                                    borderRadius: 0,
+                                                    borderBottomWidth: 1,
+                                                    borderColor: colors.text,
+                                                    flexDirection: "row",
+                                                    justifyContent: "flex-start",
+                                                }}
+                                                onPress={async () => {
+                                                    setActiveProfile(undefined, user?.sub);
+                                                    profileSheetRef.current?.expand()
+                                                }}
+                                            >
+                                                <AvatarRender avatar={user?.avatar} background />
+
+                                                <View
+                                                    style={{
+                                                        alignItems: "flex-start",
+                                                        justifyContent: "flex-end",
+                                                        flexDirection: "column",
+                                                    }}
+                                                >
+                                                    <Text className={textStyles.caption} numberOfLines={1}>
+                                                        {user?.profile_name}
+                                                    </Text>
+                                                    <Text className={textStyles.small} numberOfLines={1}>
+                                                        {user?.firstName} {user?.lastName}
+                                                    </Text>
+                                                </View>
+                                            </Button>
+                                        ))}
+                                    </View>
                                 </ScrollView>
                             )}
 
-                        </ScrollView>
+                            {showPosts && (
+                                <MasonryList
+                                    data={posts}
+                                    numColumns={3}
+                                    keyExtractor={(item) => item.post_id}
+                                    showsVerticalScrollIndicator={false}
+                                    style={{
+                                        gap: GAP,
+                                    }}
+                                    contentContainerStyle={{
+                                        paddingBottom: 125
+                                    }}
+                                    renderItem={({ item }) => {
+                                        const post = item as MinimumFeedCard;
+
+                                        const isVideo =
+                                            post.info?.dish_media_type === "video";
+
+                                        return (
+                                            <TouchableOpacity
+                                                activeOpacity={0.8}
+                                                style={{
+                                                    width: ITEM_SIZE,
+                                                    height: isVideo
+                                                        ? ITEM_SIZE * 1.5
+                                                        : ITEM_SIZE,
+                                                    margin: 2,
+                                                }}
+                                            >
+                                                <MinTag
+                                                    minCard={post}
+                                                    style={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                    }}
+                                                    containerStyle={{
+                                                        borderRadius: 15,
+                                                    }}
+                                                    onPress={() => openCook(post.post_id)}
+                                                />
+                                            </TouchableOpacity>
+                                        );
+                                    }}
+                                />
+                            )}
+
+                        </View>
 
                         {!hasResults && (
                             <View style={{ flex: 1, alignItems: "center" }}>
@@ -203,9 +241,8 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                 ) : (
 
                     <>
-
-                        <SectionHeader 
-                            title="Trending" 
+                        <SectionHeader
+                            title="Trending"
                             subtitle="Who is chefing and whats cooking at this moment ?"
                             showDivider
                             leftIcon={<FireIcon size={30} />}
@@ -213,8 +250,13 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
                         <ScrollView
                             showsVerticalScrollIndicator={false}
+                            style={{
+                                flex: 1,
+                            }}
+                            contentContainerStyle={{
+                                paddingBottom: BOTTOM_INSETS
+                            }}
                         >
-
                             <View
                                 style={{
                                     gap: 10,
@@ -222,8 +264,8 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                     alignItems: "center",
                                 }}
                             >
-                                <SectionHeader 
-                                    title="Food" 
+                                <SectionHeader
+                                    title="Food"
                                     showBackground
                                     titleClassName={textStyles.bodyMedium}
                                     leftIcon={<ShrimpIcon size={30} />}
@@ -238,20 +280,25 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                     }}
                                 >
                                     {hasTrendingPosts ? (
-                                        trending_post.map((post, index) => (
+                                        trending_post.map((post) => (
                                             <MinTag
-                                                key={index}
+                                                key={post.post_id}
                                                 minCard={post}
                                                 onPress={() => openCook(post.post_id)}
                                             />
                                         ))
                                     ) : (
-                                        <View style={{ flex: 1, justifyContent: "center" }}>
+                                        <View
+                                            style={{
+                                                width: 200,
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                        >
                                             <SpinningLogoImage size={40} />
                                         </View>
                                     )}
                                 </ScrollView>
-
                             </View>
 
                             <View
@@ -268,21 +315,17 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                     showBackground
                                 />
 
-                                <ScrollView
-                                    showsVerticalScrollIndicator={false}
-                                    style={{ width: "100%", padding: 10, maxHeight: 300 }}
-                                    contentContainerStyle={{
+                                <View
+                                    style={{
+                                        width: "100%",
+                                        paddingHorizontal: 10,
                                         gap: 10,
-                                        flexDirection: "column",
-                                        justifyContent: hasTrendingUsers ? "flex-start" : "center",
-                                        alignItems: hasTrendingUsers ? "stretch" : "center",
-                                        flexGrow: 1,
                                     }}
                                 >
                                     {hasTrendingUsers ? (
-                                        trending_user.map((user, index) => (
+                                        trending_user.map((user) => (
                                             <Button
-                                                key={index}
+                                                key={user.sub}
                                                 style={{
                                                     gap: 5,
                                                     width: "100%",
@@ -295,12 +338,15 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                                     borderWidth: 2,
                                                     borderColor: colors.secondaryCard,
                                                 }}
-                                                onPress={async () => {
-                                                    setActiveProfile(undefined, user?.sub);
-                                                    profileSheetRef.current?.expand()
+                                                onPress={() => {
+                                                    setActiveProfile(undefined, user.sub);
+                                                    profileSheetRef.current?.expand();
                                                 }}
                                             >
-                                                <AvatarRender avatar={user?.avatar} background />
+                                                <AvatarRender
+                                                    avatar={user.avatar}
+                                                    background
+                                                />
 
                                                 <View
                                                     style={{
@@ -310,26 +356,37 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                                         overflow: "hidden",
                                                     }}
                                                 >
-                                                    <Text className={textStyles.caption} numberOfLines={1}>
-                                                        {user?.profile_name}
+                                                    <Text
+                                                        className={textStyles.caption}
+                                                        numberOfLines={1}
+                                                    >
+                                                        {user.profile_name}
                                                     </Text>
-                                                    <Text className={textStyles.small} ellipsizeMode="tail" numberOfLines={1}>
-                                                        {user?.firstName} {user?.lastName}
+
+                                                    <Text
+                                                        className={textStyles.small}
+                                                        numberOfLines={1}
+                                                        ellipsizeMode="tail"
+                                                    >
+                                                        {user.firstName} {user.lastName}
                                                     </Text>
                                                 </View>
-
                                             </Button>
                                         ))
                                     ) : (
-                                        <View style={{ flex: 1, justifyContent: "center" }}>
+                                        <View
+                                            style={{
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                paddingVertical: 20,
+                                            }}
+                                        >
                                             <SpinningLogoImage size={20} />
                                         </View>
                                     )}
-                                </ScrollView>
+                                </View>
                             </View>
-
                         </ScrollView>
-
                     </>
 
                 )}
@@ -341,23 +398,31 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
             <BottomSheet
                 ref={profileSheetRef}
                 index={-1}
-                snapPoints={[525]}
+                snapPoints={BOTTOM_SNAP_POINTS}
                 enablePanDownToClose={false}
                 enableContentPanningGesture={false}
                 enableHandlePanningGesture={false}
-                backgroundStyle={{ backgroundColor: "transparent", borderRadius: 50 }}
+                backgroundStyle={{
+                    backgroundColor: "transparent",
+                }}
                 handleComponent={() => null}
             >
-                <GomealGlassView glassEffectStyle="clear" style={{ height: 520, marginHorizontal: 5, borderRadius: 50}}>
+                <View  
+                    style={{ 
+                        height: 610,  
+                        borderTopLeftRadius: FEED_CARD_PROFILE_RADIUS + 10,
+                        borderTopRightRadius: FEED_CARD_PROFILE_RADIUS + 10,
+                    }}
+                >
                     <View style={{ ...StyleSheet.absoluteFillObject, opacity: 0.85, backgroundColor: colors.secondaryCard, borderRadius: 50 }} />
-                    <BottomSheetView style={{ height: 500, marginTop: 10, marginHorizontal: 10, overflow: "hidden", alignSelf: "center", backgroundColor: colors.background, borderRadius: 40 }}>
+                    <BottomSheetView style={{ height: 450, marginTop: 10, marginHorizontal: 10, overflow: "hidden", alignSelf: "center", backgroundColor: colors.background, borderRadius: 40 }}>
                         <FeedProfile
                             sectionOpen={(open) => setStopBottomSheet(open)}
                             onClose={closeProfileSheet}
                         />
                     </BottomSheetView>
-                </GomealGlassView>
-            </BottomSheet>
+                </View>
+                </BottomSheet>
 
 
         </View>

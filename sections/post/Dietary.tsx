@@ -33,7 +33,7 @@ const Dietary: React.FC<PostSectionInfoProps> = ({
             >
                 {diets.map((key, index) => {
                     const isOther = key === "other";
-                    const active = !isOther && !!dietary[key as keyof typeof dietary];
+                    const active = !isOther && !!dietary?.[key as keyof typeof dietary];
                     const Icon = dietaryIcons[key];
 
                     return (    
@@ -58,7 +58,7 @@ const Dietary: React.FC<PostSectionInfoProps> = ({
                                             />
                                         ) : (
                                             <Input
-                                                value={dietary.other ?? ""}
+                                                value={dietary?.other ?? ""}
                                                 onChangeText={setOther}
                                                 style={{ textAlign: "right" }}
                                             />

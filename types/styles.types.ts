@@ -10,7 +10,7 @@ export const sectionHeaderText = StyleSheet.create({
 });
 
 export const difficultyColors: Record<"Easy" | "Medium" | "Hard", string> = {
-  Medium: "#fbbf24",
+  Medium: "#ffca45",
   Hard: "#ff3e55",
   Easy: "#4ade80",
 };

@@ -53,6 +53,8 @@ export const useReel = create<ReelState>((set, get) => ({
             ],
         });
 
+        useFeed.getState().setActiveReelPost(initialPost);
+
         if (localReels.length > 10) {
             return;
         }
@@ -99,6 +101,7 @@ export const useReel = create<ReelState>((set, get) => ({
             history: [],
             reels: freshReels,
         });
+        useFeed.getState().setActiveReelPost(freshReels[0] ?? null); 
     },
 
     nextReel: () => {
@@ -106,6 +109,7 @@ export const useReel = create<ReelState>((set, get) => ({
         if (reels.length < 2) return;
         const [top, ...rest] = reels;
         set({ reels: rest, history: [...history, top] });
+        useFeed.getState().setActiveReelPost(rest[0] ?? null);
     },
 
     prevReel: () => {
@@ -113,6 +117,7 @@ export const useReel = create<ReelState>((set, get) => ({
         if (history.length === 0) return;
         const last = history[history.length - 1];
         set({ reels: [last, ...reels], history: history.slice(0, -1) });
+        useFeed.getState().setActiveReelPost(last);
     },
 
     clear: () => set({ history: [], loading: false }),
