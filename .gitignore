@@ -62,4 +62,5 @@ android/local.properties
 # Misc
 *.orig.*
 .metro-health-check*
-coverage/
+coverage/**/android/.gradle/
+**/android/build/
