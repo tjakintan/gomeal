@@ -1,30 +1,65 @@
-
 # Node
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
 
 # Expo
 .expo/
 .expo-shared/
-package-lock.json
+dist/
+web-build/
+expo-env.d.ts
 
 # Google services
 google-services.json
+GoogleService-Info.plist
 
 # Firebase / Google private credentials
 *-firebase-adminsdk-*.json
 
+# Expo / EAS credentials
+credentials.json
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
 # iOS build
 ios/Pods/
+ios/build/
 ios/Build/
 ios/DerivedData/
-*.xcworkspace/contents.xcuserstate
+ios/*.xcworkspace/contents.xcuserstate
 *.xcuserstate
+*.xcuserdatad/
 
 # Android build
 android/.gradle/
 android/build/
+android/app/build/
+android/local.properties
+*.keystore
+*.jks
+!debug.keystore
 
 # Environment
-expo-env.d.ts
 .env
-README.md
+.env.local
+.env.*.local
+
+# TypeScript
+*.tsbuildinfo
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Misc
+*.orig.*
+.metro-health-check*
+coverage/
