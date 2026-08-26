@@ -104,7 +104,7 @@ export const SectionHeader = ({
             },
             subtitleStyle,
           ]}
-          className={`${textStyles.small} ${subtitleClassName ?? ""}`}
+          //className={`${textStyles.small} ${subtitleClassName ?? ""}`}
         >
           {subtitle}
         </Text>

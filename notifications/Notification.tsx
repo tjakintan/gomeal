@@ -1,6 +1,6 @@
 import { Button } from "@/components/ButtonComponent";
 import { CookIcon, MessageIcon, XIcon } from "@/icons/Icon";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { useNotification } from "@/notifications/useNotification";
 import { useTheme } from "@/provider/ThemeProvider";
 import { FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -18,6 +18,10 @@ import { FEED_CARD_PROFILE_RADIUS } from "@/sections/feed/feedProfile";
 import { GradientHeader } from "@/components/GradientComponent";
 import { BOTTOM_INSETS, BOTTOM_SNAP_POINTS } from "@/types";
 import { useCook } from "@/stores/useCook";
+import { CookMainScreen } from "@/sections/cook";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSlideUpOverlay } from "@/stores/useSlideUpOverlay";
 
 const LikeCard: React.FC<{likes: LikeNotificationCard, dark: boolean}> = ({ likes, dark }) => {
 
@@ -121,9 +125,12 @@ const LikeCard: React.FC<{likes: LikeNotificationCard, dark: boolean}> = ({ like
 
 };
 
-const MessageCard: React.FC<{messages: MessageNotificationCard, dark: boolean, onOpenMessageSection?:(open: boolean) => void}> = ({ messages, dark, onOpenMessageSection }) => {
+const MessageCard: React.FC<{messages: MessageNotificationCard, dark: boolean }> = ({ messages, dark }) => {
 
    const { colors, textStyles} = useTheme(dark ? "dark" : undefined);
+
+    const openSlideUpOverlay = useSlideUpOverlay((s) => s.openSlideUpOverlay);
+    const closeSlideUpOverlay = useSlideUpOverlay((s) => s.closeSlideUpOverlay);
 
     return (
 
@@ -197,7 +204,20 @@ const MessageCard: React.FC<{messages: MessageNotificationCard, dark: boolean, o
                     </View>
                 </View>
                 <View className="justify-start">
-                    <Button style={{height: 40, width: 100}} background onPress={() => onOpenMessageSection?.(true)}>
+                    <Button 
+                        style={{height: 40, width: 100}} 
+                        background 
+                        onPress={() => {
+                            if (messages.conversation_id) {
+                                openSlideUpOverlay(
+                                    <MessageScreen 
+                                        conversation_id={messages.conversation_id} 
+                                        onClose={closeSlideUpOverlay} 
+                                    />
+                                )
+                            }
+                        }}
+                    >
                         <Text className={textStyles.caption}>
                             message
                         </Text>
@@ -259,10 +279,12 @@ const CookCard: React.FC<{ cook: CookNotificationCard; dark: boolean }> = ({ coo
 const TrendCard: React.FC<{
     trend: TrendNotificationCard;
     dark: boolean;
-    onOpenCook?: () => void;
-}> = ({ trend, dark, onOpenCook }) => {
+}> = ({ trend, dark }) => {
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
     const openCook = useCook((state) => state.openCook);
+
+    const openSlideUpOverlay = useSlideUpOverlay((s) => s.openSlideUpOverlay);
+    const closeSlideUpOverlay = useSlideUpOverlay((s) => s.closeSlideUpOverlay);
 
     return (
         <View
@@ -276,9 +298,13 @@ const TrendCard: React.FC<{
         >
             <Pressable
                 onPress={() => {
-                    
                     openCook(trend.post_id);
-                    onOpenCook?.();
+                    openSlideUpOverlay(
+                        <CookMainScreen
+                            post_id={trend.post_id}
+                            onClose={closeSlideUpOverlay}
+                        />
+                    );
                 }}
             >
                 <View
@@ -301,7 +327,12 @@ const TrendCard: React.FC<{
             <Pressable
                 onPress={() => {
                     openCook(trend.post_id);
-                    onOpenCook?.();
+                    openSlideUpOverlay(
+                        <CookMainScreen
+                            post_id={trend.post_id}
+                            onClose={closeSlideUpOverlay}
+                        />
+                    );
                 }}
                 style={{
                     flex: 1,
@@ -335,13 +366,12 @@ const TrendCard: React.FC<{
     );
 };
 
+const MENU_HEIGHT = 65;
 const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: boolean}> = ({ onOpen, dark }) => {
 
+    const insets = useSafeAreaInsets();
     const { colors, textStyles} = useTheme(dark ? "dark" : undefined);
     const { notifications, loadingNotifications, loadNotifications} = useNotification();
-
-    const messageSheetRef = useRef<BottomSheet>(null);
-    const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
 
     useEffect(() => {
         if (!notifications) {
@@ -366,9 +396,13 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
         <>
 
             <GradientHeader
+                height={MENU_HEIGHT}
                 baseColor={colors.background}
+                style={{
+                    paddingTop: insets.top,
+                }}
                 contentStyle={{
-                    height: 65,
+                    height: MENU_HEIGHT,
                     paddingHorizontal: 20,
                     alignItems: "center",
                     flexDirection: "row"
@@ -383,11 +417,18 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                     showBackground
                     titleClassName={textStyles.h3}
                     dark={dark}
+                    leftIcon={
+                    <MaterialIcons
+                        name={"notifications-active"}
+                        size={30}
+                        color={colors.button}
+                        />
+                    }
                 />
 
             </GradientHeader>
 
-            <View style={{ flex: 1, backgroundColor: colors.background, padding: 10}}>
+            <View style={{ flex: 1, paddingTop: MENU_HEIGHT, backgroundColor: colors.background, padding: 10}}>
 
                 {loadingNotifications ? (
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -423,10 +464,6 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                                         <MessageCard
                                             dark={dark}
                                             messages={entry.item as MessageNotificationCard}
-                                            onOpenMessageSection={() => {
-                                                setActiveConversationId(entry.item.conversation_id);
-                                                messageSheetRef.current?.expand();
-                                            }}
                                         />
                                     </TouchableOpacity>
                                 );
@@ -442,7 +479,6 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                                         <TrendCard
                                             dark={dark}
                                             trend={entry.item as TrendNotificationCard}
-                                            onOpenCook={() => onOpen(false)}
                                         />
                                     </TouchableOpacity>
                                 );
@@ -453,58 +489,6 @@ const NotificationScreen: React.FC<{ onOpen: (open: boolean) => void, dark: bool
                     />
                 )}
             </View>
-
-            <BottomSheet
-                ref={messageSheetRef}
-                index={-1}
-                snapPoints={BOTTOM_SNAP_POINTS}
-                enablePanDownToClose={false}
-                enableContentPanningGesture={false}
-                enableHandlePanningGesture={false}
-                enableDynamicSizing={false}
-                backgroundStyle={{ backgroundColor: "transparent", borderRadius: 40 }}
-                handleComponent={() => null}
-            >
-                <View 
-                    style={{ 
-                        height: 610,  
-                        borderTopLeftRadius: FEED_CARD_PROFILE_RADIUS + 10,
-                        borderTopRightRadius: FEED_CARD_PROFILE_RADIUS + 10,
-                    }}
-                >
-                    <View
-                        style={{
-                        ...StyleSheet.absoluteFillObject, 
-                        opacity: 0.85,
-                        backgroundColor: colors.secondaryCard,
-                        borderRadius: 50,
-                        }}
-                    />
-                    
-                    <BottomSheetView
-                        style={{
-                            height: 450,
-                            marginTop: 10,
-                            marginHorizontal: 10,
-                            overflow: "hidden",
-                            alignSelf: "center",
-                            backgroundColor: colors.background,
-                            borderRadius: 40
-                        }}
-                    >
-                        {activeConversationId && (
-                            <MessageScreen 
-                                conversation_id={activeConversationId} 
-                                onClose={() => messageSheetRef.current?.close()} 
-                                showX={true}
-                                showBack={false}    
-                            />
-                        )}
-                    </BottomSheetView>
-
-                </View>
-
-            </BottomSheet>
 
         </>
     );

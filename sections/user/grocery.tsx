@@ -8,12 +8,12 @@ import {
 import { GradientHeader } from "@/components/GradientComponent";
 import { Input } from "@/components/InputComponent";
 import { SectionHeader } from "@/components/SectionComponent";
-import { AddIcon, BackIcon, EmptyImageIcon, SearchIcon, XIcon, WalmartIcon, InstaCartIcon, AmazonIcon, TargetIcon, WeisIcon, KrogerIcon, CostcoIcon } from "@/icons/Icon";
+import { AddIcon, BackIcon, EmptyImageIcon, SearchIcon, XIcon, WalmartIcon, InstaCartIcon, AmazonIcon, TargetIcon, WeisIcon, KrogerIcon, CostcoIcon, CheckIcon, GroceryIcon } from "@/icons/Icon";
 import { Media } from "@/media/media";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useCart } from "@/stores/useCart";
 import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
-import { Ingredient } from "@/types";
+import { ACCENT_COLORS, Ingredient } from "@/types";
 import { Cart, Retailer } from "@/types/cart.types";
 import { DEFAULT_INGREDIENT_SEARCH_CACHE_TIME } from "@/types/Time.types";
 import { SpinningLogoImage } from "@/utils/Logo";
@@ -21,12 +21,17 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+
+const MENU_HEIGHT = 65;
+const MENU_SEARCH_HEIGHT = 100;
 export const GroceryMainScreen: React.FC<{
     cart_id?: number;
     onClose: () => void;
 }> = ({ cart_id, onClose }) => {
 
+    const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme();
 
     const [name, setName] = useState("");
@@ -145,12 +150,18 @@ export const GroceryMainScreen: React.FC<{
                 style={{
                     ...StyleSheet.absoluteFillObject,
                     backgroundColor: colors.background,
-                    paddingBottom: DASHBOARD_HEIGHT
                 }}
             >
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, paddingTop: insets.top }}>
 
                     <GradientHeader
+                        height={MENU_SEARCH_HEIGHT}
+                        style={{
+                            paddingTop: insets.top
+                        }}
+                        contentStyle={{
+                            height: MENU_SEARCH_HEIGHT,
+                        }}
                         baseColor={colors.background}
                     >
 
@@ -168,7 +179,7 @@ export const GroceryMainScreen: React.FC<{
 
                             <SectionHeader
                                 title={activeCart.name}
-                                titleClassName={textStyles.caption}
+                                titleClassName={textStyles.h3}
                                 showBackground
                             />
                         </View>
@@ -198,49 +209,67 @@ export const GroceryMainScreen: React.FC<{
                             />
 
                             {showIngredientResults && ingredientResults.length > 0 && (
-                                <ScrollView showsVerticalScrollIndicator={false}>
-                                    {ingredientResults.map((ingredient) => (
-                                        <TouchableOpacity key={ingredient.id ?? ingredient.name} activeOpacity={1}>
-                                            <Button
-                                                style={{
-                                                    width: "100%",
-                                                    alignItems: "flex-start",
-                                                    padding: 8,
-                                                    borderRadius: 0,
-                                                    borderBottomWidth: 1,
-                                                    borderColor: colors.secondaryCard,
-                                                }}
-                                                onPress={async () => {
-                                                    const ingredientId = Number(ingredient.id);
-                                                    if (!Number.isFinite(ingredientId)) return;
 
-                                                    await insertIntoCart(
-                                                        ingredientId,
-                                                        activeCart.id,
-                                                        1,
-                                                        null,
-                                                    );
+                                <View
+                                    style={{
+                                        height: 100,
+                                        overflow: "hidden",
+                                        marginTop: 10,
+                                        borderRadius: 15,
+                                        backgroundColor: colors.card
+                                    }}
+                                >
 
-                                                    setIngredientSearch("");
-                                                    setDebouncedIngredientSearch("");
-                                                    setShowIngredientResults(false);
-                                                    await setActiveCart(activeCart.id);
-                                                    await loadCarts();
-                                                }}
-                                            >
-                                                <Text className={textStyles.caption}>
-                                                    {ingredient.name}
-                                                </Text>
+                                    <ScrollView showsVerticalScrollIndicator>
 
-                                                {ingredient.category && (
-                                                    <Text className={textStyles.small} style={{ color: colors.secondaryText }}>
-                                                        {ingredient.category}
+                                        <TouchableOpacity  activeOpacity={1}>
+
+                                            {ingredientResults.map((ingredient) => (
+                                                
+                                                <Button
+                                                    key={ingredient.id ?? ingredient.name}
+                                                    style={{
+                                                        width: "100%",
+                                                        alignItems: "flex-start",
+                                                        padding: 8,
+                                                        borderRadius: 0,
+                                                    }}
+                                                    onPress={async () => {
+                                                        const ingredientId = Number(ingredient.id);
+                                                        if (!Number.isFinite(ingredientId)) return;
+
+                                                        await insertIntoCart(
+                                                            ingredientId,
+                                                            activeCart.id,
+                                                            1,
+                                                            null,
+                                                        );
+
+                                                        setIngredientSearch("");
+                                                        setDebouncedIngredientSearch("");
+                                                        setShowIngredientResults(false);
+                                                        await setActiveCart(activeCart.id);
+                                                        await loadCarts();
+                                                    }}
+                                                >
+                                                    <Text className={textStyles.body}>
+                                                        {ingredient.name}
                                                     </Text>
-                                                )}
-                                            </Button>
+
+                                                    {ingredient.category && (
+                                                        <Text className={textStyles.small} style={{ color: colors.secondaryText }}>
+                                                            {ingredient.category}
+                                                        </Text>
+                                                    )}
+                                                </Button>
+                                                
+                                            ))}
+
                                         </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
+
+                                    </ScrollView>
+
+                                </View>
                             )}
                             
                         </View>
@@ -257,349 +286,352 @@ export const GroceryMainScreen: React.FC<{
                         ) : (
                             <KeyboardAwareScrollView
                                 showsVerticalScrollIndicator={false}
-                                contentContainerStyle={{
-                                    gap: 45,
-                                    paddingBottom: 125,
-                                    paddingTop: showIngredientResults ? 215 : 100 
-                                }}
                             >
-                                {activeCart.items.map((item) => {
-                                    const ingredientId = item.ingredient?.id;
+                                <TouchableOpacity 
+                                    activeOpacity={1}
+                                    style={{
+                                        gap: 45,
+                                        paddingTop: showIngredientResults ? MENU_SEARCH_HEIGHT + 120 : MENU_SEARCH_HEIGHT + 10,
+                                        paddingBottom: insets.bottom                                       
+                                    }}
+                                >
 
-                                    return (
-                                        <View
-                                            key={item.id}
-                                            style={{
-                                                width: "100%",
-                                                gap: 10,
-                                            }}
-                                        >
+                                    {activeCart.items.map((item) => {
+                                        const ingredientId = item.ingredient?.id;
+
+                                        return (
                                             <View
+                                                key={item.id}
                                                 style={{
                                                     width: "100%",
-                                                    flexDirection: "row",
-                                                    alignItems: "center",
                                                     gap: 10,
-                                                    paddingHorizontal: 5
                                                 }}
                                             >
                                                 <View
                                                     style={{
-                                                        flex: 1,
-                                                        height: 75,
-                                                        gap: 10,
-                                                        borderColor: colors.secondaryCard,
-                                                        borderBottomWidth: 2,
-                                                        overflow: "hidden",
+                                                        width: "100%",
                                                         flexDirection: "row",
                                                         alignItems: "center",
+                                                        gap: 10,
+                                                        paddingHorizontal: 5
                                                     }}
                                                 >
                                                     <View
                                                         style={{
-                                                            minWidth: 75,
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                        }}
-                                                    >
-                                                        {item.ingredient?.media_url ? (
-                                                            <Media
-                                                                uri={item.ingredient.media_url}
-                                                                mediaType="image"
-                                                                style={{ width: "100%", height: "100%" }}
-                                                                imageContentFit="cover"
-                                                            />
-                                                        ) : (
-                                                            <EmptyImageIcon color={colors.text} size={35} />
-                                                        )}
-                                                    </View>
-
-                                                    <View 
-                                                        style={{ 
-                                                            flex: 1, 
-                                                            height: "100%",
+                                                            flex: 1,
+                                                            height: 75,
+                                                            gap: 10,
+                                                            borderColor: colors.secondaryCard,
+                                                            borderBottomWidth: 2,
+                                                            overflow: "hidden",
                                                             flexDirection: "row",
-                                                            justifyContent: "space-between",
                                                             alignItems: "center",
-                                                        }} 
+                                                        }}
                                                     >
                                                         <View
                                                             style={{
-                                                                flex: 1,
-                                                                height: "100%",
+                                                                minWidth: 75,
+                                                                alignItems: "center",
                                                                 justifyContent: "center",
                                                             }}
                                                         >
-                                                            {editingItemId === item.id ? (
-                                                                <View
-                                                                    style={{
-                                                                        flexDirection: "row",
-                                                                        alignItems: "center",
-                                                                        gap: 8,
-                                                                    }}
-                                                                >
-                                                                    <IngredientQuantityButton
-                                                                        value={draftQuantities[String(item.id)] ?? Number(item.quantity) ?? 1}
-                                                                        onChange={(quantity) => {
-                                                                            updateCartItemQuantityUnitFromRow(
-                                                                                item.id,
-                                                                                Number(item.ingredient?.id),
-                                                                                Number(quantity),
-                                                                                draftUnits[String(item.id)] ?? item.unit ?? null,
-                                                                            );
-                                                                        }}
-                                                                    />
-
-                                                                    <IngredientUnitDropDownButton
-                                                                        selectedUnit={draftUnits[String(item.id)] ?? item.unit ?? " "}
-                                                                        onSelectedUnit={(unit) => {
-                                                                            updateCartItemQuantityUnitFromRow(
-                                                                                item.id,
-                                                                                Number(item.ingredient?.id),
-                                                                                draftQuantities[String(item.id)] ?? Number(item.quantity) ?? 1,
-                                                                                unit,
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                </View>
+                                                            {item.ingredient?.media_url ? (
+                                                                <Media
+                                                                    uri={item.ingredient.media_url}
+                                                                    mediaType="image"
+                                                                    style={{ width: "100%", height: "100%" }}
+                                                                    imageContentFit="cover"
+                                                                />
                                                             ) : (
-                                                                <>
-                                                                    <Text
-                                                                        className={textStyles.body}
-                                                                        numberOfLines={1}
-                                                                        ellipsizeMode="tail"
-                                                                        style={{ color: colors.text }}
-                                                                    >
-                                                                        {item.ingredient?.name}
-                                                                    </Text>
-
-                                                                    <Text
-                                                                        className={textStyles.caption}
-                                                                        numberOfLines={1}
-                                                                        ellipsizeMode="tail"
-                                                                        style={{ color: colors.secondaryText }}
-                                                                    >
-                                                                        {`$${item.price?.toFixed(2) ?? "N/A"}`}
-                                                                    </Text>
-                                                                </>
+                                                                <EmptyImageIcon color={colors.text} size={35} />
                                                             )}
                                                         </View>
 
-                                                        {editingItemId === item.id ? (
-                                                            <Button
-                                                                onPress={() => {
-                                                                    setEditingItemId(null);
-
-                                                                    setDraftQuantities((prev) => {
-                                                                        const next = { ...prev };
-                                                                        delete next[String(item.id)];
-                                                                        return next;
-                                                                    });
-
-                                                                    setDraftUnits((prev) => {
-                                                                        const next = { ...prev };
-                                                                        delete next[String(item.id)];
-                                                                        return next;
-                                                                    });
-                                                                }}
-                                                                clearBackground
-                                                            >
-                                                                <XIcon color={colors.danger} size={25} />
-                                                            </Button>
-                                                        ) : (
-                                                            <Button
-                                                                onPress={() => {
-                                                                    setEditingItemId(item.id);
-
-                                                                    setDraftQuantities((prev) => ({
-                                                                        ...prev,
-                                                                        [String(item.id)]: Number(item.quantity) || 1,
-                                                                    }));
-
-                                                                    setDraftUnits((prev) => ({
-                                                                        ...prev,
-                                                                        [String(item.id)]: item.unit ?? null,
-                                                                    }));
-                                                                }}
+                                                        <View 
+                                                            style={{ 
+                                                                flex: 1, 
+                                                                height: "100%",
+                                                                flexDirection: "row",
+                                                                justifyContent: "space-between",
+                                                                alignItems: "center",
+                                                            }} 
+                                                        >
+                                                            <View
                                                                 style={{
-                                                                    height: 50,
-                                                                    width: 60,
-                                                                    borderRadius: 15,
+                                                                    flex: 1,
+                                                                    height: "100%",
                                                                     justifyContent: "center",
-                                                                    alignItems: "center",
-                                                                    borderWidth: 2,
-                                                                    borderColor: colors.secondaryCard,
-                                                                    flexDirection: "row",
-                                                                    gap: 2,
                                                                 }}
-                                                                background={false}
                                                             >
-                                                                <Text
-                                                                    className={textStyles.caption}
-                                                                    numberOfLines={1}
-                                                                    ellipsizeMode="tail"
-                                                                >
-                                                                    {item.quantity}
-                                                                </Text>
+                                                                {editingItemId === item.id ? (
+                                                                    <View
+                                                                        style={{
+                                                                            flexDirection: "row",
+                                                                            alignItems: "center",
+                                                                            gap: 8,
+                                                                        }}
+                                                                    >
+                                                                        <IngredientQuantityButton
+                                                                            value={draftQuantities[String(item.id)] ?? Number(item.quantity) ?? 1}
+                                                                            onChange={(quantity) => {
+                                                                                updateCartItemQuantityUnitFromRow(
+                                                                                    item.id,
+                                                                                    Number(item.ingredient?.id),
+                                                                                    Number(quantity),
+                                                                                    draftUnits[String(item.id)] ?? item.unit ?? null,
+                                                                                );
+                                                                            }}
+                                                                        />
 
-                                                                {item.quantity && (
+                                                                        <IngredientUnitDropDownButton
+                                                                            selectedUnit={draftUnits[String(item.id)] ?? item.unit ?? " "}
+                                                                            onSelectedUnit={(unit) => {
+                                                                                updateCartItemQuantityUnitFromRow(
+                                                                                    item.id,
+                                                                                    Number(item.ingredient?.id),
+                                                                                    draftQuantities[String(item.id)] ?? Number(item.quantity) ?? 1,
+                                                                                    unit,
+                                                                                );
+                                                                            }}
+                                                                        />
+                                                                    </View>
+                                                                ) : (
+                                                                    <>
+                                                                        <Text
+                                                                            className={textStyles.body}
+                                                                            numberOfLines={1}
+                                                                            ellipsizeMode="tail"
+                                                                            style={{ color: colors.text }}
+                                                                        >
+                                                                            {item.ingredient?.name}
+                                                                        </Text>
+
+                                                                        <Text
+                                                                            className={textStyles.caption}
+                                                                            numberOfLines={1}
+                                                                            ellipsizeMode="tail"
+                                                                            style={{ color: colors.secondaryText }}
+                                                                        >
+                                                                            {`$${item.price?.toFixed(2) ?? "N/A"}`}
+                                                                        </Text>
+                                                                    </>
+                                                                )}
+                                                            </View>
+
+                                                            {editingItemId === item.id ? (
+                                                                <Button
+                                                                    onPress={() => {
+                                                                        setEditingItemId(null);
+
+                                                                        setDraftQuantities((prev) => {
+                                                                            const next = { ...prev };
+                                                                            delete next[String(item.id)];
+                                                                            return next;
+                                                                        });
+
+                                                                        setDraftUnits((prev) => {
+                                                                            const next = { ...prev };
+                                                                            delete next[String(item.id)];
+                                                                            return next;
+                                                                        });
+                                                                    }}
+                                                                    clearBackground
+                                                                >
+                                                                    <XIcon color={colors.danger} size={25} />
+                                                                </Button>
+                                                            ) : (
+                                                                <Button
+                                                                    onPress={() => {
+                                                                        setEditingItemId(item.id);
+
+                                                                        setDraftQuantities((prev) => ({
+                                                                            ...prev,
+                                                                            [String(item.id)]: Number(item.quantity) || 1,
+                                                                        }));
+
+                                                                        setDraftUnits((prev) => ({
+                                                                            ...prev,
+                                                                            [String(item.id)]: item.unit ?? null,
+                                                                        }));
+                                                                    }}
+                                                                    style={{
+                                                                        height: 50,
+                                                                        width: 60,
+                                                                        borderRadius: 15,
+                                                                        justifyContent: "center",
+                                                                        alignItems: "center",
+                                                                        borderWidth: 2,
+                                                                        borderColor: colors.secondaryCard,
+                                                                        flexDirection: "row",
+                                                                        gap: 2,
+                                                                    }}
+                                                                    background={false}
+                                                                >
                                                                     <Text
                                                                         className={textStyles.caption}
                                                                         numberOfLines={1}
                                                                         ellipsizeMode="tail"
                                                                     >
-                                                                        {item.unit}
+                                                                        {item.quantity}
                                                                     </Text>
-                                                                )}
-                                                            </Button>
-                                                        )}
+
+                                                                    {item.quantity && (
+                                                                        <Text
+                                                                            className={textStyles.caption}
+                                                                            numberOfLines={1}
+                                                                            ellipsizeMode="tail"
+                                                                        >
+                                                                            {item.unit}
+                                                                        </Text>
+                                                                    )}
+                                                                </Button>
+                                                            )}
+
+                                                        </View>
 
                                                     </View>
 
+                                                    {/**/}
+                                                    <CheckButton
+                                                        defaultValue={false}
+                                                        size={40}
+                                                        onChange={async (checked) => {
+                                                            if (!checked || ingredientId == null) return;
+                                                            await removeFromCart(Number(ingredientId), activeCart.id);
+                                                        }}
+                                                    />
+
                                                 </View>
 
-                                                {/**/}
-                                                <CheckButton
-                                                    defaultValue={false}
-                                                    size={40}
-                                                    style={{
-                                                        borderRadius: 999
+                                                <ScrollView
+                                                    horizontal
+                                                    showsHorizontalScrollIndicator={false}
+                                                    contentContainerStyle={{
+                                                        flexDirection: "row",
+                                                        alignItems: "center",
+                                                        gap: 15,
+                                                        paddingHorizontal: 10,
                                                     }}
-                                                    onChange={async (checked) => {
-                                                        if (!checked || ingredientId == null) return;
-                                                        await removeFromCart(Number(ingredientId), activeCart.id);
-                                                    }}
-                                                />
+                                                >
+                                                    <Button
+                                                        style={{
+                                                            width: 50,
+                                                            height: 50,
+                                                            borderRadius: 999,
+                                                            borderWidth: 1,
+                                                            borderColor: colors.secondaryCard,
+                                                            backgroundColor: "white",
+                                                            justifyContent: "center",
+                                                            alignItems: "center",
+                                                        }}
+                                                        onPress={() => openRetailer("walmart", item)}
+                                                    >
+                                                        <WalmartIcon size={40} />
+                                                    </Button>
+
+                                                    <Button
+                                                        style={{
+                                                            width: 50,
+                                                            height: 50,
+                                                            borderRadius: 999,
+                                                            borderWidth: 1,
+                                                            borderColor: colors.secondaryCard,
+                                                            backgroundColor: "white",
+                                                            justifyContent: "center",
+                                                            alignItems: "center",
+                                                        }}
+                                                        onPress={() => openRetailer("instacart", item)}
+                                                    >
+                                                        <InstaCartIcon size={40} />
+                                                    </Button>
+
+                                                    <Button
+                                                        style={{
+                                                            width: 50,
+                                                            height: 50,
+                                                            borderRadius: 999,
+                                                            borderWidth: 1,
+                                                            borderColor: colors.secondaryCard,
+                                                            backgroundColor: "white",
+                                                            justifyContent: "center",
+                                                            alignItems: "center",
+                                                        }}
+                                                        onPress={() => openRetailer("amazon", item)}
+                                                    >
+                                                        <AmazonIcon size={40} />
+                                                    </Button>
+
+                                                    <Button
+                                                        style={{
+                                                            width: 50,
+                                                            height: 50,
+                                                            borderRadius: 999,
+                                                            borderWidth: 1,
+                                                            borderColor: colors.secondaryCard,
+                                                            backgroundColor: "white",
+                                                            justifyContent: "center",
+                                                            alignItems: "center",
+                                                        }}
+                                                        onPress={() => openRetailer("target", item)}
+                                                    >
+                                                        <TargetIcon size={30} />
+                                                    </Button>
+
+                                                    <Button
+                                                        style={{
+                                                            width: 50,
+                                                            height: 50,
+                                                            borderRadius: 999,
+                                                            borderWidth: 1,
+                                                            borderColor: colors.secondaryCard,
+                                                            backgroundColor: "white",
+                                                            justifyContent: "center",
+                                                            alignItems: "center",
+                                                        }}
+                                                        onPress={() => openRetailer("weis", item)}
+                                                    >
+                                                        <WeisIcon size={30} />
+                                                    </Button>
+
+                                                    <Button
+                                                        style={{
+                                                            width: 50,
+                                                            height: 50,
+                                                            borderRadius: 999,
+                                                            borderWidth: 1,
+                                                            borderColor: colors.secondaryCard,
+                                                            backgroundColor: "white",
+                                                            justifyContent: "center",
+                                                            alignItems: "center",
+                                                        }}
+                                                        onPress={() => openRetailer("kroger", item)}
+                                                    >
+                                                        <KrogerIcon size={40} />
+                                                    </Button>
+
+                                                    <Button
+                                                        style={{
+                                                            width: 50,
+                                                            height: 50,
+                                                            borderRadius: 999,
+                                                            borderWidth: 1,
+                                                            borderColor: colors.secondaryCard,
+                                                            backgroundColor: "white",
+                                                            justifyContent: "center",
+                                                            alignItems: "center",
+                                                        }}
+                                                        onPress={() => openRetailer("costco", item)}
+                                                    >
+                                                        <CostcoIcon size={40} />
+                                                    </Button>
+                                                    
+                                                </ScrollView>
 
                                             </View>
+                                        );
+                                    })}
+                                </TouchableOpacity>
 
-                                            <ScrollView
-                                                horizontal
-                                                showsHorizontalScrollIndicator={false}
-                                                contentContainerStyle={{
-                                                    flexDirection: "row",
-                                                    alignItems: "center",
-                                                    gap: 15,
-                                                    paddingHorizontal: 10,
-                                                }}
-                                            >
-                                                <Button
-                                                    style={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        borderRadius: 999,
-                                                        borderWidth: 1,
-                                                        borderColor: colors.secondaryCard,
-                                                        backgroundColor: "white",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                    }}
-                                                    onPress={() => openRetailer("walmart", item)}
-                                                >
-                                                    <WalmartIcon size={40} />
-                                                </Button>
-
-                                                <Button
-                                                    style={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        borderRadius: 999,
-                                                        borderWidth: 1,
-                                                        borderColor: colors.secondaryCard,
-                                                        backgroundColor: "white",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                    }}
-                                                    onPress={() => openRetailer("instacart", item)}
-                                                >
-                                                    <InstaCartIcon size={40} />
-                                                </Button>
-
-                                                <Button
-                                                    style={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        borderRadius: 999,
-                                                        borderWidth: 1,
-                                                        borderColor: colors.secondaryCard,
-                                                        backgroundColor: "white",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                    }}
-                                                    onPress={() => openRetailer("amazon", item)}
-                                                >
-                                                    <AmazonIcon size={40} />
-                                                </Button>
-
-                                                <Button
-                                                    style={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        borderRadius: 999,
-                                                        borderWidth: 1,
-                                                        borderColor: colors.secondaryCard,
-                                                        backgroundColor: "white",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                    }}
-                                                    onPress={() => openRetailer("target", item)}
-                                                >
-                                                    <TargetIcon size={30} />
-                                                </Button>
-
-                                                <Button
-                                                    style={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        borderRadius: 999,
-                                                        borderWidth: 1,
-                                                        borderColor: colors.secondaryCard,
-                                                        backgroundColor: "white",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                    }}
-                                                    onPress={() => openRetailer("weis", item)}
-                                                >
-                                                    <WeisIcon size={30} />
-                                                </Button>
-
-                                                <Button
-                                                    style={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        borderRadius: 999,
-                                                        borderWidth: 1,
-                                                        borderColor: colors.secondaryCard,
-                                                        backgroundColor: "white",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                    }}
-                                                    onPress={() => openRetailer("kroger", item)}
-                                                >
-                                                    <KrogerIcon size={40} />
-                                                </Button>
-
-                                                <Button
-                                                    style={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        borderRadius: 999,
-                                                        borderWidth: 1,
-                                                        borderColor: colors.secondaryCard,
-                                                        backgroundColor: "white",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                    }}
-                                                    onPress={() => openRetailer("costco", item)}
-                                                >
-                                                    <CostcoIcon size={40} />
-                                                </Button>
-                                                
-                                            </ScrollView>
-
-                                        </View>
-                                    );
-                                })}
                             </KeyboardAwareScrollView>
                         )}
                     </View>
@@ -617,9 +649,14 @@ export const GroceryMainScreen: React.FC<{
                 backgroundColor: colors.background,
             }}
         >
-            <View
+            <GradientHeader
+                height={MENU_HEIGHT}
+                baseColor={colors.background}
                 style={{
-                    height: 65,
+                    marginTop: insets.top,
+                }}
+                contentStyle={{
+                    height: MENU_HEIGHT,
                     paddingHorizontal: 20,
                     alignItems: "center",
                     flexDirection: "row",
@@ -639,134 +676,166 @@ export const GroceryMainScreen: React.FC<{
                     title="Grocery List"
                     showBackground
                     titleClassName={textStyles.h3}
+                    leftIcon={<GroceryIcon color={colors.button} size={30}/>}
                 />
-            </View>
+            </GradientHeader>
 
-            <Pressable
-                onPress={(event) => {
-                    if (event.target === event.currentTarget) {
-                        setShowCreateCartSection(false);
-                    }
-                }}
-                style={{
-                    flex: 1,
-                    gap: 5,
-                    padding: 10,
-                    alignItems: "stretch",
-                    justifyContent: "flex-start",
-                }}
-            >
-                {showCreateCartSection ? (
-                    <View
-                        style={{
-                            width: "100%",
-                            height: 135,
-                            borderRadius: 20,
-                            borderWidth: 2,
-                            overflow: "hidden",
-                            paddingVertical: 5,
-                            paddingHorizontal: 15,
-                            backgroundColor: colors.card,
-                            borderColor: colors.secondaryCard,
-                            justifyContent: "center",
-                        }}
-                    >
-                        <View style={{ flex: 1, flexDirection: "column" }} className="w-full">
-                            <Text className={textStyles.bodyMedium} style={{ color: colors.text }}>
-                                Name:
-                            </Text>
+            <View style={{ flex: 1, paddingTop: MENU_HEIGHT}}>
 
-                            <Input value={name} autoFocus onChangeText={setName} />
-                        </View>
+                <ScrollView 
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{
+                        paddingTop: MENU_HEIGHT,
+                        paddingHorizontal: 10,
+                        gap: 5
+                    }}    
+                >
+                    <View>
 
-                        <Button
-                            onPress={async () => {
-                                const trimmedName = name.trim();
-                                if (trimmedName.length < 3) return;
-
-                                await createCart(trimmedName);
-                                setName("");
-                                setShowCreateCartSection(false);
-                                await loadCarts();
-                            }}
-                            style={{
-                                position: "absolute",
-                                bottom: 10,
-                                right: 25,
-                                width: 100,
-                                flexDirection: "row",
-                            }}
-                            background
-                        >
-                            <Text className={textStyles.bodyMedium} style={{ color: colors.text }}>
-                                +Add
-                            </Text>
-                        </Button>
-                    </View>
-                ) : (
-                    <Button
-                        onPress={() => setShowCreateCartSection(true)}
-                        style={{
-                            width: "100%",
-                            height: 75,
-                            borderRadius: 20,
-                            borderWidth: 2,
-                            overflow: "hidden",
-                            backgroundColor: colors.card,
-                            borderColor: colors.secondaryCard,
-                            justifyContent: "center",
-                        }}
-                    >
-                        <AddIcon size={25} color={colors.text} />
-                    </Button>
-                )}
-
-                <ScrollView style={{ flexGrow: 0 }} showsVerticalScrollIndicator={false}>
-                    <Pressable
-                        onPress={() => setShowCreateCartSection(false)}
-                        style={{ flex: 1, gap: 5 }}
-                    >
-                        {carts.map((cart: Cart, index) => {
-                            const isActive = activeCartId === cart.id;
-
-                            return (
-                                <Button
-                                    key={cart.id ? String(cart.id) : `cart-${index}`}
-                                    disabled={loadingCart}
-                                    onPress={async () => {
-                                        setActiveCartId(cart.id);
-                                        await setActiveCart(cart.id);
-                                    }}
-                                    onLongPress={() => deleteCart(cart.id)}
-                                    style={{
-                                        width: "100%",
-                                        height: 75,
-                                        borderRadius: 20,
-                                        borderWidth: 2,
-                                        backgroundColor: colors.card,
-                                        borderColor: isActive ? colors.secondaryText : colors.secondaryCard,
-                                        justifyContent: "flex-start",
-                                        alignItems: "flex-end",
-                                        flexDirection: "row",
-                                        paddingHorizontal: 16,
-                                        gap: 5,
-                                    }}
-                                >
-                                    <Text className={textStyles.h3} style={{ color: colors.text }}>
-                                        {cart.name}
+                        {showCreateCartSection ? (
+                            <View
+                                style={{
+                                    width: "100%",
+                                    height: 135,
+                                    borderRadius: 20,
+                                    borderWidth: 2,
+                                    paddingVertical: 5,
+                                    paddingHorizontal: 15,
+                                    backgroundColor: colors.card,
+                                    borderColor: colors.secondaryCard,
+                                    justifyContent: "center",
+                                    position: "relative",
+                                }}
+                            >
+                                <View style={{ flex: 1, flexDirection: "column" }} className="w-full">
+                                    <Text
+                                        className={textStyles.bodyMedium}
+                                        style={{ color: colors.text }}
+                                    >
+                                        Name:
                                     </Text>
 
-                                    {cart.num_ingredients > 0 && (
-                                        <Text className={textStyles.small} style={{ color: colors.secondaryText }}>
-                                            {cart.num_ingredients} ings
-                                        </Text>
-                                    )}
-                                </Button>
-                            );
-                        })}
-                    </Pressable>
+                                    <Input
+                                        value={name}
+                                        autoFocus
+                                        onChangeText={setName}
+                                    />
+                                </View>
+
+                                <View
+                                    style={{
+                                        position: "absolute",
+                                        bottom: 10,
+                                        right: 10,
+                                        flexDirection: "row",
+                                        gap: 10,
+                                    }}
+                                >
+
+                                    <Button
+                                        onPress={() => setShowCreateCartSection(false)}
+                                        style={{
+                                            right: 25,
+                                            width: 75,
+                                            flexDirection: "row",
+                                            backgroundColor: colors.danger
+                                        }}
+                                        background
+                                    >
+                                        <XIcon color={colors.text} size={25} />
+                                    </Button>
+
+                                    <Button
+                                        onPress={async () => {
+                                            const trimmedName = name.trim();
+                                            if (trimmedName.length < 3) return;
+
+                                            await createCart(trimmedName);
+                                            setName("");
+                                            setShowCreateCartSection(false);
+                                            await loadCarts();
+                                        }}
+                                        style={{
+                                            right: 25,
+                                            width: 75,
+                                            flexDirection: "row",
+                                            backgroundColor: ACCENT_COLORS.teal,
+                                        }}
+                                        disabled={!name.trim()}
+                                        background
+                                    >
+                                        <CheckIcon color={colors.text} size={30} />
+                                    </Button>
+
+                                </View>
+
+                            </View>
+                        ) : (
+                            <Button
+                                onPress={() => setShowCreateCartSection(true)}
+                                style={{
+                                    width: "100%",
+                                    height: 75,
+                                    borderRadius: 20,
+                                    borderWidth: 2,
+                                    overflow: "hidden",
+                                    backgroundColor: colors.card,
+                                    borderColor: colors.secondaryCard,
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <AddIcon size={25} color={colors.text} />
+                            </Button>
+                        )}
+
+                    </View>
+
+                    {carts.map((cart: Cart, index) => {
+                        const isActive = activeCartId === cart.id;
+
+                        return (
+
+                            <Button
+                                key={cart.id ? String(cart.id) : `cart-${index}`}
+                                disabled={loadingCart}
+                                onPress={async () => {
+                                    if (showCreateCartSection) setShowCreateCartSection(false)
+                                    setActiveCartId(cart.id);
+                                    await setActiveCart(cart.id);
+                                }}
+                                onLongPress={() => deleteCart(cart.id)}
+                                style={{
+                                    width: "100%",
+                                    height: 75,
+                                    borderRadius: 20,
+                                    borderWidth: 2,
+                                    backgroundColor: colors.card,
+                                    borderColor: isActive ? colors.secondaryText : colors.secondaryCard,
+                                    justifyContent: "flex-start",
+                                    alignItems: "flex-end",
+                                    flexDirection: "row",
+                                    paddingHorizontal: 16,
+                                    gap: 5,
+                                }}
+                            >
+                                <Text className={textStyles.h3} style={{ color: colors.text }}>
+                                    {cart.name}
+                                </Text>
+
+                                {cart.num_ingredients > 0 && (
+                                    <Text className={textStyles.small} style={{ color: colors.secondaryText }}>
+                                        {cart.num_ingredients} ings
+                                    </Text>
+                                )}
+                            </Button>
+
+                        );
+                    })}
+
                 </ScrollView>
-            </Pressable>
+
+            </View>
+
         </View>
     );
 };

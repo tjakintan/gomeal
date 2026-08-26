@@ -22,29 +22,39 @@ export type ThemePalette = {
     background: string;
     card: string;
     secondaryCard: string;
+
     text: string;
     secondaryText: string;
+
     accent: string;
+
     button: string;
     buttonSecondary: string;
-    danger: string; 
-}
+
+    // Messaging
+    messageSent: string;
+    messageReceived: string;
+    messageSentText: string;
+    messageReceivedText: string;
+
+    danger: string;
+};
 
 //.Don't change order
 export const SECTION_INDEX = {
   feed: 0,
   leaderboard: 1,
-  post: 2,
-  settings: 3,
-  user: 4,
+  chefNex: 2,
+  user: 3,
+  settings: 4,
 } as const;
 
 export const INDEX_SECTION: Record<SectionIndex, Sections> = {
   0: "feed",
   1: "leaderboard",
-  2: "post",
-  3: "settings",
-  4: "user",
+  2: "chefNex",
+  3: "user",
+  4: "settings",
 };
 
 export function getPrevSectionIndex(i: SectionIndex): SectionIndex {

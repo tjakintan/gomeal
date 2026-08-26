@@ -10,6 +10,8 @@ import { useTimer, formatTimer } from "@/stores/useTimer";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Media } from "@/media/media";
 import { SectionHeader } from "@/components/SectionComponent";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import TimerScreen from "@/utils/Timer";
 
 const Steps: React.FC<PostSectionInfoProps> = ({
     isFocused,
@@ -27,6 +29,7 @@ const Steps: React.FC<PostSectionInfoProps> = ({
     } = usePostSteps();
 
     const { openTimer } = useTimer();
+    const { openSlidingOverlay, closeSlidingOverlay} = useSlidingOverlay()
 
     const { colors, textStyles } = useTheme();
 
@@ -38,7 +41,7 @@ const Steps: React.FC<PostSectionInfoProps> = ({
 
                 <SectionHeader
                     title="Steps"
-                    subtitle="Click the empty box to start."
+                    subtitle="Click the empty box to start. To undo a selection, hold down the icon."
                     showDivider
                 />
 
@@ -126,7 +129,16 @@ const Steps: React.FC<PostSectionInfoProps> = ({
 
                                                             {step.timer ? (
                                                                 <Button
-                                                                    onPress={() => openTimer(step.timer, index)}
+                                                                    onPress={() => {
+                                                                        openTimer(step.timer, index)
+                                                                        openSlidingOverlay(
+                                                                            <TimerScreen
+                                                                                value={step.timer}
+                                                                                onChange={(val) => updateStep(index, "timer", val)}
+                                                                                onClose={closeSlidingOverlay}
+                                                                            />    
+                                                                        )
+                                                                    }}
                                                                     onLongPress={() => { updateStep(index, "timer", null);}}
                                                                     delayLongPress={400}
                                                                     style={{height: "auto"}}
@@ -135,7 +147,17 @@ const Steps: React.FC<PostSectionInfoProps> = ({
                                                                     <Text className={textStyles.h3}>{formatTimer(step.timer)}</Text>
                                                                 </Button>
                                                             ) : (
-                                                                <Button onPress={() => openTimer(null, index)}>
+                                                                <Button 
+                                                                    onPress={() => {
+                                                                        openTimer(null, index)
+                                                                        openSlidingOverlay(
+                                                                            <TimerScreen
+                                                                                value={null}
+                                                                                onChange={(val) => updateStep(index, "timer", val)}
+                                                                                onClose={closeSlidingOverlay}
+                                                                            />    
+                                                                        )
+                                                                    }}>
                                                                     <TimerIcon color={colors.text} />
                                                                 </Button>
                                                             )}
@@ -151,11 +173,13 @@ const Steps: React.FC<PostSectionInfoProps> = ({
                                                                     onLongPress={() => updateStep(index, "image_url", "")}
                                                                     delayLongPress={400}
                                                                 >
-                                                                    <Media
-                                                                        uri={step.image_url}
-                                                                        mediaType="image"
-                                                                        style={{ width: 40, height: 40, borderRadius: 8 }}
-                                                                    />
+                                                                    <View pointerEvents="none">
+                                                                        <Media
+                                                                            uri={step.image_url}
+                                                                            mediaType="image"
+                                                                            style={{ width: 40, height: 40, borderRadius: 8 }}
+                                                                        />
+                                                                    </View>
                                                                 </Button>                                                
                                                             ) : (
                                                                 <Button

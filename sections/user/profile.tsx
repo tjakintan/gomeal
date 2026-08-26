@@ -15,6 +15,7 @@ import { SpinningLogoImage } from "@/utils/Logo";
 import { useCook } from "@/stores/useCook";
 import { useReward } from "@/dashboard/store/useReward";
 import { BOTTOM_INSETS } from "@/types";
+import { NAV_SIZE } from "../Navigate";
 
 type ProfileItem = {
     label: string;
@@ -234,6 +235,7 @@ function ProfilePostSection() {
                         contentContainerStyle={{
                             gap: 10,
                             paddingHorizontal: 10,
+                            paddingBottom: NAV_SIZE,
                             alignItems: "center",
                         }}
                     >
@@ -293,19 +295,15 @@ function ProfilePostSection() {
                                         </View>
                                     )}
 
-                                    <Button style={{ padding: 0 }} onPress={() => {}}>
-
-                                        <MinTag
-                                            minCard={post}
-                                            style={{
-                                                height: 150,
-                                            }}
-                                            containerStyle={{
-                                                borderRadius: 15
-                                            }}
-                                        />
-
-                                    </Button>
+                                    <MinTag
+                                        minCard={post}
+                                        style={{
+                                            height: 150,
+                                        }}
+                                        containerStyle={{
+                                            borderRadius: 15
+                                        }}
+                                    />
 
                                 </View>
                             );

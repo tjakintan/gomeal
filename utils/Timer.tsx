@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import {
     View,
     Text,
-    StyleSheet,
     Animated,
     PanResponder,
 } from "react-native";
@@ -12,10 +11,11 @@ import { useTimer, TIMER_FIELDS } from "@/stores/useTimer";
 import { Button } from "@/components/ButtonComponent";
 import { BackIcon, NoTimerIcon, TimerIcon } from "../icons/Icon";
 import { SectionHeader } from "@/components/SectionComponent";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ITEM_H    = 64;
+const ITEM_H    = 100;
 const PAD_ITEMS = 2;
 const PICKER_H  = ITEM_H * (PAD_ITEMS * 2 + 1); // 5 visible rows
 
@@ -131,16 +131,43 @@ const PickerColumn: React.FC<PickerColumnProps> = ({ max, value, label, onChange
     const items = Array.from({ length: max }, (_, i) => i);
 
     return (
-        <View style={[styles.col, { height: PICKER_H }]}>
+        <View
+            style={{
+                flex: 1,                 // ← ONLY flex here — no width, since width IS the
+                                          //   main axis in this row and would override flex
+                height: PICKER_H,
+                overflow: "hidden",
+                position: "relative",
+            }}
+        >
             <Text
                 pointerEvents="none"
-                style={[styles.colLabel, { color: colors.text, top: PICKER_H / 2 - 8 }]}
+                style={{
+                    position: "absolute",
+                    right: 4,
+                    top: PICKER_H / 2 - 8,
+                    fontSize: 11,
+                    fontWeight: "500",
+                    opacity: 0.35,
+                    letterSpacing: 0.5,
+                    zIndex: 12,
+                    color: colors.text,
+                }}
             >
                 {label}
             </Text>
 
             {/* drag surface */}
-            <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers} />
+            <View
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                }}
+                {...panResponder.panHandlers}
+            />
 
             <Animated.View
                 pointerEvents="none"
@@ -160,7 +187,17 @@ const PickerColumn: React.FC<PickerColumnProps> = ({ max, value, label, onChange
                         18;
 
                     return (
-                        <View key={item} style={styles.item}>
+                        <View
+                            key={item}
+                            style={{
+                                height: ITEM_H,
+                                width: "100%",       // fine here — this View's parent stacks
+                                                      // in the default column direction, so
+                                                      // width is the cross axis, not main axis
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
                             <Text
                                 style={{
                                     color: colors.text,
@@ -191,6 +228,7 @@ interface TimerScreenProps {
 const TimerScreen: React.FC<TimerScreenProps> = ({ onClose, onChange }) => {
     const { colors, textStyles } = useTheme();
     const { draft, setDraft, closeTimer } = useTimer();
+    const insets = useSafeAreaInsets();
 
     const isEmpty = !draft.hours && !draft.minutes && !draft.seconds;
 
@@ -203,19 +241,31 @@ const TimerScreen: React.FC<TimerScreenProps> = ({ onClose, onChange }) => {
         if (isEmpty) return;
         onChange({ ...draft });
         closeTimer();
+        onClose?.();
     };
 
     const handleClear = () => {
         onChange(null);
         closeTimer();
+        onClose?.()
     };
 
     return (
-        <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <View
+            style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: colors.background,
+                paddingBottom: insets.bottom,
+            }}
+        >
 
             {/* ── Header ── */}
-            <View className="w-full items-center gap-2 p-2 flex-row">
-                <Button background onPress={handleBack}>
+            <View style={{ top: insets.top }} className="w-full items-center gap-2 p-2 flex-row">
+                <Button style={{ backgroundColor: colors.card }} onPress={handleBack}>
                     <BackIcon color={colors.text} />
                 </Button>
                 <SectionHeader
@@ -226,44 +276,89 @@ const TimerScreen: React.FC<TimerScreenProps> = ({ onClose, onChange }) => {
             </View>
 
             {/* ── Live readout ── */}
-            <View style={styles.readoutRow}>
-                <Text style={[styles.readout, { color: colors.text }]}>
+            <View style={{ paddingTop: 70, alignItems: "center", paddingVertical: 12 }}>
+                <Text
+                    style={{
+                        fontSize: 15,
+                        fontWeight: "500",
+                        fontVariant: ["tabular-nums"],
+                        letterSpacing: 0.5,
+                        opacity: 0.45,
+                        color: colors.text,
+                    }}
+                >
                     {pad(draft.hours ?? 0)}
-                    <Text style={styles.readoutUnit}>h{"  "}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: "400", opacity: 0.6 }}>h{"  "}</Text>
                     {pad(draft.minutes ?? 0)}
-                    <Text style={styles.readoutUnit}>m{"  "}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: "400", opacity: 0.6 }}>m{"  "}</Text>
                     {pad(draft.seconds ?? 0)}
-                    <Text style={styles.readoutUnit}>s</Text>
+                    <Text style={{ fontSize: 12, fontWeight: "400", opacity: 0.6 }}>s</Text>
                 </Text>
             </View>
 
-            {/* ── Picker ── */}
-            <View style={[styles.pickerWrap, { height: PICKER_H }]}>
-
-                {/* selection rail */}
+            {/* ── Picker (flex:1 centers it in the remaining vertical space;   */}
+            {/*    the row itself keeps a FIXED height so PICKER_H math for   */}
+            {/*    the rail stays accurate — it no longer fights flex:1)      */}
+            <View style={{ flex: 1, justifyContent: "center" }}>
                 <View
-                    pointerEvents="none"
-                    style={[
-                        styles.rail,
-                        { top: (PICKER_H - ITEM_H) / 2, borderColor: colors.text },
-                    ]}
-                />
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "stretch",
+                        paddingHorizontal: 16,
+                        height: PICKER_H,
+                        width: "100%",
+                    }}
+                >
+                    {/* selection rail */}
+                    <View
+                        pointerEvents="none"
+                        style={{
+                            position: "absolute",
+                            left: 16,
+                            right: 16,
+                            top: (PICKER_H - ITEM_H) / 2,
+                            height: ITEM_H,
+                            borderTopWidth: 1,
+                            borderBottomWidth: 1,
+                            opacity: 0.2,
+                            zIndex: 10,
+                            borderColor: colors.text,
+                        }}
+                    />
 
-                {TIMER_FIELDS.map((f, idx) => (
-                    <React.Fragment key={f.key}>
-                        {idx > 0 && (
-                            <View style={styles.sepWrap}>
-                                <Text style={[styles.sep, { color: colors.text }]}>:</Text>
-                            </View>
-                        )}
-                        <PickerColumn
-                            max={f.max}
-                            value={draft[f.key] ?? 0}
-                            label={f.label}
-                            onChange={(v) => setDraft(f.key, v)}
-                        />
-                    </React.Fragment>
-                ))}
+                    {TIMER_FIELDS.map((f, idx) => (
+                        <React.Fragment key={f.key}>
+                            {idx > 0 && (
+                                <View
+                                    style={{
+                                        width: 12,
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        zIndex: 11,
+                                    }}
+                                >
+                                    <Text
+                                        style={{
+                                            fontSize: 24,
+                                            fontWeight: "200",
+                                            opacity: 0.2,
+                                            marginBottom: 4,
+                                            color: colors.text,
+                                        }}
+                                    >
+                                        :
+                                    </Text>
+                                </View>
+                            )}
+                            <PickerColumn
+                                max={f.max}
+                                value={draft[f.key] ?? 0}
+                                label={f.label}
+                                onChange={(v) => setDraft(f.key, v)}
+                            />
+                        </React.Fragment>
+                    ))}
+                </View>
             </View>
 
             {/* ── Actions ── */}
@@ -305,73 +400,3 @@ const TimerScreen: React.FC<TimerScreenProps> = ({ onClose, onChange }) => {
 };
 
 export default TimerScreen;
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-    screen: {
-        flex: 1,
-    },
-    readoutRow: {
-        alignItems: "center",
-        paddingVertical: 12,
-    },
-    readout: {
-        fontSize: 15,
-        fontWeight: "500",
-        fontVariant: ["tabular-nums"],
-        letterSpacing: 0.5,
-        opacity: 0.45,
-    },
-    readoutUnit: {
-        fontSize: 12,
-        fontWeight: "400",
-        opacity: 0.6,
-    },
-    pickerWrap: {
-        flexDirection: "row",
-        alignItems: "stretch",
-        paddingHorizontal: 16,
-    },
-    rail: {
-        position: "absolute",
-        left: 16,
-        right: 16,
-        height: ITEM_H,
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        opacity: 0.2,
-        zIndex: 10,
-    },
-    col: {
-        flex: 1,
-        overflow: "hidden",
-        position: "relative",
-    },
-    colLabel: {
-        position: "absolute",
-        right: 4,
-        fontSize: 11,
-        fontWeight: "500",
-        opacity: 0.35,
-        letterSpacing: 0.5,
-        zIndex: 12,
-    },
-    item: {
-        height: ITEM_H,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    sepWrap: {
-        width: 12,
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 11,
-    },
-    sep: {
-        fontSize: 24,
-        fontWeight: "200",
-        opacity: 0.2,
-        marginBottom: 4,
-    },
-});

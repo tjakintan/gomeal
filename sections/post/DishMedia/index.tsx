@@ -18,8 +18,6 @@ import { SpinningLogoImage } from "@/utils/Logo";
 import { useOverlay } from "@/stores/useOverlay";
 import PermissionContent from "@/components/PermissionComponent";
 
-
-
 const DishMedia: React.FC<PostSectionInfoProps> = ({
   isFocused,
   onMediaSelected,
@@ -230,6 +228,7 @@ const DishMedia: React.FC<PostSectionInfoProps> = ({
             {mediaSource === "step_image" && (stepIndex != null) && (
                 <SectionHeader
                     title={`Step ${stepIndex + 1}`}
+                    dark
                 />
             )}
 

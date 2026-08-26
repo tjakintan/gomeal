@@ -91,7 +91,7 @@
           "backgroundColor": "#111827",
           "imageWidth": 150
         }
-      ],      
+      ],
       [
         "expo-camera",
         {
@@ -118,7 +118,8 @@
       "expo-asset",
       "@react-native-google-signin/google-signin",
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

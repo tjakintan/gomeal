@@ -6,7 +6,15 @@ import { setFeedActionCount } from "@/api/feed.api";
 
 const { width, height } = Dimensions.get("window");
 
+type ReelOrigin = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
 type ReelState = {
+    origin: ReelOrigin | null;
     reels: ReelFeedCard[];
     history: ReelFeedCard[];
     loading: boolean;
@@ -21,7 +29,11 @@ type ReelState = {
     prevReel: () => void;
     setReels: (freshReels: ReelFeedCard[]) => void;
     clear: () => void;
-    open: (post: ReelFeedCard, onOpen?: () => void) => void;
+    open: (
+        post: ReelFeedCard,
+        origin?: ReelOrigin,
+        onOpen?: () => void
+    ) => void;
     close: (onClose?: () => void) => void;
     updateCounts: (post_id: number, action: keyof FeedActionCountsTypes, increment?: number) => Promise<void>;
     toggleUserReelAction: (post_id: number, action: FeedActionType) => void;
@@ -29,6 +41,7 @@ type ReelState = {
 
 export const useReel = create<ReelState>((set, get) => ({
 
+    origin: null,
     reels: [],
     history: [],
     loading: true,
@@ -122,22 +135,46 @@ export const useReel = create<ReelState>((set, get) => ({
 
     clear: () => set({ history: [], loading: false }),
 
-    open: (post, onOpen) => {
+    open: (post, origin, onOpen) => {
+
         useFeed.getState().setActiveReelPost(post);
 
         set({
-            isVisible: true,
+            isVisible:true,
+            origin: origin ?? {
+                x:0,
+                y:0,
+                width,
+                height
+            }
         });
 
         onOpen?.();
     },
 
     close: (onClose) => {
+
+        const { origin, slideX, slideY, feedBarY } = get();
+
+        if (origin) {
+            slideX.setValue(
+                origin.x - (width - origin.width) / 2
+            );
+
+            slideY.setValue(
+                origin.y - (height - origin.height) / 2
+            );
+
+            feedBarY.setValue(0);
+        }
+
         set({
-            isVisible: false,
+            isVisible:false,
+            origin:null,
         });
 
         useFeed.getState().setActiveReelPost(null);
+
         onClose?.();
     },
 

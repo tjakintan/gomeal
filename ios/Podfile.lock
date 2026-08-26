@@ -15,9 +15,9 @@ PODS:
   - DoubleConversion (1.1.6)
   - EXApplication (55.0.14):
     - ExpoModulesCore
-  - EXConstants (55.0.16):
+  - EXConstants (55.0.17):
     - ExpoModulesCore
-  - Expo (55.0.23):
+  - Expo (55.0.28):
     - boost
     - DoubleConversion
     - ExpoModulesCore
@@ -54,7 +54,9 @@ PODS:
     - React-Core
   - ExpoAppleAuthentication (55.0.13):
     - ExpoModulesCore
-  - ExpoAsset (55.0.17):
+  - ExpoAsset (55.0.18):
+    - ExpoModulesCore
+  - ExpoAudio (55.0.16):
     - ExpoModulesCore
   - ExpoBlur (55.0.14):
     - ExpoModulesCore
@@ -70,9 +72,9 @@ PODS:
     - ExpoModulesCore
   - ExpoDomWebView (55.0.6):
     - ExpoModulesCore
-  - ExpoFileSystem (55.0.19):
+  - ExpoFileSystem (55.0.24):
     - ExpoModulesCore
-  - ExpoFont (55.0.7):
+  - ExpoFont (55.0.8):
     - ExpoModulesCore
   - ExpoGL (55.0.13):
     - ExpoModulesCore
@@ -145,7 +147,7 @@ PODS:
     - RNScreens
   - ExpoSensors (55.0.14):
     - ExpoModulesCore
-  - ExpoSplashScreen (55.0.20):
+  - ExpoSplashScreen (55.0.23):
     - ExpoModulesCore
   - ExpoStoreReview (55.0.14):
     - ExpoModulesCore
@@ -2323,6 +2325,36 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-skia (2.4.18):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React
+    - React-callinvoker
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - react-native-view-shot (4.0.3):
     - boost
     - DoubleConversion
@@ -3411,6 +3443,7 @@ DEPENDENCIES:
   - "ExpoAdapterGoogleSignIn (from `../node_modules/@react-native-google-signin/google-signin/expo/ios`)"
   - ExpoAppleAuthentication (from `../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
+  - ExpoAudio (from `../node_modules/expo-audio/ios`)
   - ExpoBlur (from `../node_modules/expo-blur/ios`)
   - ExpoCamera (from `../node_modules/expo-camera/ios`)
   - ExpoCameraBarcodeScanning (from `../node_modules/expo-camera/ios`)
@@ -3488,6 +3521,7 @@ DEPENDENCIES:
   - react-native-keyboard-controller (from `../node_modules/react-native-keyboard-controller`)
   - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
+  - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-networking (from `../node_modules/react-native/ReactCommon/react/networking`)
@@ -3576,6 +3610,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-apple-authentication/ios"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
+  ExpoAudio:
+    :path: "../node_modules/expo-audio/ios"
   ExpoBlur:
     :path: "../node_modules/expo-blur/ios"
   ExpoCamera:
@@ -3727,6 +3763,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-pager-view"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
+  react-native-skia:
+    :path: "../node_modules/@shopify/react-native-skia"
   react-native-view-shot:
     :path: "../node_modules/react-native-view-shot"
   React-NativeModulesApple:
@@ -3822,19 +3860,20 @@ SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   EXApplication: ab5a9ca485adce8be81309a5172d1565e9d7467f
-  EXConstants: dadbeba983acc30f855a919658a2b34fbd86615d
-  Expo: 71d7bf2059afadf9b54b4645b433be1748f9e75b
+  EXConstants: 49a092f564eb895b79ab416f53ba54f7e6935197
+  Expo: ba630628a148476632cec47ad022e2b05174e235
   ExpoAdapterGoogleSignIn: ab4d9fc38cb91077a4138d178395525ec65d0c2e
   ExpoAppleAuthentication: 08b3d0e502f46731abdf4c59203769fb685f66c8
-  ExpoAsset: 7721c5c4ae2a7c3c8147a046727ac6c020b05648
+  ExpoAsset: 42278ae3d585ab9bf5a223e7979d5365c348cffc
+  ExpoAudio: 3cba181b50f72690b651914c5abe8d72ab9a6321
   ExpoBlur: 7a86e84e7728108fa6908d7103fa527705a3dbbf
   ExpoCamera: 82498151f9c05cc70d116d2bf68e4c187869300c
   ExpoCameraBarcodeScanning: 66aa18c44eb8d034bdb49ea1b893fe549372ef7b
   ExpoClipboard: 5d1b0cd2686406f21e616f2d9b3431259dee2e6a
   ExpoDevice: 4c6425237cc10a3e5905323c5aa87e244d7b0017
   ExpoDomWebView: b2e9d601f9cb77d3c97da73234e175b64be91928
-  ExpoFileSystem: 0b73b097e67c83622640168f620defc65a1a6f70
-  ExpoFont: a95606f106a6394df8edf6d0d87aab9020af5ad4
+  ExpoFileSystem: b16ad358dff1dd561f561d8ca0bf22cf00ddad40
+  ExpoFont: a7e34a75bdfb703fa07a0e87807f836236608c76
   ExpoGL: 7dadcb781777ef5c90144eef2efaf8425635a2b2
   ExpoGlassEffect: 2dedac2fe817f9b02d0dad29ce0aef7afebc5cd4
   ExpoHaptics: 679f09dc37d5981e619bc197732007a3334e80b8
@@ -3850,7 +3889,7 @@ SPEC CHECKSUMS:
   ExpoNotifications: f5c15fdabb5cc3168c20cf49b6551a9d46304657
   ExpoRouter: 0948f6a7c3949e8405099663e55d149408afc021
   ExpoSensors: b41c73e0f4d36a3d1ac5703ea9e03e3e95872771
-  ExpoSplashScreen: 3e64eed7a300d4e1131e8b419b5cea6e604adba7
+  ExpoSplashScreen: 6b96ff01e0f7bf9a0ca66858b9996853b129e6be
   ExpoStoreReview: 067788aa30f0460a59b681b2c850747de6abe5cb
   ExpoSymbols: 446a0835f3fb505214891d72baf5edf1de2ee4e7
   ExpoTrimVideo: edbf7f15e4a03e54aedf654521a1d79a7d3a26d8
@@ -3912,6 +3951,7 @@ SPEC CHECKSUMS:
   react-native-keyboard-controller: dbf568b5d029cdc5b26667a7c2323b160c25dc00
   react-native-pager-view: d7d2aa47f54343bf55fdcee3973503dd27c2bd37
   react-native-safe-area-context: c00143b4823773bba23f2f19f85663ae89ceb460
+  react-native-skia: 03e8994164f792bc9fa464ed475e7f8edce36d0e
   react-native-view-shot: 6c008e58f4720de58370848201c5d4a082c6d4ca
   React-NativeModulesApple: 70b1879ac2b642ef784fb6d43360c40803b0a142
   React-networking: 49160c13f35f3eb93791d062c330caea323bde87

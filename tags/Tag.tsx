@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { View, Text, StyleSheet, ViewStyle, StyleProp, Animated } from "react-native";
+import { View, Text, StyleSheet, ViewStyle, StyleProp, Animated, Pressable } from "react-native";
 import { Button } from "@/components/ButtonComponent";
 import { useTheme } from "@/provider/ThemeProvider";
 import {  difficultyColors } from "@/types/styles.types";
@@ -21,6 +21,7 @@ import { useFeed } from "@/stores/useFeed";
 import { setFeedActionCount } from "@/api/feed.api";
 import { FeedLoveIcon } from "@/icons/feed_icon";
 import { useSettingsStore } from "@/stores/useSettings";
+import { capitalize, limitLength } from "@/utils/text";
 
 const GAP = 5; 
 const CONTENT_MIN_RATIO = 0.4;
@@ -29,7 +30,12 @@ const CONTENT_MAX_RATIO = 0.5;
 type Props = {
     card: FeedCard; 
     onPressProfile?: () => void;
-    onPressMedia?: () => void;
+    onPressMedia?: (layout: {
+        x:number;
+        y:number;
+        width:number;
+        height:number;
+    }) => void;
     onPressInfo?: () => void;
     style?: StyleProp<ViewStyle>;
     flipEnabled?: boolean;
@@ -42,11 +48,13 @@ const Tag: React.FC<Props> = ({
     height = 285,
     width = 195,
 }) => {
-    const { info, post_id, tag_color, dietary,num_ingredients, profile_name, level, avatar, action_counts } = card;
+    const { info, post_id, firstName, tag_color, lastName, dietary,num_ingredients, profile_name, level, avatar, action_counts } = card;
 
     // zustand
     const { colors, textStyles } = useTheme();
     const allowFeedColors = useSettingsStore((state) => state.settings.feed.allowFeedColors);
+
+    const mediaRef = useRef<View>(null);
 
     // Render dietary icons 
     type IconComponent = React.FC<{ size?: number; color?: string }>;
@@ -74,7 +82,6 @@ const Tag: React.FC<Props> = ({
             usableHeight * CONTENT_MAX_RATIO
         )
     );
-    const imageHeight = usableHeight - contentHeight;
 
     // ── heart state ─────────────────────────────────────────────────────────
     const setMood = useAvatarMood((s) => s.setMood);
@@ -82,7 +89,6 @@ const Tag: React.FC<Props> = ({
     const userActions: FeedActionType[] = card.user_actions ?? [];
     const isLoved = userActions.includes("post_love" as FeedActionType);
     const [animateLove, setAnimateLove] = useState(0);
-    const [avatarMood, setAvatarMood] = useState<Mood>("idle");
 
     const handleLove = async () => {
         if (!post_id) return;
@@ -93,10 +99,10 @@ const Tag: React.FC<Props> = ({
         if (!alreadyLoved) {
             setAnimateLove((prev) => prev + 1);
 
-            setAvatarMood("love");
+            setMood("love");
 
             setTimeout(() => {
-                setAvatarMood("idle");
+                setMood("idle");
             }, 3000);
         }
 
@@ -144,45 +150,57 @@ const Tag: React.FC<Props> = ({
         <View
             style={[
                 {
-                    height, width, gap: 10, 
+                    height, width, 
                     borderRadius: 20,
-                    backgroundColor: allowFeedColors ? tag_color ?? colors.card : colors.card,
+                    borderWidth: allowFeedColors ? 2 : 0,
+                    borderColor: colors.secondaryCard,
                     justifyContent: "center",
-                    alignItems: "center"
+                    alignItems: "center",
                 }, style,
             ]}
         >
 
-            {/* image box */}
             <View 
                 style={{ 
                     flex: 1, 
+                    borderTopLeftRadius: 18,
+                    borderTopRightRadius: 18,
+                    overflow: "hidden",
                     width: "100%", 
-                    paddingHorizontal: 7,
-                    paddingVertical: 15
                 }}
             >
                 <View
+                    ref={mediaRef}
                     style={{
-                        flex: 1,
-                        width: "100%",
-                        borderRadius: 15,
+                        flex:1,
+                        width:"100%",
                     }}
                 >
-
                     <Media
                         uri={info.dish_media_url}
                         mediaType={info.dish_media_type ?? "image"}
                         style={{
-                            flex: 1,
-                            borderRadius: 15
+                            flex:1,
                         }}
-                        onPress={onPressMedia}
-                        //useSettingsAutoPlay={false}
+                        onPress={() => {
+
+                            mediaRef.current?.measureInWindow(
+                                (x,y,width,height)=>{
+
+                                    onPressMedia?.({
+                                        x,
+                                        y,
+                                        width,
+                                        height
+                                    });
+
+                                }
+                            );
+
+                        }}
                         iconSize={30}
                         muteControl="bottomRow"
                     />
-
                 </View>
 
             </View>
@@ -192,7 +210,7 @@ const Tag: React.FC<Props> = ({
                     position: "absolute",
                     top: -20,
                     left: 10,
-                    alignItems: "flex-end",
+                    alignItems: "flex-start",
                     flexDirection: "row",
                     gap: 2,
                 }}
@@ -209,7 +227,7 @@ const Tag: React.FC<Props> = ({
                 >
                     <FeedLoveIcon
                         color={colors.text}
-                        fillColor="red"
+                        fillColor={tag_color ?? "red"}
                         liked={isLoved}
                         animationKey={animateLove}
                         size={25}
@@ -225,82 +243,31 @@ const Tag: React.FC<Props> = ({
             <View
                 style={{
                     width: "100%",
-                    gap: 5,
                     flexDirection: "column",
+                    alignItems: "flex-start",
                     padding: 5,
                 }}
             >
 
-                <Button 
-                    onPress={onPressProfile} 
+                <Pressable
                     style={{
-                        height: "auto",
+                        height: 50,
                         width: "100%",
-                        padding: 0,
-                        flexDirection: "row",
-                        alignItems: "flex-end",
-                        justifyContent: "flex-start",
-                        gap: 5,
-                        backgroundColor: "transparent"
-                    }} className="w-full"
-                    background
-                >
-
-                    <View
-                        style={{
-                            ...StyleSheet.absoluteFillObject,
-                            backgroundColor: colors.secondaryCard,
-                            borderRadius: 25,
-                            opacity: 0.2
-                        }}
-                    />
-                        {avatar && (
-                            <DynamicAvatarRenderer
-                                avatar={avatar}
-                                background
-                                size={27}
-                                mood={avatarMood}
-                            />
-                        )}
-
-                    {profile_name && (
-                        <Text style={{ maxWidth: 100 }} className={textStyles.sectionText} numberOfLines={1} ellipsizeMode="tail">
-                            {profile_name}
-                        </Text>
-                    )}
-
-                </Button>
-
-                <Button
-                    style={{
-                        height: 30,
-                        width: "auto",
-                        paddingVertical: 0,
-                        alignSelf: "center",
-                        overflow: "hidden",
-                        backgroundColor: "transparent"
+                        alignItems: "center",
+                        flexDirection: "column",
+                        paddingHorizontal: 5,
+                        justifyContent: "center"
                     }}
-                    className="w-full"
                     onPress={onPressInfo}
                 >
 
                     <View
                         style={{
-                            ...StyleSheet.absoluteFillObject,
-                            backgroundColor: colors.secondaryCard,
-                            borderRadius: 25,
-                            opacity: 0.4
-                        }}
-                    />
-
-                    <View 
-                        style={{ 
-                            flex: 1, 
-                            gap: 5,
-                            alignItems: "center",
+                            flex: 1,
+                            gap: 7,
+                            width: "100%",
                             flexDirection: "row",
-                            justifyContent: "center"
-                        }} 
+                        }}
                     >
 
                         {/* dif */}
@@ -337,7 +304,7 @@ const Tag: React.FC<Props> = ({
                         {/* name */}
                         <View className="flex-1 justify-center">
                             {info.dish_name ? (
-                                <Text className={textStyles.bodyMedium} numberOfLines={1} ellipsizeMode="tail">
+                                <Text className={textStyles.body} numberOfLines={1} ellipsizeMode="tail">
                                     {info.dish_name}
                                 </Text>
                             ) : (
@@ -348,6 +315,16 @@ const Tag: React.FC<Props> = ({
 
                         </View>
 
+                    </View>
+
+                    <View
+                        style={{
+                            gap: 7,
+                            width: "100%",
+                            flexDirection: "row",
+                            alignItems: "flex-end",
+                        }}
+                    >
                         {/* Active dietary icons */}
                         {activeDiets.length > 0 && (
                             <View
@@ -376,7 +353,7 @@ const Tag: React.FC<Props> = ({
 
                         {/* ingredient count */}
                         <View className="flex-row gap-1 items-end">
-                            <Text className={textStyles.h3} style={{ color: colors.text }}>
+                            <Text className={textStyles.small} style={{ color: colors.text }}>
                                 {num_ingredients} 
                             </Text>
                             <Text className={textStyles.small}>
@@ -385,7 +362,119 @@ const Tag: React.FC<Props> = ({
                         </View>
                     </View>
 
-                </Button>
+                </Pressable>
+
+                <Pressable 
+                    onPress={onPressProfile} 
+                    style={{
+                        height: "auto",
+                        width: "100%",
+                        padding: 0,
+                        flexDirection: "row",
+                        alignItems: "flex-end",
+                        justifyContent: "flex-start",
+                        gap: 5,
+                        backgroundColor: "transparent"
+                    }} 
+                >
+                    <View
+                        style={{
+                            flex: 1,
+                            flexDirection: "column",
+                            justifyContent: "flex-start",
+                            alignItems: "flex-start",
+                            paddingHorizontal: 5,
+                            paddingTop: 2,
+                            paddingBottom: 5,
+                            //backgroundColor: tag_color ? tag_color : colors.button
+                        }}
+                    >
+                        <Text
+                            className={textStyles.body}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                            style={{
+                                flex: 1,
+                                minWidth: 0,
+                                marginRight: 6,
+                            }}
+                        >
+                            {limitLength(info.dish_name, 20)}
+                        </Text>
+
+                        <View
+                            style={{
+                                gap: 2,
+                                flexDirection: "row",
+                            }}
+                        >
+
+                            <DynamicAvatarRenderer
+                                avatar={avatar}
+                                background
+                                size={25}
+                            />
+
+                            <View
+                                style={{
+                                    flex: 1, 
+                                    flexDirection: "column",
+                                    justifyContent:"flex-end",
+                                }}
+                            >
+
+                                <Text
+                                    className={textStyles.body}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                    onPress={onPressProfile}
+                                    style={{
+                                        color: colors.secondaryText,
+                                    }}
+                                >
+                                    {profile_name}
+                                </Text>
+
+                                <View
+                                    style={{
+                                        gap: 3,
+                                        flexDirection: "row",
+                                    }}
+                                >
+
+                                    <Text
+                                        className={textStyles.small}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                        onPress={onPressProfile}
+                                        style={{
+                                            color: colors.text,
+                                        }}
+                                    >
+                                        {capitalize(limitLength(firstName, 10))}
+                                    </Text>
+            
+                                    <Text
+                                        className={textStyles.small}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                        onPress={onPressProfile}
+                                        style={{
+                                            color: colors.text,
+                                        }}
+                                    >
+                                        {capitalize(limitLength(lastName ?? "", 15))}
+                                    </Text>
+
+                                </View>
+
+                            </View>
+
+                        </View>
+
+                    </View>
+                </Pressable>
+
             </View>
 
         </View>

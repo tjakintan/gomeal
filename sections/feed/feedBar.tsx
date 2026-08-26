@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
-  Animated,
   ScrollView,
   TouchableOpacity,
 } from "react-native";
@@ -14,12 +13,12 @@ import {
   FiveSecondsIcon,
 } from "@/icons/feed_bar_icons";
 import { useTheme } from "@/provider/ThemeProvider";
-import { useReel } from "@/stores/useReel";
 import { SearchIcon } from "@/icons/Icon";
 import { Button } from "@/components/ButtonComponent";
 import { useFeed } from "@/stores/useFeed";
 import { FeedScopeType } from "@/types/feed.types";
 import { GradientHeader } from "@/components/GradientComponent";
+import { ACCENT_COLORS } from "@/types";
 
 type FeedItem = {
     key: FeedScopeType;
@@ -28,7 +27,7 @@ type FeedItem = {
     icon: React.ReactNode;
 };
 
-const FeedBar: React.FC<{onShowSection: (open: boolean) => void}> = ({ onShowSection }) => {
+const FeedBar: React.FC<{ setASectionOpen?: (section: "search", open: boolean) => void }> = ({ setASectionOpen }) => {
 
     const { colors, textStyles } = useTheme();
     const { selectedScope, setSelectedScope, loadFeed } = useFeed();
@@ -44,37 +43,33 @@ const FeedBar: React.FC<{onShowSection: (open: boolean) => void}> = ({ onShowSec
             key: "high_protein",
             label: "Protein",
             onPress: () => handleScopePress("high_protein"),
-            icon: <HighProteinIcon size={30} />,
+            icon: <HighProteinIcon size={40} />,
         },
         {
             key: "soup",
             label: "Soup",
             onPress: () => handleScopePress("soup"),
-            icon: <SoupIcon size={30} />,
+            icon: <SoupIcon size={40} />,
         },
         {
             key: "appetizer",
             label: "Snack",
             onPress: () => handleScopePress("appetizer"),
-            icon: <AppetizerIcon size={30} />,
+            icon: <AppetizerIcon size={40} />,
         },
         {
             key: "dessert",
             label: "Dessert",
             onPress: () => handleScopePress("dessert"),
-            icon: <DessertIcon size={30} />,
+            icon: <DessertIcon size={40} />,
         },
         {
             key: "quick",
             label: "Quick",
             onPress: () => handleScopePress("quick"),
-            icon: <FiveSecondsIcon size={30} color={colors.text} />, 
+            icon: <FiveSecondsIcon size={40} color={colors.text} />,
         },
     ];
-
-    const handleSearchPress = () => {
-        onShowSection?.(true)
-    };
 
     return (
         <GradientHeader
@@ -90,9 +85,12 @@ const FeedBar: React.FC<{onShowSection: (open: boolean) => void}> = ({ onShowSec
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{
-                        alignItems: "center",
+                        width: "100%",
+                        paddingVertical: 5,
+                        paddingHorizontal: 10,
+                        alignItems: "flex-start",
+                        justifyContent: "flex-start",
                         gap: 5,
-                        paddingRight: 4,
                     }}
                 >
                     {feedItems.map((item) => {
@@ -113,14 +111,19 @@ const FeedBar: React.FC<{onShowSection: (open: boolean) => void}> = ({ onShowSec
                                     style={{
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        height: 50,
-                                        width: 50,
+                                        height: 60,
+                                        width: 60,
                                         borderRadius: 50,
-                                        borderWidth: isActive ? 2 : 0,
-                                        borderColor: isActive ? colors.secondaryCard : colors.card,
+                                        backgroundColor: isActive ? ACCENT_COLORS.purple : "transparent",
                                     }}
                                 >
-                                    {item.icon}
+                                    <View
+                                        style={{
+                                            transform: [{ rotate: isActive ? "30deg" : "0deg" }],
+                                        }}
+                                    >
+                                        {item.icon}
+                                    </View>
                                 </Button>
 
                                 <Text
@@ -142,21 +145,7 @@ const FeedBar: React.FC<{onShowSection: (open: boolean) => void}> = ({ onShowSec
                 </ScrollView>
             </View>
 
-            <View>
-                <View className="flex-1 w-full pb-3 justify-center">
-                    <Button
-                        style={{
-                            width: 50,
-                            height: 50,
-                            alignSelf: "center",
-                        }}
-                        onPress={handleSearchPress}
-                        clearBackground
-                    >
-                        <SearchIcon color={colors.text} size={20} />
-                    </Button>
-                </View>
-            </View>
+
         </GradientHeader>
     );
 };

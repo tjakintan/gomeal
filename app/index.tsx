@@ -1,33 +1,36 @@
 import PagerView from "react-native-pager-view";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState, useRef, useEffect, useCallback, memo, useMemo } from "react";
-import { View, Animated, Dimensions, StyleSheet, useWindowDimensions, Linking } from "react-native";
+import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from "react";
+import { View, Animated, Dimensions, StyleSheet, useWindowDimensions, Linking, InteractionManager, Modal } from "react-native";
 import DashBoard from "@/dashboard/index";
 import Navigate from "@/sections/Navigate";
 import * as Notifications from "expo-notifications";
 import { Sections, SECTION_INDEX } from "@/types/layout.types";
-import { Settings, Feed, Leaderboard, User, PostScreen } from "@/sections";
+import { Settings, Feed, Leaderboard, User, ChefNex } from "@/sections";
 import OnBoardScreen from "@/onboard/index";
 import { useUser } from "@/stores/useUser";
 import { useNotificationListener } from "@/notifications/notification.socket";
 import { useTheme } from "@/provider/ThemeProvider";
-import { CookMainScreen } from "@/sections/cook";
 import NotificationScreen from "@/notifications/Notification";
 import { useInboxListener, useMessageReadListener, useNewMessageListener } from "@/api/messages.socket";
-import { useCook } from "@/stores/useCook";
-import TimerScreen from "@/utils/Timer";
-import { useTimer } from "@/stores/useTimer";
-import { usePostSteps } from "@/stores/usePost";
-import { useMessage } from "@/stores/useMessage";
-import { InboxMainScreen } from "@/sections/user/inbox";
 import { useActivateBugReport, BugReportScreen } from "./bug";
 import { useReel } from "@/stores/useReel";
 import { initNotificationListener, registerPushNotifications, requestPushNotificationPermission } from "@/notifications/pushNotification";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
 import { useOverlay } from "@/stores/useOverlay";
-import { Overlay } from "./overlay";
+import Overlay from "./overlay";
 import PermissionContent from "@/components/PermissionComponent";
+
+// Overlays
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import SlidingOverlay from "./slideOverlay";
+import { useSlideUpOverlay } from "@/stores/useSlideUpOverlay";
+import SlideUpOverlay from "./slideUpOverlay";
+
+import Reel from "@/sections/feed/reel";
+import { useFeed } from "@/stores/useFeed";
+import { useAnimatedThemeColors } from "@/stores/useTheme";
 
 const { height } = Dimensions.get("window");
 
@@ -54,15 +57,161 @@ const { height } = Dimensions.get("window");
 // Memoized sections — won't re-render when parent state changes
 const MemoUser       = memo(User);
 const MemoFeed       = memo(Feed);
-const MemoPost       = memo(PostScreen);
+const MemoChefNex       = memo(ChefNex);
 const MemoLeaderboard = memo(Leaderboard);
 const MemoSettings   = memo(Settings);
+
+const SLIDE_BASE_Z_INDEX = 1000;
+const SLIDE_UP_BASE_Z_INDEX = 3000;
+/**
+ * Controls the sliding overlay lifecycle.
+ *
+ * Opening:
+ * - Mounts the content.
+ * - Starts at the right side of the screen.
+ * - Animates into the viewport.
+ *
+ * Closing:
+ * - Slides the content back to the right.
+ * - Keeps rendering until the animation completes.
+ * - Prevents abrupt unmounting halfway through the gesture.
+*/
+const SlideOverlayItem = ({
+    id,
+    depth,
+    dark,
+    closing,
+    children,
+}: {
+    id: string;
+    depth: number;
+    dark: boolean;
+    closing: boolean;
+    children: React.ReactNode;
+}) => {
+    const { width } = useWindowDimensions();
+
+    const translateX = useRef(new Animated.Value(width)).current;
+    const hasClosed = useRef(false);
+
+    useEffect(() => {
+        Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 0,
+            speed: 20,
+        }).start();
+    }, []);
+
+    useEffect(() => {
+        if (!closing || hasClosed.current) return;
+
+        hasClosed.current = true;
+
+        Animated.spring(translateX, {
+            toValue: width,
+            useNativeDriver: true,
+            bounciness: 0,
+            speed: 20,
+        }).start(({ finished }) => {
+            if (!finished) return;
+
+            useSlidingOverlay.setState(state => ({
+                stack: state.stack.slice(0, -1),
+            }));
+        });
+    }, [closing, width]);
+
+    return (
+        <Animated.View
+            style={{
+                ...StyleSheet.absoluteFillObject,
+                zIndex: SLIDE_BASE_Z_INDEX + depth,
+                elevation: SLIDE_BASE_Z_INDEX + depth,
+                transform: [{ translateX }],
+            }}
+        >
+            <SlidingOverlay dark={dark}>
+                {children}
+            </SlidingOverlay>
+        </Animated.View>
+    );
+};
+
+const SlideUpOverlayItem = ({
+    id,
+    depth,
+    dark,
+    closing,
+    children,
+}: {
+    id: string;
+    depth: number;
+    dark: boolean;
+    closing: boolean;
+    children: React.ReactNode;
+}) => {
+    const { height } = useWindowDimensions();
+
+    const translateY = useRef(new Animated.Value(height)).current;
+    const hasClosed = useRef(false);
+
+    // Open: slide from below the screen upward
+    useEffect(() => {
+        translateY.setValue(height);
+
+        Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 0,
+            speed: 20,
+        }).start();
+    }, []);
+
+    // Close: slide back below the screen, then remove THIS overlay
+    useEffect(() => {
+        if (!closing || hasClosed.current) return;
+
+        hasClosed.current = true;
+
+        Animated.spring(translateY, {
+            toValue: height,
+            useNativeDriver: true,
+            bounciness: 0,
+            speed: 20,
+        }).start(({ finished }) => {
+            if (!finished) return;
+
+            useSlideUpOverlay.setState((state) => ({
+                stack: state.stack.filter((item) => item.id !== id),
+            }));
+        });
+    }, [closing, height, id, translateY]);
+
+    return (
+        <Animated.View
+            pointerEvents="auto"
+            style={[
+                StyleSheet.absoluteFillObject,
+                {
+                    zIndex: SLIDE_UP_BASE_Z_INDEX + depth,
+                    elevation: SLIDE_UP_BASE_Z_INDEX + depth,
+                    transform: [{ translateY }],
+                },
+            ]}
+        >
+            <SlideUpOverlay dark={dark}>
+                {children}
+            </SlideUpOverlay>
+        </Animated.View>
+    );
+};
 
 const AuthenticatedApp: React.FC = () => {
 
   const pagerRef   = useRef<PagerView>(null);
   const slideAnim  = useRef(new Animated.Value(height)).current;
-  const { height: screenHeight } = useWindowDimensions();
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   
   // Tracks whether the dashboard and/or nav bar is actually collapsed, independent
   // of `stopPager` (which also gets toggled by reel/cook/media-enhance —
@@ -72,35 +221,23 @@ const AuthenticatedApp: React.FC = () => {
   const [collapsed,  setCollapsed]  = useState(false);
 
   // ─── store selectors (stable references) ──────────────────────────────────
-  const inboxOpen  = useMessage((s) => s.inboxOpen);
-  const closeInbox = useMessage((s) => s.closeInbox);
-  const isOpen     = useCook((s) => s.isOpen);
-  const post_id    = useCook((s) => s.post_id);
-  const closeCook  = useCook((s) => s.closeCook);
-  const timerOpen  = useTimer((s) => s.isOpen);
-  const draft      = useTimer((s) => s.draft);
-  const stepIndex  = useTimer((s) => s.stepIndex);
-  const closeTimer = useTimer((s) => s.closeTimer);
-  const updateStep = usePostSteps().updateStep;
-  const { isOpen: overlayOpen, openOverlay, content, closeOverlay } = useOverlay();
+  const { isOpen: overlayOpen, openOverlay, content, children: overlayChildrenFromStore, closeOverlay } = useOverlay();
 
   // ─── local UI state ───────────────────────────────────────────────────────
   const [section,             setSection]             = useState<Sections>("feed");
-  const [focusedSection,      setFocusedSection]      = useState<Sections>("feed");
   const [feedReelOpen,        setFeedReelOpen]        = useState(false);
   const [stopPager,           setStopPager]           = useState(false);
-  const [showNoti,            setShowNoti]            = useState(false);
-  const [notiMounted,         setNotiMounted]         = useState(false);
-  const [hideNav,             setHideNav]             = useState(false);
   const [checkedPushPermission, setCheckedPushPermission] = useState(false);
   const [bugReportOpen, setBugReportOpen] = useState(false);
 
   const overlaySlideAnim = useRef(new Animated.Value(height)).current;
   const [overlayMounted, setOverlayMounted] = useState(false);
   const [overlayContent, setOverlayContent] = useState(content);
+  const [overlayChildren, setOverlayChildren] = useState(overlayChildrenFromStore);
 
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme(feedReelOpen ? "dark" : undefined);
+  const forceDark = feedReelOpen || section === "chefNex";
+  const { colors } = useTheme(forceDark ? "dark" : undefined); 
 
   // ─── request push notification permission───────────────────────────────────────────────────────
   useEffect(() => {
@@ -162,19 +299,7 @@ const AuthenticatedApp: React.FC = () => {
   useMessageReadListener();
   useNewMessageListener();
   initNotificationListener();
-
-  // ─── notification slide ───────────────────────────────────────────────────
-  useEffect(() => {
-    if (showNoti) setNotiMounted(true);
-    Animated.spring(slideAnim, {
-      toValue: showNoti ? 0 : height,
-      useNativeDriver: true,
-      bounciness: 0,
-      speed: 20,
-    }).start();
-  }, [showNoti]);
   
-
   // ─── bug report shake ─────────────────────────────────────────────────────
   useActivateBugReport({
       enabled: !bugReportOpen,
@@ -186,7 +311,7 @@ const AuthenticatedApp: React.FC = () => {
               custom: (
                 <BugReportScreen
                   section={section}
-                  dark={feedReelOpen}
+                  dark={forceDark}
                   onClose={() => {
                     setBugReportOpen(false);
                     closeOverlay();
@@ -204,34 +329,131 @@ const AuthenticatedApp: React.FC = () => {
   const stopPagerRef = useRef(stopPager);
   useEffect(() => { stopPagerRef.current = stopPager; }, [stopPager]);
 
-  const hideNavRef = useRef(hideNav);
-  useEffect(() => { hideNavRef.current = hideNav; }, [hideNav]);
-
   const sectionRef = useRef<Sections>(section);
   useEffect(() => { sectionRef.current = section; }, [section]);
 
   const collapsedRef = useRef(collapsed);
   useEffect(() => { collapsedRef.current = collapsed; }, [collapsed]);
 
-  const showNotiRef = useRef(showNoti);
-  useEffect(() => { showNotiRef.current = showNoti; }, [showNoti]);
-
-  const inboxOpenRef = useRef(inboxOpen);
-  useEffect(() => { inboxOpenRef.current = inboxOpen; }, [inboxOpen]);
-
-  const cookOpenRef = useRef(isOpen);
-  useEffect(() => { cookOpenRef.current = isOpen; }, [isOpen]);
-
-  const timerOpenRef = useRef(timerOpen);
-  useEffect(() => { timerOpenRef.current = timerOpen; }, [timerOpen]);
-
   const chromeWasHiddenBeforeOverlayRef = useRef(false);
+  
+
+  // --------- Reels Refs ------------------------------------
+  const reelTranslateX = useRef(new Animated.Value(0)).current;
+  const reelTranslateY = useRef(new Animated.Value(0)).current;
+  const reelScale = useRef(new Animated.Value(1)).current;
+
+  const reelVisible = useReel((s)=>s.isVisible);
+  const reelPost = useFeed((s)=>s.activeReelPost);
+  const reelLayout = useReel((s)=>s.origin);
+
+  useEffect(() => {
+      if (!reelVisible || !reelLayout) return;
+
+      // reset starting position
+      reelTranslateX.setValue(
+          reelLayout.x - (screenWidth - reelLayout.width) / 2
+      );
+
+      reelTranslateY.setValue(
+          reelLayout.y - (screenHeight - reelLayout.height) / 2
+      );
+
+      reelScale.setValue(
+          Math.min(
+              reelLayout.width / screenWidth,
+              reelLayout.height / screenHeight
+          )
+      );
+
+
+      InteractionManager.runAfterInteractions(() => {
+          Animated.parallel([
+              Animated.spring(reelTranslateX,{
+                  toValue:0,
+                  speed:20,
+                  bounciness:0,
+                  useNativeDriver:true,
+              }),
+
+              Animated.spring(reelTranslateY,{
+                  toValue:0,
+                  speed:20,
+                  bounciness:0,
+                  useNativeDriver:true,
+              }),
+
+              Animated.spring(reelScale,{
+                  toValue:1,
+                  speed:20,
+                  bounciness:0,
+                  useNativeDriver:true,
+              }),
+          ]).start();
+      });
+
+
+  },[
+      reelVisible,
+      reelLayout?.x,
+      reelLayout?.y,
+      reelLayout?.width,
+      reelLayout?.height,
+      screenWidth,
+      screenHeight
+  ]);
+  
+  /**
+   * Slides the sliding overlay in/out from the right edge of the screen.
+   *
+   * Unlike `Overlay`, this component is intentionally content-only:
+   *
+   * - `SlidingOverlay` does not own animation state.
+   * - `SlidingOverlay` does not control mounting/unmounting.
+   * - `AuthenticatedApp` owns the Animated.Value and transition lifecycle.
+   *
+   * This keeps all global screen transitions centralized in the app shell,
+   * preventing multiple animation owners from competing over the same UI layer.
+   *
+   * The animation uses `translateX` because the overlay behaves like a drawer:
+   *
+   *   closed:
+   *      translateX = screenWidth
+   *
+   *   open:
+   *      translateX = 0
+   *
+   * The native driver is used because `transform` properties are fully
+   * supported by React Native's native animation system, allowing the slide
+   * transition to remain smooth without JS thread involvement.
+   *
+   * The content is kept mounted during close animations so the exit transition
+   * can complete before removing the overlay from the render tree.
+  */
+  const stack = useSlidingOverlay((s) => s.stack);
+  const slideUpStack = useSlideUpOverlay((s) => s.stack);
+
+  // ─── Reel z-index tracking ──────────────────────────────────────
+  // Reel's stacking position isn't fixed — it depends on how many sliding
+  // overlays existed *before* reel opened:
+  //
+  //   - Opened directly from feed (stack empty) → reel must sit ABOVE
+  //     whatever gets pushed from within it (e.g. Cook), so Cook is
+  //     visible on top when launched from inside reel.
+  //   - Opened from within an already-open sliding overlay (e.g. profile)
+  //     → reel must sit ABOVE that overlay, but anything pushed on top of
+  //     the stack *after* reel opened (e.g. Cook, launched from reel)
+  //     must still render above reel.
+  //
+  // Captured as `stack.length` at the instant reel becomes visible, then
+  // offset by -0.5 so it sits strictly between "already on stack" (below)
+  // and "pushed after" (above), regardless of zIndex-tie render order.
+
 
   // ─── stable callbacks ─────────────────────────────────────────────────────
   const resetFeedScrolled = useCallback(() => {
     setStopPager(false);
     setCollapsed(false);
-    setHideNav(false);
 
     Animated.timing(dashAnim, {
       toValue: 0,
@@ -246,80 +468,30 @@ const AuthenticatedApp: React.FC = () => {
     }).start();
   }, []);
 
-  const goToSection = useCallback(async (s: Sections) => {
-    pagerRef.current?.setPageWithoutAnimation(SECTION_INDEX[s]);
-    closeTimer();
-    await closeCook();
+  const goToSection = useCallback(
+    async (s: Sections) => {
+      if (s !== "feed") {
+        useReel.getState().close();
+        setFeedReelOpen(false);
+        setStopPager(false);
 
-    if (s !== "feed") {
-      useReel.getState().close();
-      setFeedReelOpen(false);
-      setStopPager(false);
-
-      if (collapsedRef.current || hideNavRef.current) {
-        resetFeedScrolled();
+        if (collapsedRef.current) {
+          resetFeedScrolled();
+        }
       }
-    }
 
-    setSection(s);
-    setFocusedSection(s);
-  }, [closeTimer, closeCook, resetFeedScrolled]);
-
-  /**
-   * Swipe guard, part 1: fires once a swipe has fully resolved into a page
-   * change. If paging should be locked (`stopPager` or `hideNav`), the
-   * native pager may still have accepted the gesture before the
-   * `scrollEnabled={false}` prop update crossed the bridge — so this snaps
-   * back to the locked section instead of trusting the new position.
-   */
-  const onPageSelected = useCallback((e: any) => {
-    const newSection = Object.keys(SECTION_INDEX)[e.nativeEvent.position] as Sections;
-
-    if (stopPagerRef.current || hideNavRef.current) {
-      pagerRef.current?.setPageWithoutAnimation(SECTION_INDEX[sectionRef.current]);
-      return;
-    }
-
-    setSection(newSection);
-    setFocusedSection(newSection);
-
-    if (newSection !== "feed" && (collapsedRef.current || hideNavRef.current)) {
-      resetFeedScrolled();
-    }
-  }, [resetFeedScrolled]);
-
-  /**
-   * Swipe guard, part 2: fires as soon as a drag *starts*, before
-   * `onPageSelected` would ever fire. Catches the case where the user
-   * begins swiping mid-lock — re-snaps immediately rather than letting the
-   * gesture settle on the wrong page first.
-   */
-  const onPageScrollStateChanged = useCallback((e: any) => {
-    const state = e.nativeEvent.pageScrollState as "idle" | "dragging" | "settling";
-    if (state === "dragging" && (stopPagerRef.current || hideNavRef.current)) {
-      pagerRef.current?.setPageWithoutAnimation(SECTION_INDEX[sectionRef.current]);
-    }
-  }, []);
+      setSection(s);
+    },
+    [resetFeedScrolled]
+  );
 
   const setASectionOpen = useCallback((sec: string, open: boolean) => {
     if (sec === "reel") setFeedReelOpen(open);
     setStopPager(open);
   }, []);
 
-  const onTimerChange = useCallback((val: any) => {
-    if (stepIndex !== null) updateStep(stepIndex, "timer", val);
-  }, [stepIndex, updateStep]);
-
   const dashAnim = useRef(new Animated.Value(0)).current;
   const navAnim = useRef(new Animated.Value(0)).current;
-
-  const onOpenNotification = useCallback(async (open: boolean) => {
-    if (inboxOpen || isOpen || timerOpen) {
-      closeInbox(); await closeCook(); closeTimer(); return;
-    }
-    setShowNoti(open);
-    setHideNav(open);
-  }, [inboxOpen, isOpen, timerOpen, closeInbox, closeCook, closeTimer]);
 
   /**
    * Hides/shows the dashboard + nav chrome.
@@ -359,14 +531,6 @@ const AuthenticatedApp: React.FC = () => {
     inputRange: [0, 1],
     outputRange: [0, 120],
   });
-
-  useEffect(() => {
-    Animated.timing(navAnim, {
-      toValue: hideNav ? 1 : 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [hideNav]);
 
   // ─── dashboard transitions ───────────────────────────────────────────────────────────────
   const dashboardTranslateY = dashAnim.interpolate({
@@ -413,13 +577,13 @@ const AuthenticatedApp: React.FC = () => {
   useEffect(() => {
     if (overlayOpen && content) {
       setOverlayContent(content);
+      setOverlayChildren(overlayChildrenFromStore)
       setOverlayMounted(true);
 
-      const chromeAlreadyHidden = collapsedRef.current || hideNavRef.current;
+      const chromeAlreadyHidden = collapsedRef.current;
       chromeWasHiddenBeforeOverlayRef.current = chromeAlreadyHidden;
 
       if (!chromeAlreadyHidden) {
-        setHideNav(true);
         Animated.parallel([
           Animated.timing(dashAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
           Animated.spring(overlaySlideAnim, {
@@ -446,7 +610,6 @@ const AuthenticatedApp: React.FC = () => {
       ];
 
       if (!chromeMustStayHidden) {
-        setHideNav(false);
         anims.push(
           Animated.timing(dashAnim, { toValue: 0, duration: 220, useNativeDriver: true })
         );
@@ -479,13 +642,10 @@ const AuthenticatedApp: React.FC = () => {
           style={{
             height: 175,
             paddingTop: insets.top,
-            backgroundColor: colors.background,
+            backgroundColor: colors.background, // inner static View — see note below
           }}
         >
-          <DashBoard
-            dark={feedReelOpen}
-            onOpenNotification={onOpenNotification}
-          />
+          <DashBoard dark={forceDark}  />
         </View>
       </Animated.View>
 
@@ -501,131 +661,169 @@ const AuthenticatedApp: React.FC = () => {
         }}
       >
 
-        <PagerView
-          ref={pagerRef}
-          style={{ flex: 1 }}
-          scrollEnabled={!stopPager && !hideNav}
-          initialPage={SECTION_INDEX["feed"]}
-          offscreenPageLimit={1}
-          onPageSelected={onPageSelected}
-          onPageScrollStateChanged={onPageScrollStateChanged}
-        >
+        <View style={{ flex: 1 }}>
 
-          <View key="feed">
-            <MemoFeed
-              isFocused={focusedSection === "feed"}
-              setASectionOpen={setASectionOpen}
-              onChromeHidden={setFeedScrolled}
-              chromeAnim={dashAnim}
-            />
-          </View>
-
-          <View key="leaderboard">
-            <MemoLeaderboard
-              isFocused={focusedSection === "leaderboard"}
-            />
-          </View>
-
-          <SafeAreaView key="post">
-            <MemoPost
-              isFocused={focusedSection === "post"}
-              setMediaEnhanceOpen={setStopPager}
-            />
-          </SafeAreaView>
-
-          <SafeAreaView key="settings">
-            <MemoSettings isFocused={focusedSection === "settings"} />
-          </SafeAreaView>
-
-          <View key="user">
-            <MemoUser
-              isFocused={focusedSection === "user"}
-              setHideNav={setHideNav}
-            />
-          </View>
-
-        </PagerView>
-
-        {notiMounted && (
-          <Animated.View
-            style={{
-              position: "absolute",
-              top: 0, left: 0, right: 0, bottom: 0,
-              transform: [{ translateY: slideAnim }],
-              zIndex: 20,
-            }}
-          >
-            <View style={{ flex: 1, backgroundColor: "red" }}>
-              <NotificationScreen
-                dark={feedReelOpen}
-                onOpen={onOpenNotification}
-              />
+            <View
+                pointerEvents={section === "feed" ? "auto" : "none"}
+                style={[
+                    StyleSheet.absoluteFillObject,
+                    { display: section === "feed" ? "flex" : "none" },
+                ]}
+            >
+                <MemoFeed
+                    isFocused={section === "feed"}
+                    setASectionOpen={setASectionOpen}
+                    onChromeHidden={setFeedScrolled}
+                    chromeAnim={dashAnim}
+                />
             </View>
-          </Animated.View>
-        )}
 
-        {isOpen && post_id !== null && (
-          <View style={{
-              ...StyleSheet.absoluteFillObject,
-            }}
-          >
-            <CookMainScreen
-              key={post_id}
-              post_id={post_id}
-              dark={feedReelOpen}
-              onClose={closeCook}
-              chromeAnim={dashAnim}
-            />
-          </View>
-        )}
+            <View
+                pointerEvents={section === "leaderboard" ? "auto" : "none"}
+                style={[
+                    StyleSheet.absoluteFillObject,
+                    { display: section === "leaderboard" ? "flex" : "none" },
+                ]}
+            >
+                <MemoLeaderboard
+                    isFocused={section === "leaderboard"}
+                />
+            </View>
 
-        {timerOpen && (
-          <View pointerEvents="auto" style={StyleSheet.absoluteFillObject}>
-            <TimerScreen
-              value={draft}
-              onChange={onTimerChange}
-            />
-          </View>
-        )}
+            <View
+                pointerEvents={section === "chefNex" ? "auto" : "none"}
+                style={[
+                    StyleSheet.absoluteFillObject,
+                    { display: section === "chefNex" ? "flex" : "none" },
+                ]}
+            >
+                <MemoChefNex
+                    isFocused={section === "chefNex"}
+                    dark={forceDark}
+                />
+            </View>
 
-        {inboxOpen && (
-          <View pointerEvents="auto" style={{ ...StyleSheet.absoluteFillObject, zIndex: 30 }}>
-            <InboxMainScreen onClose={closeInbox} setHideNav={setHideNav}/>
-          </View>
-        )}
+            <View
+                pointerEvents={section === "user" ? "auto" : "none"}
+                style={[
+                    StyleSheet.absoluteFillObject,
+                    { display: section === "user" ? "flex" : "none" },
+                ]}
+            >
+                <MemoUser
+                    isFocused={section === "user"}
+                />
+            </View>
+
+            <View
+                pointerEvents={section === "settings" ? "auto" : "none"}
+                style={[
+                    StyleSheet.absoluteFillObject,
+                    { display: section === "settings" ? "flex" : "none" },
+                ]}
+            >
+                <SafeAreaView style={{ flex: 1 }}>
+                    <MemoSettings
+                        isFocused={section === "settings"}
+                    />
+                </SafeAreaView>
+            </View>
+
+        </View>
 
       </Animated.View>
 
       <Animated.View
-        pointerEvents={(hideNav || showNoti) ? "none" : "auto"}
+        pointerEvents="auto"
         style={{
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          zIndex: 999,
+          zIndex: 499,
           transform: [{ translateY: navTranslateY }], // remove navHideTranslateY
         }}
       >
         <Navigate
           goToSection={goToSection}
           section={section}
-          dark={feedReelOpen}
+          dark={forceDark}
         />
       </Animated.View>
 
-      {overlayMounted && overlayContent && (
+      {overlayMounted && (overlayContent || overlayChildren) && (
         <Animated.View
           pointerEvents="auto"
           style={{
             position: "absolute",
             top: 0, left: 0, right: 0, bottom: 0,
             transform: [{ translateY: overlaySlideAnim }],
-            zIndex: 1000,
+            zIndex: 2000,
           }}
         >
-          <Overlay content={overlayContent} onClose={closeOverlay} dark={feedReelOpen} />
+          <Overlay content={overlayContent ?? {}} onClose={closeOverlay} dark={forceDark}>
+            {overlayChildren}
+          </Overlay>
         </Animated.View>
+      )}
+
+      {stack.map((overlay, index) => (
+          <SlideOverlayItem
+              key={overlay.id}
+              id={overlay.id}
+              depth={index}
+              dark={forceDark}
+              closing={!!overlay.closing}
+          >
+              {overlay.content}
+          </SlideOverlayItem>
+      ))}
+      {slideUpStack.map((overlay, index) => (
+          <SlideUpOverlayItem
+              key={overlay.id}
+              id={overlay.id}
+              depth={index}
+              dark={forceDark}
+              closing={!!overlay.closing}
+          >
+              {overlay.content}
+          </SlideUpOverlayItem>
+      ))}
+      {reelVisible && reelPost && reelLayout && (
+          <Modal
+              visible={reelVisible}
+              transparent
+              animationType="none"
+              presentationStyle="overFullScreen"
+              statusBarTranslucent
+              onRequestClose={() => {
+                  useReel.getState().close();
+                  setFeedReelOpen(false);
+              }}
+          >
+              <Animated.View
+                  style={[
+                      StyleSheet.absoluteFillObject,
+                      {
+                          overflow: "hidden",
+                          backgroundColor: "black",
+                          transform: [
+                              { translateX: reelTranslateX },
+                              { translateY: reelTranslateY },
+                              { scale: reelScale },
+                          ],
+                      },
+                  ]}
+              >
+                  <Reel
+                      initialPost={reelPost}
+                      onBack={() => {
+                          useReel.getState().close();
+                          setFeedReelOpen(false);
+                      }}
+                  />
+              </Animated.View>
+          </Modal>
       )}
 
     </>

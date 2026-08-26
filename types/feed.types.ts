@@ -95,6 +95,25 @@ export type MinimumFeedCard = {
     action_counts: FeedActionCountsTypes;
 };
 
+export type SearchFeedCard = {
+    post_id: number;
+
+    info: {
+        dish_name: string;
+        dish_media_url: string;
+        dish_media_type: MediaType;
+    };
+
+    action_counts?: FeedActionCountsTypes;
+
+    user_sub: string;
+    profile_name: string;
+    avatar: Avatar;
+    firstName: string;
+    lastName: string | null;
+    tag_color?: string | null;
+};
+
 export type FeedProfileCard ={
     sub: string,
     post_id: number,

@@ -2,7 +2,7 @@ import { Button } from "@/components/ButtonComponent";
 import { DobInput, Input } from "@/components/InputComponent";
 import { SectionHeader } from "@/components/SectionComponent";
 import { AvatarRender } from "@/dashboard/Avatar";
-import { BackIcon, EditIcon, PersonXIcon } from "@/icons/Icon";
+import { BackIcon, CheckIcon, EditIcon, PersonSettingIcon, PersonXIcon } from "@/icons/Icon";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useFeed } from "@/stores/useFeed";
 import { useBlockUser } from "@/stores/useReport";
@@ -13,10 +13,13 @@ import { getDobParts, isValidDob } from "@/utils/time";
 import { useProfile } from "@/stores/useProfile";
 import { UpdateUserProfile } from "@/types/profile.types";
 import { SpinningLogoImage } from "@/utils/Logo";
-import { BOTTOM_INSETS } from "@/types";
+import { ACCENT_COLORS, BOTTOM_INSETS } from "@/types";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GradientHeader } from "@/components/GradientComponent";
 
 export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
+    const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme();
 
     const [showBlockSection, setShowBlockSection] = useState(false);
@@ -35,6 +38,7 @@ export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
+                paddingTop: insets.top,
             }}
         >
             <View
@@ -53,6 +57,7 @@ export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
                     title="Account"
                     showBackground
                     titleClassName={textStyles.h3}
+                    leftIcon={<PersonSettingIcon color={colors.button} size={30} />}
                 />
 
             </View>
@@ -124,8 +129,10 @@ export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
 
 };
 
+const MENU_HEIGHT = 65;
 const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
+    const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme();
 
     const {
@@ -148,9 +155,14 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 backgroundColor: colors.background,
             }}
         >
-            <View
+            <GradientHeader
+                height={MENU_HEIGHT}
+                baseColor={colors.background}
                 style={{
-                    height: 65,
+                    paddingTop: insets.top
+                }}
+                contentStyle={{
+                    height: MENU_HEIGHT,
                     paddingHorizontal: 20,
                     alignItems: "center",
                     flexDirection: "row",
@@ -166,9 +178,10 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     titleClassName={textStyles.h3}
                     leftIcon={<PersonXIcon size={30} color={colors.button} />}
                 />
-            </View>
 
-            <View style={{ flex: 1, padding: 10 }}>
+            </GradientHeader>
+
+            <View style={{ flex: 1, padding: 10, paddingTop: MENU_HEIGHT + insets.top }}>
                 {loadingBlockedUsers ? (
                     <EmptyBlockSection />
                 ) : !blockedUsers.length ? (
@@ -254,7 +267,7 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
 const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
-    const { width, height } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const { user } = useUser();
     const { loading, updateProfile } = useProfile();
     const { colors, textStyles } = useTheme();
@@ -319,10 +332,14 @@ const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 paddingBottom: BOTTOM_INSETS
             }}
         >
-            
-            <View
+            <GradientHeader
+                height={MENU_HEIGHT}
+                baseColor={colors.background}
                 style={{
-                    height: 65,
+                    paddingTop: insets.top
+                }}
+                contentStyle={{
+                    height: MENU_HEIGHT,
                     paddingHorizontal: 20,
                     alignItems: "center",
                     flexDirection: "row",
@@ -332,19 +349,46 @@ const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     <BackIcon color={colors.text} />
                 </Button>
 
-                <SectionHeader
-                    title="Update account"
-                    showBackground
-                    titleClassName={textStyles.h3}
-                    leftIcon={<EditIcon size={30} color={colors.button} />}
-                />
-            </View>
+                <View
+                    style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                    }}
+                >
+                    <SectionHeader
+                        title="Update"
+                        showBackground
+                        titleClassName={textStyles.h3}
+                        leftIcon={<EditIcon size={30} color={colors.button} />}
+                    />
+                </View>
+
+                <Button
+                    onPress={handleConfirm}
+                    style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 21,
+                        backgroundColor: ACCENT_COLORS.teal,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginLeft: 8,
+                    }}
+                    background={loading ? false : true}
+                    disabled={(loading || isEmpty) ? true : false}
+                >
+                    <CheckIcon color={colors.text} size={22} />
+                </Button>
+
+            </GradientHeader>
 
             <View
                 style={{
                     flex: 1,
                     paddingHorizontal: 5,
                     paddingVertical: 10,
+                    paddingTop: MENU_HEIGHT + insets.top,
                     justifyContent: "space-between"
                 }}
             >
@@ -483,25 +527,6 @@ const UpdateSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
                     </View>
 
-                </View>
-
-                <View style={{padding: 10}}>
-                    <Button 
-                        onPress={handleConfirm} 
-                        style={{width: 100, gap: 15, alignSelf: "center", flexDirection: "row", justifyContent: "center"}} 
-                        background={loading ? false : true}
-                        disabled={(loading || isEmpty) ? true : false}
-                    >
-                        {loading ? (
-                            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                                <SpinningLogoImage size={20} />
-                            </View>
-                        ) : (
-                            <Text className={textStyles.caption}>
-                                Confirm
-                            </Text>
-                        )}
-                    </Button>
                 </View>
 
             </View>

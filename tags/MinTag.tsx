@@ -14,14 +14,19 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Gesture } from "@/components/ButtonComponent";
 import { formatCount } from "@/utils/time";
 import { FeedLoveIcon, FeedStarIcon } from "@/icons/feed_icon";
-import { EggsIcon } from "@/icons/Icon";
+import { EggsIcon, LikeIcon, StarIcon } from "@/icons/Icon";
 
 type MinTagProps = {
     minCard: MinimumFeedCard;
     style?: StyleProp<ViewStyle>;
     containerStyle?: StyleProp<ViewStyle>;
     dark?: boolean;
-    onPress?: () => void;
+    onPress?: (layout: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    }) => void;
 };
 
 const FunctionRow: React.FC<{ icon: React.ReactNode; count: number }> = ({ icon, count }) => (
@@ -52,6 +57,7 @@ export const MinTag: React.FC<MinTagProps> = ({
     const { info, action_counts } = minCard;
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
     const likeCount = action_counts?.post_love ?? 0;
+    const mediaRef = React.useRef<View>(null);
 
     const containerRadius =
         typeof containerStyle === "object" &&
@@ -82,6 +88,7 @@ export const MinTag: React.FC<MinTagProps> = ({
                     ]}
                 >
                     <View
+                        ref={mediaRef}
                         style={[
                             StyleSheet.absoluteFillObject,
                             {
@@ -95,7 +102,18 @@ export const MinTag: React.FC<MinTagProps> = ({
                             mediaType={info.dish_media_type}
                             style={{ width: "100%", height: "100%" }}
                             iconSize={25}
-                            onPress={onPress}
+                            onPress={() => {
+                                mediaRef.current?.measureInWindow(
+                                    (x, y, width, height) => {
+                                        onPress?.({
+                                            x,
+                                            y,
+                                            width,
+                                            height,
+                                        });
+                                    }
+                                );
+                            }}
                             muteControl="row"
                         />
                     </View>
@@ -151,8 +169,8 @@ export const MinTag: React.FC<MinTagProps> = ({
 
                         {/* Stats: love · star · cook */}
                         <View style={{ flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                            <FunctionRow icon={<FeedLoveIcon size={15} color="white" fillColor="red" liked={false} />} count={action_counts?.post_love ?? 0} />
-                            <FunctionRow icon={<FeedStarIcon size={15} color="white" fillColor="yellow" starred={false} />} count={action_counts?.post_star ?? 0} />
+                            <FunctionRow icon={<LikeIcon size={15} />} count={action_counts?.post_love ?? 0} />
+                            <FunctionRow icon={<StarIcon size={15} color={"yellow"} fillColor="yellow"/>} count={action_counts?.post_star ?? 0} />
                             <FunctionRow icon={<EggsIcon size={15} />} count={action_counts?.post_cook ?? 0} />
                         </View>
                     </View>

@@ -4,7 +4,7 @@ import { useTheme } from "@/provider/ThemeProvider";
 import { Animated, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { MinimumFeedCard, UserActionedPostsType } from "@/types/feed.types";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CookIcon, LikeIcon, SendIcon, LikeOutlineIcon, EmptyImageIcon, MoreIcon, EggsIcon, GridIcon, XIcon, BlockIcon, ReportIcon, WwwIcon, CalendarIcon } from "@/icons/Icon";
+import { CookIcon, LikeIcon, SendIcon, LikeOutlineIcon, EmptyImageIcon, MoreIcon, EggsIcon, GridIcon, XIcon, BlockIcon, ReportIcon, WwwIcon, CalendarIcon, BackIcon } from "@/icons/Icon";
 import { MinTag } from "@/tags/MinTag";
 import { Button, ExpandingButton } from "@/components/ButtonComponent";
 import { SpinningLogoImage } from "@/utils/Logo";
@@ -15,6 +15,9 @@ import { useBlockUser, useReport } from "@/stores/useReport";
 import { useCook } from "@/stores/useCook";
 import * as WebBrowser from "expo-web-browser";
 import { GradientHeader } from "@/components/GradientComponent";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import { useReel } from "@/stores/useReel";
 
 export const FEED_CARD_PROFILE_RADIUS = 40;
 
@@ -24,12 +27,6 @@ type FilterMeta = {
     color: string;
     filter: keyof UserActionedPostsType;
 };
-
-const FILTERS: FilterMeta[] = [
-    { icon: GridIcon, label: "Posts", color: "red", filter: "post_made"},
-    { icon: LikeOutlineIcon, label: "Likes", color: "red", filter: "post_love"},
-    { icon: CookIcon, label: "Cooks", color: "red", filter: "post_cook"},
-];
 
 const FeedProfile: React.FC<{
     dark?: boolean;
@@ -45,11 +42,11 @@ const FeedProfile: React.FC<{
     const { reportTarget, loadingReport } = useReport();
     const { blockUser, loadingBlockUser } = useBlockUser();
     const { activeProfile, removeProfile, loadingProfile, clearActiveProfile } = useFeed(); 
+    const { openSlidingOverlay, closeSlidingOverlay } = useSlidingOverlay();
+
+    const insets = useSafeAreaInsets();
 
     const [showMenu, setShowMenu] = useState(false);
-    const [showMessagesSection, setShowMessagesSection] = useState(false);
-
-    const slideMessageSectionIn = useSharedValue(500);
 
     // ---- bio -----------------------------
     const [readMoreBio, setReadMoreBio] = useState(false);
@@ -59,17 +56,23 @@ const FeedProfile: React.FC<{
     const shownBio = !readMoreBio && isBioLong ? bio.slice(0, bioLimit).trim() : bio;
 
     const handleSectionOpen = () => {
-        setShowMessagesSection(true);
         sectionOpen?.(true);
-        setShowMenu(false);
-        slideMessageSectionIn.value = withSpring(0, { damping: 18, stiffness: 150 });
+        if (activeProfile) {
+            openSlidingOverlay(
+                <MessageScreen
+                    post_id={activeProfile.post_id ?? undefined}
+                    receiver_sub={activeProfile.sub}
+                    onClose={handleSectionClose}
+                    dark={dark}
+                    onAllowToOpenProfile={false}
+                />
+            )
+        }
     };
 
     const handleSectionClose = () => {
         sectionOpen?.(false)
-        slideMessageSectionIn.value = withTiming(500, { duration: 250 }, () => {
-            runOnJS(setShowMessagesSection)(false); 
-        });
+        closeSlidingOverlay();
     };
 
     // ----- website -----------------------------
@@ -100,7 +103,7 @@ const FeedProfile: React.FC<{
                 />
             )}
 
-            <View style={{height: 150}}>
+            <View style={{height: 200}}>
                 {activeProfile?.profile_img_url ? (
                     <Image
                         source={{uri: activeProfile?.profile_img_url}}
@@ -108,7 +111,7 @@ const FeedProfile: React.FC<{
                         resizeMode="cover"
                     />
                 ) : (
-                    <View style={{ height: "100%", width: "100%", backgroundColor: colors.card }} className="items-center justify-center">
+                    <View style={{ height: "100%", width: "100%", backgroundColor: colors.secondaryCard }} className="items-center justify-center">
                         <EmptyImageIcon color={colors.text} size={50} />
                     </View>
                 )}
@@ -118,7 +121,7 @@ const FeedProfile: React.FC<{
                         style={{
                             position: "absolute",
                             left: 15,
-                            top: 15,
+                            top: insets.top,
                             justifyContent: "center",
                             elevation: 20,
                             zIndex: 2,
@@ -126,10 +129,12 @@ const FeedProfile: React.FC<{
                         }}
                     >
                         <Button
-                            onPress={onClose} 
-                            clearBackground
+                            onPress={() => {closeSlidingOverlay(), onClose?.(), clearActiveProfile() }} 
+                            style={{
+                                backgroundColor: colors.card,
+                            }}
                         >
-                            <XIcon color={colors.danger} size={25} />
+                            <BackIcon color={colors.text} size={25} />
                         </Button>
                     </View>
                 )}
@@ -138,7 +143,7 @@ const FeedProfile: React.FC<{
                     style={{
                         position: "absolute",
                         right: 15,
-                        top: 15,
+                        top: insets.top,
                         justifyContent: "center",
                         flexDirection: "row",
                         gap: 5,
@@ -148,8 +153,8 @@ const FeedProfile: React.FC<{
                     }}
                 >
                     {(activeProfile?.sub !== user?.sub) && showMessagesButton  && (
-                        <Button onPress={handleSectionOpen} clearBackground>
-                            <SendIcon color={"white"} size={22}/>
+                        <Button onPress={handleSectionOpen} style={{ backgroundColor: colors.card }}>
+                            <SendIcon color={colors.text} size={25}/>
                         </Button>
                     )}
                     {showMore && (
@@ -219,9 +224,11 @@ const FeedProfile: React.FC<{
                                     </Button>
                                 </View>
                             }
-                            clearBackground
+                            style={{
+                                backgroundColor: colors.card,
+                            }}
                         >
-                            <MoreIcon color={"white"} size={15} rotate={90} />
+                            <MoreIcon color={colors.text} size={15} rotate={90} />
                         </ExpandingButton>
                     )}
                 </View>
@@ -391,19 +398,8 @@ const FeedProfile: React.FC<{
             </View>
 
             <View style={{ flex: 1}}>
-                <FeedProfilePostsSection dark={dark} sectionOpen={showMessagesSection}/>
+                <FeedProfilePostsSection dark={dark} />
             </View>
-
-            {showMessagesSection && activeProfile?.sub && (
-                <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: colors.background, zIndex: 6 }}>
-                    <MessageScreen
-                        post_id={activeProfile.post_id ?? undefined}
-                        receiver_sub={activeProfile.sub}
-                        onClose={handleSectionClose}
-                        dark={dark}
-                    />
-                </View>
-            )}
 
         </View>
     );
@@ -419,15 +415,18 @@ const FeedProfilePostsSection: React.FC<{ dark?: boolean; sectionOpen?: boolean 
 
     const screenWidth = Dimensions.get("window").width;
     const NUM_COLUMNS = 3;
-    const GRID_PADDING = 8;
-    const GAP = 4;
-    const itemSize = (screenWidth - GRID_PADDING * 2 - GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
+    const itemSize = (screenWidth ) / NUM_COLUMNS;
 
     const handleRefresh = useCallback(async () => {
         if (!activeProfile?.sub) return;
         await setActiveProfile(undefined, activeProfile.sub);
     }, [activeProfile?.sub, setActiveProfile]);
 
+    const FILTERS: FilterMeta[] = [
+        { icon: GridIcon, label: "Posts", color: "red", filter: "post_made"},
+        { icon: LikeOutlineIcon, label: "Likes", color: "red", filter: "post_love"},
+        { icon: CookIcon, label: "Cooks", color: "red", filter: "post_cook"},
+    ];
 
     return (
         <View style={StyleSheet.absoluteFillObject}>
@@ -508,7 +507,6 @@ const FeedProfilePostsSection: React.FC<{ dark?: boolean; sectionOpen?: boolean 
                         }
                     }}
                     contentContainerStyle={{
-                        paddingHorizontal: GRID_PADDING / 2,
                         paddingTop: 60
                     }}
                 >
@@ -522,8 +520,6 @@ const FeedProfilePostsSection: React.FC<{ dark?: boolean; sectionOpen?: boolean 
                                 key={rowIndex}
                                 style={{
                                     flexDirection: "row",
-                                    gap: GAP,
-                                    marginBottom: GAP,
                                     justifyContent: isIncompleteRow ? "flex-start" : "space-between",
                                 }}
                             >
@@ -532,12 +528,26 @@ const FeedProfilePostsSection: React.FC<{ dark?: boolean; sectionOpen?: boolean 
                                         key={colIndex}
                                         minCard={post}
                                         dark={dark}
-                                        onPress={() => openCook(post.post_id)}
-                                        style={{
-                                            width: itemSize - GRID_PADDING,
-                                            height: itemSize - GRID_PADDING,
+                                        onPress={async (layout) => {
+                                            const fullPost = await useFeed
+                                                .getState()
+                                                .loadPost(post.post_id);
+
+                                            if (!fullPost) return;
+
+                                            useReel.getState().open(
+                                                fullPost as any,
+                                                layout,
+                                                () => {
+                                                    // callback
+                                                }
+                                            );
                                         }}
-                                        containerStyle={{ borderRadius: 10 }}
+                                        style={{
+                                            width: itemSize,
+                                            height: itemSize,
+                                        }}
+                                        containerStyle={{ borderRadius: 0 }}
                                     />
                                 ))}
                             </View>
@@ -561,8 +571,9 @@ const FeedProfilePostsSection: React.FC<{ dark?: boolean; sectionOpen?: boolean 
 };
 
 const EmptyFeedProfile = ({ dark }: { dark?: boolean }) => {
-
     const { colors } = useTheme(dark ? "dark" : undefined);
+    const insets = useSafeAreaInsets();
+
     const [containerWidth, setContainerWidth] = useState(0);
     const opacity = useRef(new Animated.Value(0.45)).current;
 
@@ -583,7 +594,6 @@ const EmptyFeedProfile = ({ dark }: { dark?: boolean }) => {
         );
 
         anim.start();
-
         return () => anim.stop();
     }, []);
 
@@ -604,103 +614,111 @@ const EmptyFeedProfile = ({ dark }: { dark?: boolean }) => {
     );
 
     const NUM_COLUMNS = 3;
-    const GRID_PADDING = 8;
-    const GAP = 4;
-
     const itemSize = containerWidth
-        ? (containerWidth - GRID_PADDING * 2 - GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS
+        ? containerWidth / NUM_COLUMNS
         : 0;
 
     return (
         <View
             style={StyleSheet.absoluteFillObject}
-            onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+            onLayout={(e) =>
+                setContainerWidth(e.nativeEvent.layout.width)
+            }
         >
             {/* Cover */}
-            <View
-                style={{
-                    height: 150,
-                    backgroundColor: colors.card,
-                }}
-            >
-                {bone("100%", 150, 0)}
+            <View style={{ height: 200 }}>
+                {bone("100%", 200, 0)}
 
                 <View
                     style={{
                         position: "absolute",
                         left: 15,
-                        top: 15,
+                        top: insets.top,
                     }}
                 >
-                    {bone(35, 35, 999)}
+                    {bone(42, 42, 999)}
                 </View>
 
                 <View
                     style={{
                         position: "absolute",
                         right: 15,
-                        top: 15,
+                        top: insets.top,
                         flexDirection: "row",
-                        gap: 8,
+                        gap: 6,
                     }}
                 >
-                    {bone(35, 35, 999)}
-                    {bone(35, 35, 999)}
+                    {bone(42, 42, 999)}
+                    {bone(42, 42, 999)}
                 </View>
             </View>
 
-            {/* Name + website + Stats */}
+            {/* Profile information */}
             <View
                 style={{
-                    flexDirection: "row",
-                    paddingHorizontal: 15,
-                    paddingTop: 10,
-                    paddingBottom: 5,
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    padding: 10,
+                    gap: 12,
                 }}
             >
-                <View style={{ flex: 1, gap: 5 }}>
-                    {bone("40%", 12, 5)}
-                    {bone("55%", 14, 6)}
-                    {bone("35%", 10, 4)}
-                </View>
-
                 <View
                     style={{
                         flexDirection: "row",
-                        gap: 20,
+                        alignItems: "flex-start",
                     }}
                 >
-                    {[1, 2].map((i) => (
-                        <View
-                            key={i}
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                gap: 6,
-                            }}
-                        >
-                            {bone(40, 40, 999)}
-                            {bone(45, 18, 6)}
+                    <View
+                        style={{
+                            flex: 1,
+                            gap: 12,
+                        }}
+                    >
+                        <View style={{ gap: 4 }}>
+                            {bone("38%", 13)}
+                            {bone("28%", 12)}
+                            {bone("45%", 10)}
                         </View>
-                    ))}
+
+                        {bone("55%", 11)}
+                    </View>
+
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            gap: 18,
+                        }}
+                    >
+                        {[1, 2].map((i) => (
+                            <View
+                                key={i}
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "flex-end",
+                                    gap: 8,
+                                }}
+                            >
+                                {bone(40, 40, 999)}
+
+                                <View
+                                    style={{
+                                        gap: 4,
+                                        alignItems: "flex-start",
+                                    }}
+                                >
+                                    {bone(30, 16)}
+                                    {bone(24, 10)}
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+
+                <View style={{ gap: 6 }}>
+                    {bone("92%", 12)}
+                    {bone("82%", 12)}
                 </View>
             </View>
 
-            {/* Bio */}
-            <View
-                style={{
-                    paddingHorizontal: 15,
-                    paddingBottom: 10,
-                    gap: 6,
-                }}
-            >
-                {bone("92%", 12, 4)}
-                {bone("70%", 12, 4)}
-            </View>
-
-            {/* Filters */}
+            {/* Filter tabs */}
             <View
                 style={{
                     height: 60,
@@ -719,37 +737,27 @@ const EmptyFeedProfile = ({ dark }: { dark?: boolean }) => {
                             gap: 5,
                         }}
                     >
-                        {bone(22, 22, 999)}
-                        {bone(45, 10, 4)}
+                        {bone(20, 20, 999)}
+                        {bone(42, 10)}
                     </View>
                 ))}
             </View>
 
             {/* Grid */}
             <ScrollView
-                contentContainerStyle={{
-                    paddingHorizontal: GRID_PADDING / 2,
-                    paddingTop: 10,
-                    
-                }}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{}}
             >
-                {Array.from({ length: 4 }).map((_, row) => (
+                {Array.from({ length: 6 }).map((_, row) => (
                     <View
                         key={row}
                         style={{
                             flexDirection: "row",
-                            gap: GAP,
-                            marginBottom: GAP,
-                            justifyContent: "space-between"
                         }}
                     >
                         {[1, 2, 3].map((col) => (
                             <View key={col}>
-                                {bone(
-                                    itemSize - GRID_PADDING,
-                                    itemSize - GRID_PADDING,
-                                    10
-                                )}
+                                {bone(itemSize, itemSize, 0)}
                             </View>
                         ))}
                     </View>
@@ -758,4 +766,5 @@ const EmptyFeedProfile = ({ dark }: { dark?: boolean }) => {
         </View>
     );
 };
+
 export default FeedProfile;

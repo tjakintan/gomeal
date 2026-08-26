@@ -1,29 +1,30 @@
 import FeedBar from "./feedBar";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-  TouchableOpacity,
-  Animated,
-  StyleSheet,
-  Dimensions,
-  Modal,
-  ScrollView,
-  ListRenderItem,
+    Text,
+    View,
+    FlatList,
+    RefreshControl,
+    Animated,
+    Dimensions,
 } from "react-native";
-import Reel from "./reel";
+import { Button } from "@/components/ButtonComponent";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useFeed } from "@/stores/useFeed";
 import Tag, { EmptyTag } from "@/tags/Tag";
-import { useReel } from "@/stores/useReel";
-import { DietaryData, dietaryDescriptions, dietaryIcons } from "@/types";
+import { useReel } from "@/stores/useReel";;
 import { filterFeedByFoodPreferences } from "../../utils/feedFilter";
 import { useSettingsStore } from "@/stores/useSettings";
-import { SpinningLogoImage } from "@/utils/Logo";
 import { FeedCard, MinimumFeedCard } from "@/types/feed.types";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import { CookMainScreen } from "../cook";
+import FeedProfile from "./feedProfile";
+import { useCook } from "@/stores/useCook";
+import { SearchMainScreen } from "./search";
+import { SearchIcon } from "@/icons/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSlideUpOverlay } from "@/stores/useSlideUpOverlay";
+import { GradientHeader } from "@/components/GradientComponent";
 
 const HEIGHTS = {
     SMALL: 360,
@@ -58,31 +59,30 @@ const renderSkeletons = () => (
 
 const Feed: React.FC<{
     isFocused?: boolean; 
-    setReelOpen?: (open: boolean) => void; 
-    setShowProfile?: (open: boolean) => void;
-    setShowCook?: (post_id: number) => void;
-    setShowSearch: (open: boolean) => void;
+    setReelOpen?: (open: boolean) => void;
     isSearchOpen?: boolean;
     onChromeHidden?: (hidden: boolean) => void;
     chromeAnim: Animated.Value;
-}> = ({ isFocused, isSearchOpen, setReelOpen, setShowProfile, setShowCook, setShowSearch ,onChromeHidden, chromeAnim }) => {
+}> = ({ isFocused, isSearchOpen, setReelOpen,onChromeHidden, chromeAnim }) => {
 
-    const { colors } = useTheme();
+    const { colors, textStyles } = useTheme();
+    const { openSlidingOverlay, closeSlidingOverlay } = useSlidingOverlay();
 
     const posts = useFeed((s) => s.posts);
+    const close = useReel((s) => s.close);
     const loadFeed = useFeed((s) => s.loadFeed);
     const loadNextFeed = useFeed((s) => s.loadNextFeed);
     const loadingFeed = useFeed((s) => s.loadingFeed);
     const loadingMoreFeed = useFeed((s) => s.loadingMoreFeed);
     const hasMoreFeed = useFeed((s) => s.hasMoreFeed);
-    const activeReelPost = useFeed((s) => s.activeReelPost);
     const setActiveProfile = useFeed((s) => s.setActiveProfile);
     const setSelectedScope = useFeed((s) => s.setSelectedScope);
+    const openCook = useCook((s) => s.openCook);
 
-    const { isVisible, open, close } = useReel();  
+    const [showSearch, setShowSearch] = useState(false);
 
-    const isReelOpen = !!activeReelPost && isVisible;
-    const isFeedBarHidden = isSearchOpen || isReelOpen;
+    const insets = useSafeAreaInsets();
+    const isFeedBarHidden = isSearchOpen;
     
     const foodPreferences = useSettingsStore((state) => state.settings.food);
     const filteredPosts = useMemo(() => {
@@ -134,6 +134,12 @@ const Feed: React.FC<{
             loadNextFeed();
         }
     };
+    
+    const openSlideUpOverlay = useSlideUpOverlay((s) => s.openSlideUpOverlay);
+    const closeSlideUpOverlay = useSlideUpOverlay((s) => s.closeSlideUpOverlay);
+    const handleSearchPress = () => {
+        openSlideUpOverlay(<SearchMainScreen onClose={() => closeSlideUpOverlay()} />);
+    };
 
     const feedBarTranslateY = chromeAnim?.interpolate({
         inputRange: [0, 1],
@@ -172,14 +178,20 @@ const Feed: React.FC<{
         if (!chromeHidden.current && delta > HIDE_THRESHOLD) {
             chromeHidden.current = true;
             anchorY.current = offsetY;
+
+            setShowSearch(true);
             onChromeHidden?.(true);
+
             return;
         }
 
         if (chromeHidden.current && delta < -HIDE_THRESHOLD) {
             chromeHidden.current = false;
             anchorY.current = offsetY;
+
+            setShowSearch(false);
             onChromeHidden?.(false);
+
             return;
         }
 
@@ -220,23 +232,44 @@ const Feed: React.FC<{
                         flipEnabled
                         height={getCardHeight(post)}
                         width={`100%`}
-                        onPressInfo={() => setShowCook?.(post.post_id)}
+                        onPressInfo={() => {
+                            openCook(post.post_id)
+                            openSlidingOverlay(
+                                <CookMainScreen
+                                    post_id={post.post_id}
+                                    onClose={() => closeSlidingOverlay()}
+                                />
+                            )
+                        }}
                         onPressProfile={() => {
                             setActiveProfile(post.post_id);
-                            setShowProfile?.(true);
+                            openSlidingOverlay(
+                                <FeedProfile
+                                    onClose={() => closeSlidingOverlay()}
+                                />
+                            )
                         }}
-                        onPressMedia={async () => {
+                        onPressMedia={async (layout) => {
+
                             const fullPost = await useFeed.getState().loadPost(post.post_id);
+
                             if (!fullPost) return;
-                            useReel.getState().open(fullPost as any, () => {
-                                setReelOpen?.(true);
-                            });
+
+
+                            useReel.getState().open(
+                                fullPost as any,
+                                layout,
+                                () => {
+                                    setReelOpen?.(true);
+                                }
+                            );
+
                         }}
                     />
                 </View>
             );
         },
-        [setShowCook, setActiveProfile, setShowProfile, setReelOpen]
+        [setActiveProfile, setReelOpen]
     );
 
     return (
@@ -252,7 +285,7 @@ const Feed: React.FC<{
                         transform: [{ translateY: feedBarTranslateY }],
                     }}
                 >
-                    <FeedBar onShowSection={setShowSearch} />
+                    <FeedBar />
                 </Animated.View>
             )}
         
@@ -307,15 +340,43 @@ const Feed: React.FC<{
                 )}
             </View>
 
-            <View style={[StyleSheet.absoluteFill]}>
-                {activeReelPost && isVisible ? (
-                    <Reel
-                        initialPost={activeReelPost}
-                        chromeAnim={chromeAnim}
-                        onBack={() => close(() => setReelOpen?.(false))}
-                    />
-                ) : null}
-            </View>
+            {showSearch && (
+                <GradientHeader
+                    height={140}
+                    baseColor={colors.background}
+                    direction="bottom"
+                    style={{
+                        bottom: insets.bottom - 5,
+                        zIndex: 20,
+                    }}
+                    contentStyle={{
+                        alignItems: "center",
+                    }}
+                >
+                    <Button
+                        style={{
+                            width: "auto",
+                            height: 45,
+                            paddingHorizontal: 15,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            alignSelf: "center",
+                            gap: 10,
+                        }}
+                        onPress={handleSearchPress}
+                        clearBackground
+                    >
+                        <Text
+                            className={textStyles.body}
+                            style={{ marginRight: 10 }}
+                        >
+                            Search...
+                        </Text>
+                        <SearchIcon color={colors.text} size={20} />
+                    </Button>
+                </GradientHeader>
+            )}
+
         </>
     );
 };

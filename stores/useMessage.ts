@@ -52,6 +52,9 @@ type MessageState = {
         reader_sub: string
     ) => void;
 
+    lastInteractedAt: Record<number, number>;
+    touchConversation: (conversation_id: number) => void;
+
     deleteConversation: (conversation_id: number) => Promise<boolean>;
     removeConversationLocally: (conversation_id: number) => void;
 
@@ -93,6 +96,17 @@ export const useMessage = create<MessageState>((set, get) => ({
 
     loadingConversation: false,
     sendingMessage: false,
+
+    lastInteractedAt: {},
+
+    touchConversation: (conversation_id: number) => {
+        set((state) => ({
+            lastInteractedAt: {
+                ...state.lastInteractedAt,
+                [conversation_id]: Date.now(),
+            },
+        }));
+    },
 
     loadInbox: async (): Promise<InboxConversation[]> => {
         set({ loadingInbox: true });

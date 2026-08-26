@@ -8,7 +8,7 @@ import { useUser } from "@/stores/useUser";
 import { SvgXml } from "react-native-svg";
 import { Button } from "@/components/ButtonComponent";
 import { ToggleButton } from "@/components/ButtonComponent";
-import { BackIcon, EmptyIcon, NextIcon, PersonIcon } from "@/icons/Icon";
+import { BackIcon, CheckIcon, EmptyIcon, NextIcon, PersonIcon } from "@/icons/Icon";
 import { onBoardUserSectionProps } from "@/types/onBoard.types";
 import {
   Badge_level_1,
@@ -20,7 +20,8 @@ import {
 } from "@/icons/badge_icon";
 import Bread from "./bread";
 import { formatBread } from "@/utils/time";
-import { BOTTOM_INSETS } from "@/types";
+import { ACCENT_COLORS, BOTTOM_INSETS } from "@/types";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const OPTION_AVATAR_SIZE = 65;
 
@@ -303,6 +304,8 @@ export const EditAvatarScreen: React.FC<{
   avatar?: Avatar;
   onConfirm?: (avatar: Avatar) => void;
 }> = ({ onClose, avatar, onConfirm }) => {
+
+    const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme();
     const userAvatar = useUser((state) => state.user?.avatar);
 
@@ -330,7 +333,7 @@ export const EditAvatarScreen: React.FC<{
             style={{
                 ...StyleSheet.absoluteFillObject,
                 backgroundColor: colors.background,
-                paddingBottom: BOTTOM_INSETS
+                paddingTop: insets.top,
             }}
         >
             <View
@@ -339,18 +342,47 @@ export const EditAvatarScreen: React.FC<{
                     paddingHorizontal: 20,
                     alignItems: "center",
                     flexDirection: "row",
+                    gap: 10,
                 }}
             >
                 <Button onPress={onClose} clearBackground>
                     <BackIcon color={colors.text} />
                 </Button>
 
-                <SectionHeader
-                    title="Edit Avatar"
-                    showBackground
-                    titleClassName={textStyles.h3}
-                    leftIcon={<PersonIcon size={30} color={colors.button} />}
-                />
+                <View
+                    style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                    }}
+                >
+                    <SectionHeader
+                        title="Edit Avatar"
+                        showBackground
+                        titleClassName={textStyles.h3}
+                        leftIcon={
+                            <PersonIcon size={30} color={colors.button} />
+                        }
+                    />
+                </View>
+
+                <Button
+                    onPress={handleConfirm}
+                    clearBackground
+                    style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 21,
+                        backgroundColor: ACCENT_COLORS.teal,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        zIndex: 10,
+                        elevation: 10,
+                    }}
+                >
+                    <CheckIcon color="#FFFFFF" size={22} />
+                </Button>
 
             </View>
 
@@ -476,22 +508,6 @@ export const EditAvatarScreen: React.FC<{
 
             </ScrollView>
 
-            <View style={{ height: 60, width: "100%", alignItems: "center", marginTop: 5 }}>
-                <Button
-                    style={{
-                        width: 100,
-                        flexDirection: "row",
-                        backgroundColor: colors.button,
-                        gap: 10,
-                        overflow: "hidden",
-                    }}
-                    onPress={handleConfirm}
-                    background
-                >
-                    <Text className={textStyles.bodyMedium}>Confirm</Text>
-                </Button>
-            </View>
-
         </View>
     );
 };
@@ -546,28 +562,42 @@ export const AvatarRender: React.FC<{
     const inner = (
         <>
             <SvgXml xml={getSvg().toString()} width={size} height={size} />
-            {showBadge && resolvedBadge && (
-                <View style={{ position: "absolute", top: 0, right: 0 }}>
-                    <BadgeRender badge={resolvedBadge} size={size * 0.35} />
-                </View>
-            )}
         </>
     );
 
     if (!background) return inner;
 
     return (
-        <View style={{
-            height: size * 1.5,
-            width: size * 1.5,
-            borderRadius: 999,
-            borderWidth: 2,
-            borderColor: colors.card,
-            backgroundColor: colors.secondaryCard,
-            justifyContent: "center",
-            alignItems: "center",
-        }}>
-            {inner}
+        <View 
+            style={{
+                height: size * 1.5,
+                width: size * 1.5,
+                borderRadius: 999,
+                borderWidth: 2,
+                borderColor: colors.card,
+                backgroundColor: colors.secondaryCard,
+                justifyContent: "center",
+                alignItems: "center"
+            }}
+        >
+            {showBadge && resolvedBadge && (
+                <View style={{ position: "absolute", top: 0, right: 0 }}>
+                    <BadgeRender badge={resolvedBadge} size={size * 0.35} />
+                </View>
+            )}
+            <View   
+                style={{
+                    height: size * 1.5,
+                    width: size * 1.5,
+                    borderRadius: 999,
+                    marginBottom: 5,
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    overflow: "hidden"
+                }}
+            >
+                {inner}
+            </View>
         </View>
     );
 };

@@ -6,6 +6,9 @@ import { socketEmit } from "@/api/socket";
 import { useMessage } from "@/stores/useMessage";
 
 import { useCook } from "@/stores/useCook";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import { CookMainScreen } from "@/sections/cook";
+import MessageScreen from "@/sections/messages/messages";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -103,18 +106,25 @@ async function handleMessageNotification(conversation_id: number) {
   ]);
 
   const match = inbox.find((item) => item.conversation.id === id);
+  useMessage.setState({ pendingConversation: match ?? null });
 
-  useMessage.setState({
-    pendingConversation: match ?? null,
-    inboxOpen: true,
-  });
-};
+  useSlidingOverlay.getState().openSlidingOverlay(
+    <MessageScreen 
+      conversation_id={id} 
+      onClose={() => useSlidingOverlay.getState().closeSlidingOverlay()}
+    />
+  );
+}
 
 async function handleTrendingPost(post_id: number) {
-
-  useCook.getState().openCook(post_id);
-};
-
+  useCook.getState().openCook(post_id)
+  useSlidingOverlay.getState().openSlidingOverlay(
+    <CookMainScreen 
+      post_id={Number(post_id)} 
+      onClose={() => useSlidingOverlay.getState().closeSlidingOverlay()}
+    />
+  );
+}
 // Called at module load time — before any component mounts
 export function initNotificationListener() {
   // Live listener — fires when the user taps a notification

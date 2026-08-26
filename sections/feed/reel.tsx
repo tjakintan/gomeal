@@ -22,14 +22,20 @@ import { capitalize } from "@/utils/text";
 import { NutritionRender, DietaryRender, DifficultyRender } from "@/utils/food";
 import ReanimatedAnimated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { GradientHeader } from "@/components/GradientComponent";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import { CookMainScreen } from "../cook";
 
 const reelSkeletons = Array.from({ length: 3 });
 
-const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void; chromeAnim?: Animated.Value;}> = ({ onBack, initialPost, chromeAnim }) => {
+const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void; }> = ({ onBack, initialPost }) => {
 
     const { colors, textStyles } = useTheme("dark");
     const { openCook } = useCook();
     const { openOverlay } = useOverlay();
+    const {
+        openSlidingOverlay,
+        closeSlidingOverlay,
+    } = useSlidingOverlay();
     const { reportTarget, loadingReport } = useReport();
     
     const { loadReel, loadNextReel, hasMoreReels, loadingMoreReels, removePost, setActiveProfile, clearActiveProfile } = useFeed();
@@ -43,26 +49,21 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
     const [showMenuRow, setShowMenuRow] = useState(false);
     const [sharePostId, setSharePostId] = useState<number | null>(null);
 
-    const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false);
-    const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
-    const [isChromeHidden, setIsChromeHidden] = useState(false);
 
-    const profileSheetRef = useRef<BottomSheet>(null);
     const shareSheetRef = useRef<BottomSheet>(null);
 
     const insets = useSafeAreaInsets();
     const { height: windowHeight } = useWindowDimensions();
-    const tagHeight = isChromeHidden ? windowHeight : REEL_TAG_HEIGHT;
+    const tagHeight = windowHeight;
 
     const handleOpenShare = (post_id: number) => {
         setSharePostId(post_id);
     };
 
-    const profileSheetAnimatedIndex = useSharedValue(-1);
     const shareSheetAnimatedIndex = useSharedValue(-1);
 
     const headerAnimatedStyle = useAnimatedStyle(() => {
-        const maxIndex = Math.max(profileSheetAnimatedIndex.value, shareSheetAnimatedIndex.value);
+        const maxIndex = shareSheetAnimatedIndex.value;
 
         return {
             opacity: interpolate(maxIndex, [-1, 0], [1, 0], Extrapolation.CLAMP),
@@ -73,12 +74,6 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
             ],
         };
     });
-
-    const closeProfileSheet = () => {
-        profileSheetRef.current?.close();
-        setIsProfileSheetOpen(false);
-        clearActiveProfile();
-    };
 
     const handleReport = async () => {
         if (!activePost?.post_id || loadingReport) return;
@@ -98,18 +93,6 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
             setRefreshing(false);
         }
     };
-        
-    useEffect(() => {
-        if (!chromeAnim) return;
-
-        const currentValue = (chromeAnim as any).__getValue();
-        setIsChromeHidden(currentValue >= 0.99);
-
-        const id = chromeAnim.addListener(({ value }) => {
-            setIsChromeHidden(value >= 0.99);
-        });
-        return () => chromeAnim.removeListener(id);
-    }, [chromeAnim]);
 
     useEffect(() => {
         if (sharePostId == null) return;
@@ -137,7 +120,12 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
 
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "black" }]}>
 
-            <View style={{ height: tagHeight, backgroundColor: colors.background }}>
+            <Animated.View
+                style={{
+                    height: tagHeight,
+                    backgroundColor: colors.background,
+                }}
+            >
 
                 {(loading || refreshing) ? (
                     <View
@@ -148,7 +136,7 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                         }}
                     >
                         {reelSkeletons.map((_, i) => (
-                            <EmptyReelTag key={`reel-skeleton-${i}`} delay={i * 120} height={tagHeight} fullscreen={isChromeHidden}/>
+                            <EmptyReelTag key={`reel-skeleton-${i}`} delay={i * 120} height={tagHeight} />
                         ))}
                     </View>
                 ) : (
@@ -161,11 +149,6 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                         scrollEnabled
                         onEndReachedThreshold={0.5}
                         scrollEventThrottle={16}
-                        getItemLayout={(_, index) => ({
-                            length: tagHeight,
-                            offset: tagHeight * index,
-                            index,
-                        })}
                         refreshControl={
                             <RefreshControl
                                 refreshing={refreshing}
@@ -225,28 +208,38 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                                     height={tagHeight}
                                     onSwipeUp={nextReel}
                                     onSwipeDown={prevReel}
-                                    fullscreen={isChromeHidden}
                                     onSetActiveProfile={(post_id) => {
                                         setActiveProfile(post_id);
-                                        profileSheetRef.current?.expand();
-                                        setIsProfileSheetOpen(true);
+
+                                        openSlidingOverlay(
+                                            <FeedProfile
+                                                dark
+                                            />
+                                        );
                                     }}
                                     onSetSharePost={handleOpenShare}
                                     onOpenCook={(post_id) => {
                                         openCook(post_id);
+                                        openSlidingOverlay(
+                                            <CookMainScreen
+                                                post_id={post_id}
+                                                dark
+                                                onClose={closeSlidingOverlay}
+                                            />
+                                        )
                                     }}
                                 />
                             </>
                         )}
                     />
                 )}
-            </View>
+            </Animated.View>
 
             <ReanimatedAnimated.View
-                pointerEvents={isProfileSheetOpen ? "none" : "box-none"}
+                pointerEvents={"box-none"}
                 style={[
                     StyleSheet.absoluteFillObject,
-                    { zIndex: 2, elevation: 2 },
+                    { top: insets.top, zIndex: 2, elevation: 2 },
                     headerAnimatedStyle,
                 ]}
             >
@@ -254,13 +247,13 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                     pointerEvents="box-none"
                     style={{ ...StyleSheet.absoluteFillObject, zIndex: 2, elevation: 2 }}
                 >
-                    <View pointerEvents="box-none" style={{ position: "absolute", left: 20, top: isChromeHidden ? insets.bottom + 25 : 15 }}>
+                    <View pointerEvents="box-none" style={{ position: "absolute", left: 20,}}>
                         <Button onPress={() => onBack()} clearBackground>
                             <BackIcon color={colors.text} />
                         </Button>
                     </View>
 
-                    <View pointerEvents="box-none" style={{ position: "absolute", right: 20, top: isChromeHidden ? insets.bottom + 25 : 15 }}>
+                    <View pointerEvents="box-none" style={{ position: "absolute", right: 20,}}>
                         <ExpandingButton
                             expanded={showMenuRow}
                             onPress={() => setShowMenuRow(true)}
@@ -345,56 +338,11 @@ const Reel: React.FC<{initialPost: ReelFeedCard; onBack: (data?: string) => void
                 </View>
             </ReanimatedAnimated.View>
 
-            <BottomSheet
-                ref={profileSheetRef}
-                index={-1}
-                snapPoints={BOTTOM_SNAP_POINTS}
-                detached={false}
-                animatedIndex={profileSheetAnimatedIndex}
-                onChange={(index) => setIsProfileSheetOpen(index !== -1)}
-                enableDynamicSizing={false}
-                enablePanDownToClose={false}
-                enableContentPanningGesture={false}
-                enableHandlePanningGesture={false}
-                backdropComponent={(props) => (
-                    <BottomSheetBackdrop
-                        {...props}
-                        disappearsOnIndex={-1}
-                        appearsOnIndex={0}
-                        opacity={0.7}
-                        pressBehavior="close"
-                    />
-                )}
-                backgroundStyle={{
-                    backgroundColor: "transparent",
-                    borderRadius: FEED_CARD_PROFILE_RADIUS + 10,
-                }}
-                handleComponent={() => null}
-            >
-                <View 
-                    style={{ 
-                        flex: 1,
-                        borderTopLeftRadius: FEED_CARD_PROFILE_RADIUS + 10,
-                        borderTopRightRadius: FEED_CARD_PROFILE_RADIUS + 10,
-                    }}
-                >
-                    <View style={{ ...StyleSheet.absoluteFillObject, opacity: 0.85, backgroundColor: colors.secondaryCard, borderRadius: FEED_CARD_PROFILE_RADIUS + 10 }} />
-                    <BottomSheetView style={{ height: (chromeAnim as any).__getValue() >= 1 ? BOTTOM_HEIGHT - NAV_SIZE : 450, marginTop: 10, marginHorizontal: 10, overflow: "hidden", alignSelf: "center", backgroundColor: colors.background, borderRadius: FEED_CARD_PROFILE_RADIUS }}>
-                        <FeedProfile
-                            dark
-                            onClose={closeProfileSheet}
-                        />
-                    </BottomSheetView>
-                </View>
-            </BottomSheet>
-
             {/* Share Bottom Sheet */}
             <BottomSheet
                 ref={shareSheetRef}
                 index={-1}
                 animatedIndex={shareSheetAnimatedIndex}
-                bottomInset={isChromeHidden ? insets.bottom : BOTTOM_INSETS}
-                onChange={(index) => setIsShareSheetOpen(index !== -1)}
                 enablePanDownToClose
                 onClose={() => setSharePostId(null)}
                 keyboardBehavior="interactive"

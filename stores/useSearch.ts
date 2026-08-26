@@ -1,20 +1,20 @@
 import { create } from "zustand";
 import { get_search_api, get_user_search_api, get_trend_api } from "@/api/search.api";
-import { MinimumFeedCard } from "@/types/feed.types";
+import { MinimumFeedCard, SearchFeedCard } from "@/types/feed.types";
 import { MinimumProfile } from "@/types/profile.types";
 
 type SearchResult = {
     users?: MinimumProfile[];
     trending_user?: MinimumProfile[];
-    trending_post?: MinimumFeedCard[];
-    posts?: MinimumFeedCard[];
+    trending_post?: SearchFeedCard[];
+    posts?: SearchFeedCard[];
 };
 
 type SearchState = {
-    trending_post: MinimumFeedCard[];
+    trending_post: SearchFeedCard[];
     trending_user: MinimumProfile[];
     users: MinimumProfile[];
-    posts: MinimumFeedCard[];
+    posts: SearchFeedCard[];
     loading: boolean;
     trendLoading: boolean;
     loadSearch: (query: string) => Promise<void>;

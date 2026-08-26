@@ -1,30 +1,50 @@
-import { useColorScheme } from "react-native";
+import { Animated, useColorScheme } from "react-native";
 import { useSettingsStore } from "@/stores/useSettings";
 import { ThemePalette } from "@/types/layout.types";
 import { ACCENT_COLORS } from "@/types";
+import { useEffect, useRef } from "react";
     
 export const themeColors: Record<"light" | "dark", ThemePalette> = {
     light: {
-      background: "#ffffff",
-      card: "#f4f4f4",
-      secondaryCard: "#e5e7eb",
-      text: "#000000",
-      secondaryText: "#4b5563",
-      accent: "#5114d3",
-      button: "#4A90D9",        
-      buttonSecondary: "#cccccc", 
-      danger: "#dc2626",
+        background: "#ffffff",
+        card: "#f4f4f4",
+        secondaryCard: "#e5e7eb",
+        text: "#000000",
+        secondaryText: "#4b5563",
+
+        accent: "#5114d3",
+
+        button: "#4A90D9",
+        buttonSecondary: "#cccccc",
+
+        messageSent: "#2563EB",
+        messageReceived: "#E5E7EB",
+
+        messageSentText: "#FFFFFF",
+        messageReceivedText: "#111827",
+
+        danger: "#dc2626",
     },
+
     dark: {
-      background: "#000000",
-      card: "#1c1c1e",
-      secondaryCard: "#2c2c2e",
-      text: "#ffffff",
-      secondaryText: "#d1d5db",
-      accent: "#5114d3",
-      button: "#4A90D9",        
-      buttonSecondary: "#6b6b70", 
-      danger: "#f65353", 
+        background: "#000000",
+        card: "#1c1c1e",
+        secondaryCard: "#2c2c2e",
+        text: "#ffffff",
+        secondaryText: "#d1d5db",
+
+        accent: "#5114d3",
+
+        button: "#4A90D9",
+        buttonSecondary: "#6b6b70",
+
+        messageSent: "#2563EB",
+        messageReceived: "#2C2C2E",
+
+        messageSentText: "#FFFFFF",
+        messageReceivedText: "#FFFFFF",
+
+        danger: "#f65353",
     },
 };
 
@@ -78,6 +98,43 @@ export const useThemeColors = () => {
     accent: accentHex,
   };
 
+};
+
+export const useAnimatedThemeColors = (forceDark = false) => {
+  const activeTheme = useActiveTheme();
+  const isDark = forceDark || activeTheme === "dark";
+
+  const accentColor = useSettingsStore((state) => state.settings.app.accentColor);
+  const accentHex = ACCENT_COLORS[accentColor] ?? themeColors.dark.accent;
+
+  const progress = useRef(new Animated.Value(isDark ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: isDark ? 1 : 0,
+      duration: 250,
+      // Must run on JS thread
+      useNativeDriver: false, 
+    }).start();
+  }, [isDark]);
+
+  const c = (key: keyof ThemePalette) =>
+    progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [themeColors.light[key], themeColors.dark[key]],
+    });
+
+  return {
+    background: c("background"),
+    card: c("card"),
+    secondaryCard: c("secondaryCard"),
+    text: c("text"),
+    secondaryText: c("secondaryText"),
+    button: c("button"),
+    buttonSecondary: c("buttonSecondary"),
+    danger: c("danger"),
+    accent: accentHex,
+  };
 };
 
 export const useTextStyles = () => {

@@ -72,7 +72,7 @@ const AppSettings:React.FC = () => {
                                     height: 40,
                                     borderRadius: 999,
                                     borderWidth: isActive ? 3 : 0,
-                                    borderColor: "white",
+                                    borderColor: colors.secondaryCard,
                                     alignItems: "center",
                                     justifyContent: "center",
                                 }}

@@ -115,6 +115,13 @@ const DeleteConfirmContent: React.FC<{
     return (
         <View style={{ flex: 1, width: "100%", gap: 20, justifyContent: "center", alignItems: "center" }}>
 
+
+            <Text
+                className={textStyles.h1}
+            >
+                Confirm Account deletion
+            </Text>
+            
             <Text
                 className={textStyles.body}
                 style={{
@@ -216,7 +223,6 @@ const UserSettings: React.FC= () => {
 
     const handleDeletePress = () => {
         openOverlay({
-            title: "Delete Account",
             custom: (
                 <DeleteConfirmContent
                     onConfirm={handleDelete}

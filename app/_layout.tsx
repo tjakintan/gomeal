@@ -133,33 +133,38 @@ function LayoutContent() {
   }, [user?.sub]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <Slot />
-        </GestureHandlerRootView>
-      </TouchableWithoutFeedback>
+    <GestureHandlerRootView style={{ flex: 1 }}>
 
-      {showBootOverlay && (
-        <Animated.View
-          pointerEvents={booting ? "auto" : "none"}
-          style={{
-            ...StyleSheet.absoluteFillObject,
-            opacity: bootOpacity,
-            zIndex: 999,
-          }}
-        >
-          <BootScreen />
-        </Animated.View>
-      )}
-    </View>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          
+          <Slot />
+
+        </TouchableWithoutFeedback>
+
+        {showBootOverlay && (
+          <Animated.View
+            pointerEvents={booting ? "auto" : "none"}
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              opacity: bootOpacity,
+              zIndex: 999,
+            }}
+          >
+            <BootScreen />
+          </Animated.View>
+        )}
+
+      </View>
+
+    </GestureHandlerRootView>
   );
 }
 
 export default function RootLayout() {
   return (
     <KeyboardProvider>
-      
         <QueryClientProvider client={queryClient}>
           <FontProvider>
             <ThemeProvider>

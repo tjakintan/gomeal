@@ -7,7 +7,7 @@ export const ACCENT_COLORS = {
     purple: "#7C3AED",
     pink: "#DB2777",
     orange: "#EA580C",
-    yellow: "#FACC15",
+    yellow: "#a08209",
     teal: "#0D9488",
 } as const;
 

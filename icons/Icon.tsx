@@ -56,11 +56,11 @@ export const XIcon = ({ color, size }: { color: string; size?: number }) => {
         <Svg
             width={size ?? iconWidth}
             height={size ?? iconWidth}
-            viewBox="0 0 24 24"
+            viewBox="0 0 256 256"
         >
             <Path
                 fill={color}
-                d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59L7.11 5.7A1 1 0 0 0 5.7 7.11L10.59 12L5.7 16.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4"
+                d="M202.83 197.17a4 4 0 0 1-5.66 5.66L128 133.66l-69.17 69.17a4 4 0 0 1-5.66-5.66L122.34 128L53.17 58.83a4 4 0 0 1 5.66-5.66L128 122.34l69.17-69.17a4 4 0 1 1 5.66 5.66L133.66 128Z"
             />
         </Svg>
     );
@@ -209,6 +209,23 @@ export const BackIcon = ({
       <Path
         fill={color}
         d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+      />
+    </Svg>
+  );
+};
+
+export const MenuIcon = ({ size, color }: { size?: number; color: string }) => {
+  const dimension = size ?? iconWidth;
+
+  return (
+    <Svg width={dimension} height={dimension} viewBox="0 0 24 24">
+      <Path
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M6 8h12M6 12h12M6 16h12"
       />
     </Svg>
   );
@@ -1693,16 +1710,18 @@ export const CostcoIcon = ({ size }: { size?: number }) => {
 
 export const StarIcon = ({
   color = "#000",
+  fillColor = "transparent",
   size = 24,
 }: {
   color?: string;
+  fillColor?: string;
   size?: number;
 }) => {
   return (
     <Svg width={size + 2} height={size + 2} viewBox="0 0 24 24">
       <Path
         stroke={color}
-        fill={`transparent`}
+        fill={fillColor}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.5}

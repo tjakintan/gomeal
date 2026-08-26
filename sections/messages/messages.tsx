@@ -1,6 +1,6 @@
-import { Button, CheckButton } from "@/components/ButtonComponent";
+import { Button, CheckButton, ExpandingButton } from "@/components/ButtonComponent";
 import { StyleSheet, View, Text, Platform, FlatList, Touchable, TouchableOpacity, Modal, Pressable, Dimensions, Image, GestureResponderEvent, Keyboard, InteractionManager } from "react-native";
-import { BackIcon, CopyIcon, MoreIcon, ReportIcon, SeenIcon, ThreeDotsIcon, XIcon, DeleteIcon } from "@/icons/Icon";
+import { BackIcon, BlockIcon, CopyIcon, MoreIcon, ReportIcon, SeenIcon, ThreeDotsIcon, XIcon, DeleteIcon } from "@/icons/Icon";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useMessage } from "@/stores/useMessage";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -9,7 +9,7 @@ import { SpinningLogoImage } from "@/utils/Logo";
 import { Message } from "@/types/messages.types";
 import { formatTime, isSameDay } from "@/utils/time";
 import Animated, { useAnimatedKeyboard, useAnimatedReaction, useAnimatedStyle } from "react-native-reanimated";
-import { useReport } from "@/stores/useReport";
+import { useBlockUser, useReport } from "@/stores/useReport";
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 import { useMessageReadListener, useNewMessageListener, useTypingListener } from "@/api/messages.socket";
 import { emitTypingStart, emitTypingStop } from "@/api/messages.api";
@@ -22,6 +22,10 @@ import GomealGlassView from "@/components/GlassComponent";
 import { useKeyboardHeight } from "@/components/keyboardComponent";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { dismissConversationNotifications } from "@/notifications/pushNotification";
+import { AvatarRender } from "@/dashboard/Avatar";
+import { useFeed } from "@/stores/useFeed";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import FeedProfile from "../feed/feedProfile";
 
 const MessageBubble = ({
     children,
@@ -75,17 +79,18 @@ const MessageBubble = ({
 
 const MessageScreen: React.FC<{
     post_id?: number;
-    showBack?: boolean;
-    showX?: boolean;
     conversation_id?: number;
     receiver_sub?: string;
     onClose?: () => void;
     dark?: boolean;
-    inBottomSheet?: boolean;
-}> = ({ post_id, showBack = true, showX = false, conversation_id, receiver_sub, onClose, dark, inBottomSheet = true }) => {
+    onAllowToOpenProfile?: boolean
+}> = ({ post_id, conversation_id, receiver_sub, onClose, dark, onAllowToOpenProfile = true }) => {
 
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
     const { reportTarget, loadingReport } = useReport();
+    const { blockUser, loadingBlockUser } = useBlockUser();
+    const { setActiveProfile, clearActiveProfile } = useFeed();
+    const { openSlidingOverlay, closeSlidingOverlay } = useSlidingOverlay();
     const {
         sendMessage,
         markAsRead,
@@ -93,12 +98,18 @@ const MessageScreen: React.FC<{
         removeMessage,
         conversations,
         loadConversation,
-        loadingConversation,
         deleteMessage,
+        loadInbox,
+        clearConversation,
     } = useMessage(); 
+
+    const otherUser = conversations?.other_user;
+
+    const insets = useSafeAreaInsets();
 
     const [text, setText] = useState("");
     const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+    const [showMenu, setShowMenu] = useState(false);
 
     const rootRef = useRef<View>(null);
     const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
@@ -113,6 +124,9 @@ const MessageScreen: React.FC<{
 
     const [checkedMessages, setCheckedMessages] = useState<number[]>([]);
     const [isSelecting, setIsSelecting] = useState(false);
+
+    // header height: avatar/name row when otherUser is present, otherwise the slim back/X bar
+    const HEADER_HEIGHT = otherUser ? 70 : 50;
 
     const toggleChecked = (messageId: number) => {
         setCheckedMessages(prev =>
@@ -177,7 +191,7 @@ const MessageScreen: React.FC<{
     const EDGE_PADDING = 40;
     const MENU_GAP = 10;
     const PREFER_ABOVE_BIAS = 40;
-    const KEYBOARD_TOP_CLEARANCE = inBottomSheet ? -70 : 70;
+    const KEYBOARD_TOP_CLEARANCE = 80;
 
     const bubbleTopRel = bubbleRect.y - containerOffset.y;
     const bubbleBottomRel = bubbleTopRel + bubbleRect.height;
@@ -252,9 +266,6 @@ const MessageScreen: React.FC<{
             });
         };
 
-        // Primary measurement: settle bottomGap once mount + any entrance animation
-        // (bottom sheet open, etc.) finishes — works identically whether embedded
-        // in a sheet (bottomGap > 0) or full-screen (bottomGap ≈ 0)
         const interactionHandle = InteractionManager.runAfterInteractions(measureGap);
 
         return () => {
@@ -283,7 +294,7 @@ const MessageScreen: React.FC<{
                     onPress={() => setSelectedMessage(null)}
                 >
                     <BlurView
-                        intensity={7}
+                        intensity={50}
                         tint={dark ? "dark" : "light"}
                         style={StyleSheet.absoluteFill}
                     />
@@ -360,7 +371,7 @@ const MessageScreen: React.FC<{
                                 justifyContent: "space-between",
                                 paddingHorizontal: 16,
                                 paddingVertical: 0,
-                                backgroundColor: colors.background
+                                backgroundColor: colors.secondaryCard
                             }}
                         >
                             <Text style={{ color: colors.text, fontSize: 16 }}>More</Text>
@@ -380,7 +391,7 @@ const MessageScreen: React.FC<{
                                 justifyContent: "space-between",
                                 paddingHorizontal: 16,
                                 paddingVertical: 0,
-                                backgroundColor: colors.background
+                                backgroundColor: colors.secondaryCard
                             }}
                         >
                             <Text style={{ color: colors.text, fontSize: 16 }}>Copy</Text>
@@ -425,12 +436,21 @@ const MessageScreen: React.FC<{
                         isMe={selectedMessage.sender_sub === conversations?.sender_sub}
                         backgroundColor={
                             selectedMessage.sender_sub === conversations?.sender_sub
-                                ? colors.button
-                                : colors.card
+                                ? colors.messageSent
+                                : colors.messageReceived
                         }
                         maxWidth={bubbleRect.width}
                     >
-                        <Text style={{ color: colors.text }}>{selectedMessage.content}</Text>
+                        <Text
+                            style={{
+                                color:
+                                    selectedMessage.sender_sub === conversations?.sender_sub
+                                        ? colors.messageSentText
+                                        : colors.messageReceivedText,
+                            }}
+                        >
+                            {selectedMessage.content}
+                        </Text>
                     </MessageBubble>
                 </View>
             )}
@@ -439,9 +459,9 @@ const MessageScreen: React.FC<{
                 <View
                     style={{
                         position: "absolute",
-                        top: 15,
+                        top: insets.top + 15,
                         right: 15,
-                        zIndex: 11,
+                        zIndex: 61,
                         flexDirection: "row",
                         alignItems: "flex-end",
                         gap: 2
@@ -478,7 +498,7 @@ const MessageScreen: React.FC<{
                 ) : (
                     <FlatList
                         style={{ zIndex: 2 }}
-                        contentContainerStyle={{ gap: 5, paddingHorizontal: 10, paddingTop: isKeyboardVisible ? keyboardHeight + KEYBOARD_TOP_CLEARANCE : 70, paddingBottom: 25 }}
+                        contentContainerStyle={{ gap: 5, paddingHorizontal: 10, paddingTop: isKeyboardVisible ? keyboardHeight + KEYBOARD_TOP_CLEARANCE : KEYBOARD_TOP_CLEARANCE, paddingBottom: insets.top + HEADER_HEIGHT + 10 }}
                         data={[...conversations.messages].reverse()}
                         inverted
                         overScrollMode="never"
@@ -495,11 +515,6 @@ const MessageScreen: React.FC<{
                                 const ref = bubbleRefs.current[msg.id];
                                 if (!ref || !rootRef.current) return;
 
-                                // Measure the container fresh, at the same moment as the bubble — don't
-                                // rely on the `onLayout` containerOffset capture, since that can run
-                                // while a parent BottomSheet (e.g. from NotificationScreen) is still
-                                // mid-animation into its final position, leaving `containerOffset` stale
-                                // for the rest of the screen's lifetime.
                                 rootRef.current.measureInWindow((rootX, rootY) => {
                                     ref.measureInWindow((x, y, width, height) => {
                                         setContainerOffset({ x: rootX, y: rootY });
@@ -539,7 +554,7 @@ const MessageScreen: React.FC<{
 
                                     {showDateLabel && (
                                         <View style={{ alignItems: "center", marginVertical: 8 }}>
-                                            <Text className={textStyles.caption}>
+                                            <Text className={textStyles.small}>
                                                 {formatTime(msg.sent_at, false)}
                                             </Text>
                                         </View>
@@ -777,48 +792,173 @@ const MessageScreen: React.FC<{
                 </Animated.View>
             )}
 
+            {/* ---- Top header ---- */}
             <GradientHeader
                 baseColor={colors.background}
-                height={50}
+                height={HEADER_HEIGHT + insets.top}
+                contentStyle={{
+                    height: HEADER_HEIGHT + insets.top,
+                    paddingTop: insets.top,
+                    paddingHorizontal: 15,
+                    flexDirection: "row",
+                    alignItems: "center",
+                }}
             >
-                {showBack && (
-                    <View
-                        pointerEvents="box-none"
+                {showMenu && (
+                    <Pressable
+                        onPress={() => setShowMenu(false)}
                         style={{
-                            ...StyleSheet.absoluteFillObject,
-                            top: 15,
-                            left: 15,
-                            zIndex: 5,
-                            elevation: 5,
+                            position: "absolute",
+                            top: -2000,
+                            left: -2000,
+                            right: -2000,
+                            bottom: -2000,
+                            zIndex: 100,
                         }}
-                    >
+                    />
+                )}
+
+                {otherUser && (
+                    <>
                         <Button
                             clearBackground
-                            onPress={onClose}
+                            onPress={() => {
+                                clearConversation();
+                                onClose?.();
+                            }}
                         >
                             <BackIcon color={colors.text} />
                         </Button>
-                    </View>
-                )}
 
-                {showX && (
-                    <View
-                        pointerEvents="box-none"
-                        style={{
-                            ...StyleSheet.absoluteFillObject,
-                            left: 15,
-                            top: 15,
-                            zIndex: 5,
-                            elevation: 5,
-                        }}
-                    >
+                        <AvatarRender avatar={otherUser?.avatar} size={32} />
+
                         <Button
-                            clearBackground
-                            onPress={onClose}
+                            onPress={async () => {
+                                if(!onAllowToOpenProfile) return
+                                await setActiveProfile(undefined, otherUser.sub);
+
+                                openSlidingOverlay(
+                                    <FeedProfile
+                                        showMessagesButton={false}
+                                        onClose={() => {
+                                            clearActiveProfile();
+                                            closeSlidingOverlay();
+                                        }}
+                                    />
+                                );
+                            }}
+                            style={{
+                                flex: 1,
+                                alignItems: "flex-start",
+                                justifyContent: "center",
+                                paddingHorizontal: 10,
+                            }}
                         >
-                            <XIcon color={colors.danger} />
+                            <Text
+                                className={textStyles.bodyMedium}
+                                numberOfLines={1}
+                                style={{ color: colors.text }}
+                            >
+                                {otherUser.profile_name}
+                            </Text>
+
+                            <Text
+                                className={textStyles.small}
+                                numberOfLines={1}
+                                style={{ color: colors.secondaryText }}
+                            >
+                                {otherUser.firstName} {otherUser.lastName}
+                            </Text>
                         </Button>
-                    </View>
+
+                        <View
+                            style={{
+                                position: "absolute",
+                                right: 10,
+                                zIndex: 101,
+                                elevation: 10,
+                                top: showMenu ? insets.top : insets.top + 15,
+                            }}
+                        >
+                            {isSelecting ? (
+                                <Button
+                                    onPress={() => {
+                                        setIsSelecting(false);
+                                        setCheckedMessages([]);
+                                    }}
+                                    clearBackground
+                                >
+                                    <Text style={{ color: colors.danger }}>Cancel</Text>
+                                </Button>
+                            ) : (
+                                <ExpandingButton
+                                    expanded={showMenu}
+                                    anchor="top-right"
+                                    onPress={() => setShowMenu(v => !v)}
+                                    expandedStyle={{ borderRadius: 20 }}
+                                    expandedWidth={150}
+                                    expandedChildren={
+                                        <View style={{ gap: 5, overflow: "hidden" }}>
+                                            <Button
+                                                onPress={async () => {
+                                                    if (loadingReport) return;
+                                                    await reportTarget(otherUser.sub, "user");
+                                                    onClose?.();
+                                                    loadInbox();
+                                                }}
+                                                disabled={loadingReport}
+                                                style={{
+                                                    width: 125,
+                                                    flexDirection: "row",
+                                                    alignItems: "center",
+                                                    justifyContent: "space-between",
+                                                    paddingHorizontal: 16,
+                                                    paddingVertical: 12,
+                                                    backgroundColor: colors.background,
+                                                }}
+                                            >
+                                                <Text style={{ color: colors.text, fontSize: 16 }}>Report</Text>
+                                                {loadingReport ? (
+                                                    <SpinningLogoImage size={18} />
+                                                ) : (
+                                                    <ReportIcon color={colors.text} size={18} />
+                                                )}
+                                            </Button>
+
+                                            <Button
+                                                onPress={async () => {
+                                                    if (loadingBlockUser) return;
+                                                    await blockUser(otherUser.sub);
+                                                    onClose?.();
+                                                    loadInbox();
+                                                }}
+                                                disabled={loadingBlockUser}
+                                                style={{
+                                                    width: 125,
+                                                    flexDirection: "row",
+                                                    alignItems: "center",
+                                                    justifyContent: "space-between",
+                                                    paddingHorizontal: 16,
+                                                    paddingVertical: 12,
+                                                    backgroundColor: colors.background,
+                                                }}
+                                            >
+                                                <Text style={{ color: colors.danger, fontSize: 16 }}>Block</Text>
+                                                {loadingBlockUser ? (
+                                                    <SpinningLogoImage size={18} />
+                                                ) : (
+                                                    <BlockIcon color={colors.danger} size={18} />
+                                                )}
+                                            </Button>
+                                        </View>
+                                    }
+                                    clearBackground
+                                >
+                                    <MoreIcon color={colors.text} size={15} rotate={90} />
+                                </ExpandingButton>
+                            )}
+                        </View>
+                    </>
                 )}
             </GradientHeader>
 

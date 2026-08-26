@@ -191,8 +191,22 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
 
     const { colors, textStyles } = useTheme();
     const { continueWithGoogle, continueWithApple } = useOnboarding();
+    const [activeButton, setActiveButton] = useState<"email" | "google" | "apple" | null>(null);
+
+    const isDisabled = (button: "email" | "google" | "apple") =>
+        activeButton !== null && activeButton !== button;
+
+    const handleEmailContinue = () => {
+        setActiveButton("email");
+        try {
+            onNext?.();
+        } finally {
+            setActiveButton(null);
+        }
+    };
 
     const handleGoogleSignup = async () => {
+        setActiveButton("google");
         try {
             await GoogleSignin.hasPlayServices({
                 showPlayServicesUpdateDialog: true,
@@ -222,11 +236,13 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
             }
 
             console.error("Google sign in error:", error);
+        } finally {
+            setActiveButton(null);
         }
     };
 
     const handleAppleSignup = async () => {
-
+        setActiveButton("apple");
         try {
             const credential = await AppleAuthentication.signInAsync({
                 requestedScopes: [
@@ -249,6 +265,8 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
             }
 
             console.error("Apple sign in error:", error);
+        } finally {
+            setActiveButton(null);
         }
     };
 
@@ -265,30 +283,39 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
                 title="Welcome"
                 titleClassName={textStyles.h3}
                 leftIcon={<SpinningLogoImage size={30} />}
+                subtitleStyle={{
+                    color: colors.text,
+                    fontSize: 12,
+                    lineHeight: 18,
+                }}
                 subtitle="Sign in, or continue with email to get started"
             />
 
             <Button
+                disabled={isDisabled("email")}
                 style={{
                     flexDirection: "row",
                     gap: 10,
                     width: "100%",
                     height: 60,
                     backgroundColor: colors.card,
+                    opacity: isDisabled("email") ? 0.4 : 1,
                 }}
-                onPress={() => onNext?.()}
+                onPress={handleEmailContinue}
             >
                 <Text className={textStyles.sectionText}>Continue with email</Text>
                 <ForwardEmailIcon color={colors.text} />
             </Button>
 
             <Button
+                disabled={isDisabled("google")}
                 style={{
                     flexDirection: "row",
                     gap: 10,
                     width: "100%",
                     height: 60,
                     backgroundColor: colors.card,
+                    opacity: isDisabled("google") ? 0.4 : 1,
                 }}
                 onPress={handleGoogleSignup}
             >
@@ -297,12 +324,14 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
             </Button>
 
             <Button
+                disabled={isDisabled("apple")}
                 style={{
                     flexDirection: "row",
                     gap: 10,
                     width: "100%",
                     height: 60,
                     backgroundColor: colors.card,
+                    opacity: isDisabled("apple") ? 0.4 : 1,
                 }}
                 onPress={handleAppleSignup}
             >
@@ -349,7 +378,6 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
         </View>
     );
 };
-
 const Email: React.FC<onBoardUserSectionProps> = () => {
     const { colors } = useTheme();
     const { loading, error, submitEmail } = useOnboarding();

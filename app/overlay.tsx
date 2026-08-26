@@ -9,17 +9,31 @@ import { GradientHeader } from "@/components/GradientComponent";
 
 type Props = {
     content: OverlayContent;
+    children?: React.ReactNode;
     onClose: () => void;
     dark?: boolean;
 };
 
-export const Overlay: React.FC<Props> = ({ content, onClose, dark }) => {
+const Overlay: React.FC<Props> = ({
+    content,
+    children,
+    onClose,
+    dark,
+}) => {
 
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
     const insets = useSafeAreaInsets();
 
+    if (children) {
+        return (
+            <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: colors.background }}>
+                {children}
+            </View>
+        );
+    }
+
     return (
-        <View style={{...StyleSheet.absoluteFillObject, backgroundColor: colors.background,}}>
+        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: colors.background }}>
 
             <View
                 style={{
@@ -36,23 +50,12 @@ export const Overlay: React.FC<Props> = ({ content, onClose, dark }) => {
                         paddingHorizontal: 16,
                         paddingTop: 16,
                         paddingBottom: 12,
+                        gap: 10,
                         flexDirection: "row",
                         alignItems: "center",
                         justifyContent: "space-between",
                     }}
                 >
-                    <View style={{ flex: 1 }}>
-                        <Text
-                            className={textStyles.h3}
-                            numberOfLines={2}
-                            style={{
-                                color: colors.text,
-                                marginRight: 12,
-                            }}
-                        >
-                            {content.title}
-                        </Text>
-                    </View>
 
                     {content.showX !== false && (
                         <Button
@@ -67,6 +70,19 @@ export const Overlay: React.FC<Props> = ({ content, onClose, dark }) => {
                             <XIcon color={colors.danger} />
                         </Button>
                     )}
+
+                    <View style={{ flex: 1 }}>
+                        <Text
+                            className={textStyles.h3}
+                            numberOfLines={2}
+                            style={{
+                                color: colors.text,
+                                marginRight: 12,
+                            }}
+                        >
+                            {content.title}
+                        </Text>
+                    </View>
                     
                 </GradientHeader>
 
@@ -134,3 +150,5 @@ export const Overlay: React.FC<Props> = ({ content, onClose, dark }) => {
         </View>
     );
 };
+
+export default Overlay;

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Pressable, Text, View } from "react-native";
 import GomealGlassView from "@/components/GlassComponent";
-import { NotiIcon, NotiDeliveredIcon } from "@/icons/Icon";
+import { AddIcon } from "@/icons/Icon";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useUser } from "@/stores/useUser";
 import Bread from "./bread";
@@ -14,10 +14,14 @@ import Svg, { Circle } from "react-native-svg";
 import { useAvatarMood } from "./store/useAvatar";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { capitalize } from "@/utils/text";
+import { useOverlay } from "@/stores/useOverlay";
+import { PostScreen } from "@/sections";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import { useSlideUpOverlay } from "@/stores/useSlideUpOverlay";
+import NotificationScreen from "@/notifications/Notification";
 
 type DashBoardProps = {
     dark?: any;
-    onOpenNotification: (open: boolean) => void;
 };
 
 const ProgressCircle: React.FC<{
@@ -157,14 +161,10 @@ const DashRewardAnim: React.FC<{ dark: boolean }> = ({ dark }) => {
     return (
         <Animated.View
             style={{
-                width: 100,
-                height: 33,
-                alignItems: "center",
-                justifyContent: "center",
                 transform: [{ translateY: showRewardAnimY }],
             }}
         >
-            <Text className={textStyles.h1} style={{ color: currentItem.color }}>
+            <Text className={textStyles.h2} style={{ color: currentItem.color }}>
                 {currentItem.label}
             </Text>
         </Animated.View>
@@ -173,9 +173,8 @@ const DashRewardAnim: React.FC<{ dark: boolean }> = ({ dark }) => {
 };
 
 const DashNotificationCircle: React.FC<{
-  onOpenNotification: (open: boolean) => void;
   dark: boolean;
-}> = ({ onOpenNotification, dark }) => {
+}> = ({ dark }) => {
 
     const { user } = useUser();
     const setMood = useAvatarMood((s) => s.setMood);
@@ -191,6 +190,9 @@ const DashNotificationCircle: React.FC<{
     const spinValue = useRef(new Animated.Value(0)).current;
     const loopRef = useRef<Animated.CompositeAnimation | null>(null);
     const [showDelivered, setShowDelivered] = useState(unreadCount > 0);
+
+    const openSlideUpOverlay = useSlideUpOverlay((s) => s.openSlideUpOverlay);
+    const closeSlideUpOverlay = useSlideUpOverlay((s) => s.closeSlideUpOverlay);
 
     const spin = spinValue.interpolate({
         inputRange: [0, 1],
@@ -222,18 +224,36 @@ const DashNotificationCircle: React.FC<{
 
     const handlePress = useCallback(() => {
         markAllRead();
-        onOpenNotification(true);
-    }, [markAllRead, onOpenNotification]);
+        openSlideUpOverlay(
+            <NotificationScreen
+                dark={dark}
+                onOpen={(open) => {
+                    if (!open) closeSlideUpOverlay();
+                }}
+            />
+        );
+    }, [markAllRead, openSlideUpOverlay, closeSlideUpOverlay, dark]);
 
     return (
         <View
             style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 8,
-                marginLeft: 12,
+                gap: 5,
             }}
         >
+            <View
+                style={{
+                    width: 75,
+                    height: 40,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden"
+                }}
+            >
+                <DashRewardAnim dark={dark} />
+            </View>
+            
             <ProgressCircle
                 size={52}
                 strokeWidth={4}
@@ -272,6 +292,8 @@ const DashNotificationCircle: React.FC<{
                 </Button>
             </ProgressCircle>
 
+            <DashPostButton dark={dark} />
+
             <Button style={{ padding: 0, }} onPress={handlePress}>
 
                 <Animated.View
@@ -302,11 +324,41 @@ const DashNotificationCircle: React.FC<{
     );
 };
 
-const DashBoard: React.FC<DashBoardProps> = ({ dark, onOpenNotification }) => {
+const DashPostButton: React.FC<{ dark: boolean }> = ({ dark }) => {
+    const { colors } = useTheme(dark ? "dark" : undefined);
+    const openOverlay = useSlidingOverlay((s) => s.openSlidingOverlay);
+
+    const handlePress = useCallback(() => {
+        openOverlay(
+            <PostScreen />
+        );
+    }, [openOverlay]);
+
+    return (
+        <Button style={{ padding: 0 }} onPress={handlePress}>
+            <View
+                style={{
+                    width: 45,
+                    height: 45,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: colors.accent === "transparent" ? colors.button : colors.accent,
+                }}
+            >
+                <AddIcon size={22} color={colors.text} />
+            </View>
+        </Button>
+    );
+};
+
+const DashBoard: React.FC<DashBoardProps> = ({ dark, }) => {
 
     const setMood = useAvatarMood((s) => s.setMood);
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
+
     const { user } = useUser();
+    const openOverlay = useOverlay((s) => s.openOverlay);
 
     if (!user) return null;
 
@@ -324,19 +376,14 @@ const DashBoard: React.FC<DashBoardProps> = ({ dark, onOpenNotification }) => {
                     onPress={() => setMood("confused", 3000)}
                     style={{ width: "100%" }}
                 >
-                    <GomealGlassView
+                    <View
                         style={{
                             minHeight: 64,
-                            borderRadius: 24,
-                            paddingHorizontal: 14,
-                            paddingVertical: 10,
                             flexDirection: "row",
                             alignItems: "center",
                             justifyContent: "space-between",
                             overflow: "hidden",
                         }}
-                        interactive
-                        glassEffectStyle="clear"
                     >
                         <View style={{ flex: 1, gap: 5, minWidth: 0, justifyContent: "center" }}>
 
@@ -351,13 +398,12 @@ const DashBoard: React.FC<DashBoardProps> = ({ dark, onOpenNotification }) => {
 
                                 <Text
                                     className={textStyles.h3}
-                                    style={{ 
-                                        color: colors.text
-                                    }}
+                                    style={{ color: colors.text }}
                                     numberOfLines={1}
                                 >
                                     {capitalize(user.firstName ?? " ")}
                                 </Text>
+                                
                             </View>
 
                             <View
@@ -388,15 +434,14 @@ const DashBoard: React.FC<DashBoardProps> = ({ dark, onOpenNotification }) => {
                                     
                                 </View>
 
-                                <DashRewardAnim dark={dark} />
 
                             </View>
                             
                         </View>
 
-                        <DashNotificationCircle dark={dark} onOpenNotification={onOpenNotification} />
+                        <DashNotificationCircle dark={dark} />
 
-                    </GomealGlassView>
+                    </View>
                 </Pressable>
             </Gesture>
 

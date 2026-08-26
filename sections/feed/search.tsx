@@ -1,5 +1,5 @@
 import { Button } from "@/components/ButtonComponent";
-import { ChefIcon, ShrimpIcon, FireIcon, XIcon } from "@/icons/Icon";
+import { ChefIcon, ShrimpIcon, FireIcon, XIcon, BackIcon } from "@/icons/Icon";
 import React, { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
@@ -12,29 +12,31 @@ import { useFeed } from "@/stores/useFeed";
 import { useSearch } from "@/stores/useSearch";
 import { Input } from "@/components/InputComponent";
 import { SectionHeader } from "@/components/SectionComponent";
-import { MinTag } from "@/tags/MinTag";
+import DiscoveryTag, { EmptyDiscoveryTag } from "@/tags/DiscoveryTag";
 import GomealGlassView from "@/components/GlassComponent";
 import FeedProfile, { FEED_CARD_PROFILE_RADIUS } from "./feedProfile";
 import { useCook } from "@/stores/useCook";
-import { MinimumFeedCard } from "@/types/feed.types";
+import { MinimumFeedCard, SearchFeedCard } from "@/types/feed.types";
 import { BOTTOM_INSETS, BOTTOM_SNAP_POINTS } from "@/types";
-import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
+import { useReel } from "@/stores/useReel";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSlideUpOverlay } from "@/stores/useSlideUpOverlay";
 
 export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) => {
 
     const { colors, textStyles} = useTheme();
     const [search, setSearch] = useState("");
 
-    const profileSheetRef = useRef<BottomSheet>(null);
-    const [stopBottomSheet, setStopBottomSheet] = useState(false);
+    const openSlideUpOverlay = useSlideUpOverlay((s) => s.openSlideUpOverlay);
+    const closeSlideUpOverlay = useSlideUpOverlay((s) => s.closeSlideUpOverlay);
 
+    const insets = useSafeAreaInsets();
     const SCREEN_WIDTH = Dimensions.get("window").width;
     const NUM_COLUMNS = 3;
     const GAP = 1;
     const ITEM_SIZE = (SCREEN_WIDTH - GAP * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
 
-    const { openCook } = useCook();
-    const { activeProfile, setActiveProfile, clearActiveProfile } = useFeed();
+    const { setActiveProfile, clearActiveProfile } = useFeed();
     const { trending_post, trending_user, users, posts, loadTrend, loadSearch, loading, clearSearch } = useSearch();
     
     const handleBack = () => { onClose(); };
@@ -50,12 +52,10 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
     const showUsers = hasSearch && hasUsers;
     const showPosts = hasSearch && !hasUsers && hasPosts;
-    const hasResults = showUsers || showPosts;
 
     const closeProfileSheet = () => {
-        profileSheetRef.current?.close();
+        closeSlideUpOverlay();
         clearActiveProfile();
-        setStopBottomSheet(false);
     };
 
     useEffect(() => {
@@ -76,7 +76,7 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
     return (
 
-        <View style={{...StyleSheet.absoluteFillObject, backgroundColor: colors.background }}>
+        <View style={{...StyleSheet.absoluteFillObject, paddingTop: insets.top, backgroundColor: colors.background }}>
 
             <View 
                 style={{
@@ -87,21 +87,14 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
                 <View
                     style={{
-                        paddingVertical: 10,
                         justifyContent: "center",
                         flexDirection: 'row',
                         alignItems: 'center',
                         gap: 8,
                     }}
                 >
-                    <Button
-                        onPress={handleBack}
-                        clearBackground
-                    >
-                        <XIcon color={colors.danger} />
-                    </Button>
 
-                    <View style={{ width: 300, flexShrink: 1 }}>
+                    <View style={{ width: "100%", paddingHorizontal: 5, flexShrink: 1 }}>
                         <Input
                             autoFocus
                             value={search}
@@ -110,18 +103,14 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                             containerStyle={{
                                 borderRadius: 30
                             }}
+                            leftIcon={<BackIcon color={colors.text} />}
+                            onIconPress={handleBack}
                         />
                     </View>
 
                 </View>
 
-                {hasSearch && loading ? (
-
-                    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                        <SpinningLogoImage size={25} />
-                    </View>
-
-                ) : hasSearch ? (
+                {hasSearch ? (
 
                     <>
 
@@ -138,8 +127,7 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                         style={{
                                             gap: 5,
                                             maxHeight: 300,
-                                            paddingVertical: 5,
-                                            paddingHorizontal: 20,
+                                            padding: 5,
                                         }}
                                         className="w-full"
                                     >
@@ -147,20 +135,32 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                             <Button
                                                 key={index}
                                                 style={{
-                                                    gap: 10,
+                                                    gap: 5,
                                                     width: "100%",
-                                                    borderRadius: 0,
-                                                    borderBottomWidth: 1,
-                                                    borderColor: colors.text,
+                                                    overflow: "hidden",
+                                                    borderRadius: 20,
+                                                    padding: 5,
                                                     flexDirection: "row",
                                                     justifyContent: "flex-start",
+                                                    alignItems: "flex-end",
+                                                    borderWidth: 2,
+                                                    borderColor: colors.secondaryCard,
                                                 }}
                                                 onPress={async () => {
                                                     setActiveProfile(undefined, user?.sub);
-                                                    profileSheetRef.current?.expand()
+                                                    openSlideUpOverlay(
+                                                        <FeedProfile 
+                                                            onClose={() => closeSlideUpOverlay()}
+                                                        />
+                                                    );
                                                 }}
                                             >
-                                                <AvatarRender avatar={user?.avatar} background />
+                                                <AvatarRender
+                                                    avatar={user.avatar} 
+                                                    background 
+                                                    showBadge
+                                                    badge={user.badge}
+                                                />
 
                                                 <View
                                                     style={{
@@ -195,8 +195,7 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                         paddingBottom: 125
                                     }}
                                     renderItem={({ item }) => {
-                                        const post = item as MinimumFeedCard;
-
+                                        const post = item as SearchFeedCard
                                         const isVideo =
                                             post.info?.dish_media_type === "video";
 
@@ -205,22 +204,42 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                                 activeOpacity={0.8}
                                                 style={{
                                                     width: ITEM_SIZE,
-                                                    height: isVideo
-                                                        ? ITEM_SIZE * 1.5
-                                                        : ITEM_SIZE,
+                                                    height: 250,
                                                     margin: 2,
                                                 }}
                                             >
-                                                <MinTag
-                                                    minCard={post}
+                                                <DiscoveryTag
+                                                    card={post}
                                                     style={{
-                                                        width: "100%",
-                                                        height: "100%",
+                                                        width: "100%"
                                                     }}
-                                                    containerStyle={{
-                                                        borderRadius: 15,
+                                                    onPress={async (layout) => {
+                                                        const fullPost = await useFeed
+                                                            .getState()
+                                                            .loadPost(post.post_id);
+
+                                                        if (!fullPost) return;
+
+                                                        useReel.getState().open(
+                                                            fullPost as any,
+                                                            layout,
+                                                            () => {
+                                                                // callback
+                                                            }
+                                                        );
                                                     }}
-                                                    onPress={() => openCook(post.post_id)}
+                                                    onPressProfile={() => {
+                                                        setActiveProfile(
+                                                            undefined,
+                                                            post.user_sub
+                                                        );
+
+                                                        openSlideUpOverlay(
+                                                            <FeedProfile
+                                                                onClose={closeProfileSheet}
+                                                            />
+                                                        );
+                                                    }}
                                                 />
                                             </TouchableOpacity>
                                         );
@@ -230,17 +249,12 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
 
                         </View>
 
-                        {!hasResults && (
-                            <View style={{ flex: 1, alignItems: "center" }}>
-                                <Text className={textStyles.caption}>Ops...</Text>
-                            </View>
-                        )}
-
                     </>
 
                 ) : (
 
                     <>
+                    
                         <SectionHeader
                             title="Trending"
                             subtitle="Who is chefing and whats cooking at this moment ?"
@@ -254,7 +268,7 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                 flex: 1,
                             }}
                             contentContainerStyle={{
-                                paddingBottom: BOTTOM_INSETS
+                                paddingBottom: insets.bottom,
                             }}
                         >
                             <View
@@ -275,18 +289,50 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                     horizontal
                                     showsHorizontalScrollIndicator={false}
                                     contentContainerStyle={{
-                                        paddingHorizontal: 10,
                                         gap: 8,
+                                        paddingHorizontal: 10,
                                     }}
                                 >
                                     {hasTrendingPosts ? (
-                                        trending_post.map((post) => (
-                                            <MinTag
+                                        trending_post.map((post) => {
+                                            console.log('[SCREEN RAW POST]', JSON.stringify(post));
+                                            return (
+                                            <DiscoveryTag
                                                 key={post.post_id}
-                                                minCard={post}
-                                                onPress={() => openCook(post.post_id)}
-                                            />
-                                        ))
+                                                card={post}
+                                                style={{
+                                                    width: 200
+                                                }}
+                                                onPress={async (layout) => {
+                                                    const fullPost = await useFeed
+                                                        .getState()
+                                                        .loadPost(post.post_id);
+
+                                                    if (!fullPost) return;
+
+                                                    useReel.getState().open(
+                                                        fullPost as any,
+                                                        layout,
+                                                        () => {
+                                                            // callback
+                                                        }
+                                                    );
+                                                }}
+                                                onPressProfile={() => {
+                                                    setActiveProfile(
+                                                        undefined,
+                                                        post.user_sub
+                                                    );
+
+                                                    openSlideUpOverlay(
+                                                        <FeedProfile
+                                                            onClose={closeProfileSheet}
+                                                        />
+                                                    );
+                                                }}
+                                            />)
+                                            }
+                                    )
                                     ) : (
                                         <View
                                             style={{
@@ -334,18 +380,24 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                                     padding: 5,
                                                     flexDirection: "row",
                                                     justifyContent: "flex-start",
-                                                    backgroundColor: colors.card,
+                                                    alignItems: "flex-end",
                                                     borderWidth: 2,
                                                     borderColor: colors.secondaryCard,
                                                 }}
                                                 onPress={() => {
                                                     setActiveProfile(undefined, user.sub);
-                                                    profileSheetRef.current?.expand();
+                                                    openSlideUpOverlay(
+                                                        <FeedProfile 
+                                                            onClose={() => closeSlideUpOverlay()}
+                                                        />
+                                                    );
                                                 }}
                                             >
                                                 <AvatarRender
                                                     avatar={user.avatar}
                                                     background
+                                                    showBadge
+                                                    badge={user.badge}
                                                 />
 
                                                 <View
@@ -381,7 +433,7 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                                                 paddingVertical: 20,
                                             }}
                                         >
-                                            <SpinningLogoImage size={20} />
+                                            <EmptySearchSection />
                                         </View>
                                     )}
                                 </View>
@@ -389,44 +441,100 @@ export const SearchMainScreen: React.FC<{onClose: () => void}> = ({ onClose }) =
                         </ScrollView>
                     </>
 
-                )}
-
+                ) }
         
             </View>
-
-            {/* Profile Bottom Sheet */}
-            <BottomSheet
-                ref={profileSheetRef}
-                index={-1}
-                snapPoints={BOTTOM_SNAP_POINTS}
-                enablePanDownToClose={false}
-                enableContentPanningGesture={false}
-                enableHandlePanningGesture={false}
-                backgroundStyle={{
-                    backgroundColor: "transparent",
-                }}
-                handleComponent={() => null}
-            >
-                <View  
-                    style={{ 
-                        height: 610,  
-                        borderTopLeftRadius: FEED_CARD_PROFILE_RADIUS + 10,
-                        borderTopRightRadius: FEED_CARD_PROFILE_RADIUS + 10,
-                    }}
-                >
-                    <View style={{ ...StyleSheet.absoluteFillObject, opacity: 0.85, backgroundColor: colors.secondaryCard, borderRadius: 50 }} />
-                    <BottomSheetView style={{ height: 450, marginTop: 10, marginHorizontal: 10, overflow: "hidden", alignSelf: "center", backgroundColor: colors.background, borderRadius: 40 }}>
-                        <FeedProfile
-                            sectionOpen={(open) => setStopBottomSheet(open)}
-                            onClose={closeProfileSheet}
-                        />
-                    </BottomSheetView>
-                </View>
-                </BottomSheet>
-
 
         </View>
 
     );
 
+};
+
+const EmptySearchSection = () => {
+    const { colors } = useTheme();
+
+    return (
+        <View
+            style={{
+                flex: 1,
+                padding: 10,
+                gap: 10,
+            }}
+        >
+            {/* fake result cards */}
+            {[1, 2, 3].map((i) => (
+                <View
+                    key={i}
+                    style={{
+                        height: 70,
+                        width: "100%",
+                        borderRadius: 20,
+                        backgroundColor: colors.card,
+                        borderWidth: 1,
+                        borderColor: colors.secondaryCard,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        padding: 10,
+                        gap: 10,
+                    }}
+                >
+                    <View
+                        style={{
+                            width: 45,
+                            height: 45,
+                            borderRadius: 999,
+                            backgroundColor: colors.secondaryCard,
+                        }}
+                    />
+
+                    <View
+                        style={{
+                            flex: 1,
+                            gap: 8,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: "45%",
+                                height: 12,
+                                borderRadius: 10,
+                                backgroundColor: colors.secondaryCard,
+                            }}
+                        />
+
+                        <View
+                            style={{
+                                width: "30%",
+                                height: 10,
+                                borderRadius: 10,
+                                backgroundColor: colors.secondaryCard,
+                            }}
+                        />
+                    </View>
+                </View>
+            ))}
+
+            {/* fake post grid */}
+            <View
+                style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 2,
+                    marginTop: 10,
+                }}
+            >
+                {Array.from({ length: 9 }).map((_, i) => (
+                    <View
+                        key={i}
+                        style={{
+                            width: "33%",
+                            aspectRatio: 1,
+                            backgroundColor: colors.card,
+                        }}
+                    />
+                ))}
+            </View>
+        </View>
+    );
 };

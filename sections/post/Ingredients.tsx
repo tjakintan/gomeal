@@ -86,43 +86,51 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
     
                 {/* List of ingredient names after search to add */}
                 {showSearchResults && (
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        {results.map((result) => (
-                            <TouchableOpacity key={result.name} activeOpacity={1}>
-                                <Button
-                                    style={{
-                                        width: "100%",
-                                        alignItems: "flex-start",
-                                        padding: 5,
-                                        borderRadius: 0,
-                                        borderBottomWidth: 1,
-                                        borderColor: colors.secondaryCard,
-                                    }}
-                                    onPress={async () => {
-                                        addIngredient({
-                                            id: result.id,
-                                            name: result.name,
-                                            category: result.category,
-                                            source: result.source,
-                                            media_url: result.media_url || null,
-                                        });
-                                        setShowSearchResults(false);
-                                        setSearch("");
-                                    }}
-                                >
-                                    <Text className={textStyles.bodyMedium}>
-                                        {result.name}
-                                    </Text>
-
-                                    {result.category && (
-                                        <Text className={textStyles.small + " text-gray-500"}>
-                                        {result.category}
+                    <View
+                        style={{
+                            height: 125,
+                            overflow: "hidden",
+                            marginTop: 10,
+                            borderRadius: 15,
+                            backgroundColor: colors.card
+                        }}
+                    >
+                        <ScrollView showsVerticalScrollIndicator>
+                            {results.map((result) => (
+                                <TouchableOpacity key={result.name} activeOpacity={1}>
+                                    <Button
+                                        style={{
+                                            width: "100%",
+                                            alignItems: "flex-start",
+                                            padding: 5,
+                                            borderRadius: 0,
+                                        }}
+                                        onPress={async () => {
+                                            addIngredient({
+                                                id: result.id,
+                                                name: result.name,
+                                                category: result.category,
+                                                source: result.source,
+                                                media_url: result.media_url || null,
+                                            });
+                                            setShowSearchResults(false);
+                                            setSearch("");
+                                        }}
+                                    >
+                                        <Text className={textStyles.body}>
+                                            {result.name}
                                         </Text>
-                                    )}
-                                </Button>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+
+                                        {result.category && (
+                                            <Text className={textStyles.small + " text-gray-500"}>
+                                            {result.category}
+                                            </Text>
+                                        )}
+                                    </Button>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
                 )}
 
             </View>

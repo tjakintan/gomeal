@@ -46,4 +46,5 @@ export interface DirectConversationData {
     sender_sub: string;
     isNew: boolean;
     messages: Message[];
+    other_user: UltraMinimumProfile;
 };

@@ -143,7 +143,7 @@ export const Input = forwardRef<TextInput, InputProps>(({
       >
 
         {leftIcon && (
-          <Button onPress={onIconPress} clearBackground>{leftIcon}</Button>
+          <Button onPress={onIconPress}>{leftIcon}</Button>
         )}
 
         <FocusBox
@@ -196,7 +196,7 @@ export const Input = forwardRef<TextInput, InputProps>(({
         </FocusBox>
 
         {rightIcon && (
-          <Button onPress={onIconPress} clearBackground>{rightIcon}</Button>
+          <Button onPress={onIconPress}>{rightIcon}</Button>
         )}
 
         {children}

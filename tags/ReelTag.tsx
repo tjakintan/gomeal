@@ -20,7 +20,6 @@ import { capitalize } from "@/utils/text";
 type Props = {
     card?: ReelFeedCard;
     height?: number;
-    fullscreen?: boolean;
     onSwipeUp: () => void;
     onSwipeDown: () => void;
     onSetActiveProfile: (post_id: number) => void;
@@ -29,19 +28,19 @@ type Props = {
     style?: StyleProp<ViewStyle>;
 };
 
-export const DASHBOARD_HEIGHT = 175;
+export const DASHBOARD_HEIGHT = 150;
 export const REEL_TAG_HEIGHT = Dimensions.get("window").height - 305;
 export const REEL_TAG_WIDTH = Dimensions.get("window").width ;
 export const REEL_TAG_RADIUS = 0;
 const SWIPE_THRESHOLD = 60;
 
-const ReelTag: React.FC<Props> = ({ card, style, height, fullscreen, onSwipeUp, onSwipeDown, onSetActiveProfile, onSetSharePost, onOpenCook }) => {
+const ReelTag: React.FC<Props> = ({ card, style, height, onSwipeUp, onSwipeDown, onSetActiveProfile, onSetSharePost, onOpenCook }) => {
 
     const { post_id, info, avatar, profile_name, firstName, lastName, level } = card ?? {};
 
     const insets = useSafeAreaInsets();
     const tagHeight = height ?? REEL_TAG_HEIGHT;
-    const infoBottomPadding = fullscreen ? insets.bottom : 0;
+    const infoBottomPadding = insets.bottom;
     const { colors, textStyles } = useTheme("dark");
 
     const onSwipeUpRef = useRef(onSwipeUp);
@@ -413,12 +412,12 @@ export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: n
     );
 };
 
-export const EmptyReelTag: React.FC<{ delay?: number; height?: number; fullscreen?: boolean }> = ({ delay = 0, height, fullscreen }) => {
+export const EmptyReelTag: React.FC<{ delay?: number; height?: number;}> = ({ delay = 0, height, }) => {
 
     const { colors } = useTheme("dark");
     const insets = useSafeAreaInsets();
     const tagHeight = height ?? REEL_TAG_HEIGHT;
-    const infoBottomPadding = fullscreen ? 65 : 15;
+    const infoBottomPadding = insets.bottom;
     const opacity = useRef(new Animated.Value(0.45)).current;
 
     useEffect(() => {

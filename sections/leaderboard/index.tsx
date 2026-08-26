@@ -2,7 +2,7 @@ import { Button } from "@/components/ButtonComponent";
 import { get_leaderboard, LeaderboardEntry, useLeaderboardListener } from "@/api/leaderboard.socket";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { Animated, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import LeaderboardPodium from "../../utils/3Dblock";
 import { SpinningLogoImage } from "@/utils/Logo";
 import { AvatarRender, LevelRender, BreadRender, BadgeRender } from "@/dashboard/Avatar";
@@ -10,10 +10,8 @@ import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useUser } from "@/stores/useUser";
 import { BadgeLevel, BOTTOM_INSETS, BOTTOM_SNAP_POINTS } from "@/types";
 import { useFeed } from "@/stores/useFeed";
-import FeedProfile, { FEED_CARD_PROFILE_RADIUS } from "../feed/feedProfile";
-import { NAV_SIZE } from "../Navigate";
-import { G } from "react-native-svg";
-import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
+import FeedProfile from "../feed/feedProfile";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
 
 const BADGE_LEVELS: { level: number; xp: number; badge: BadgeLevel }[] = [
     { level: 1,   xp: 100,   badge: 1 },
@@ -78,27 +76,34 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
     const MAX_XP = MAX_LEVEL * 100;
     const progress = Math.min((user?.xp ?? 0) / MAX_XP, 1);
 
-    const profileSheetRef = useRef<BottomSheet>(null);
+    const { openSlidingOverlay, closeSlidingOverlay } = useSlidingOverlay();
 
     const [rankings, setRankings] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showProfile, setShowProfile] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     const top3 = rankings.slice(0, 3);
     const rest = rankings.slice(3);
 
     useEffect(() => {
         if (isFocused) {
-            profileSheetRef.current?.close();
+            closeSlidingOverlay();
         }
     }, [isFocused]);
 
     const openProfile = async (sub?: string) => {
         await setActiveProfile(undefined, sub);
-        setShowProfile(true);
+
+        openSlidingOverlay(
+            <FeedProfile
+                onClose={() => {
+                    closeSlidingOverlay();
+                    clearActiveProfile();
+                }}
+            />
+        );
     };
 
-    ///
     const PAGE_SIZE = 20;
     const [cursor, setCursor] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -106,11 +111,26 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
 
     const refreshLeaderboard = useCallback(async () => {
         const page = await get_leaderboard(PAGE_SIZE, 0);
+
         if (!page) return;
+
         setRankings(page.rankings);
         setCursor(page.nextCursor);
         setHasMore(page.hasMore);
+
     }, []);
+
+    const handleRefresh = useCallback(async () => {
+        if (refreshing) return;
+
+        setRefreshing(true);
+
+        try {
+            await refreshLeaderboard();
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refreshing, refreshLeaderboard]);
 
     useEffect(() => {
         const init = async () => {
@@ -124,7 +144,7 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
     useLeaderboardListener(refreshLeaderboard);
 
     const loadMore = async () => {
-        if (loadingMore || !hasMore) return;
+        if (loadingMore || !hasMore || refreshing) return;
         setLoadingMore(true);
         const page = await get_leaderboard(PAGE_SIZE, cursor);
         if (page) {
@@ -185,7 +205,7 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
 
             </View>
 
-            <View style={{ height: 300, gap: 1, flexDirection: "row", paddingHorizontal: 10 }} className="w-full justify-center">
+            <View pointerEvents="box-none" style={{ height: 300, gap: 1, flexDirection: "row", paddingHorizontal: 10 }} className="w-full justify-center">
                 <PodiumSpot entry={top3[1]} rank={2} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[1]?.sub)} />
                 <PodiumSpot entry={top3[0]} rank={1} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[0]?.sub)} />
                 <PodiumSpot entry={top3[2]} rank={3} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[2]?.sub)} />
@@ -196,19 +216,26 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, backgroundColor: colors.background }} className="items-center justify-center">
-                <SpinningLogoImage size={30} />
-            </View>
+            <EmptyLeaderboard />
         );
     }
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background}}>
+            
             <FlatList
                 data={rest}
-                style={{
-                    paddingBottom: BOTTOM_INSETS,
-                }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={"transparent"}
+                        colors={["transparent"]}
+                    />
+                }
+                nestedScrollEnabled
+                bounces
+                alwaysBounceVertical
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.5}
                 showsVerticalScrollIndicator={false}
@@ -244,51 +271,177 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
                 )}
             />
 
-            {showProfile && (
-                <BottomSheet
-                    ref={profileSheetRef}
-                    index={0}
-                    snapPoints={BOTTOM_SNAP_POINTS}
-                    enablePanDownToClose={false}
-                    enableContentPanningGesture={false}
-                    enableHandlePanningGesture={false}
-                    enableDynamicSizing={false}
-                    backgroundStyle={{ backgroundColor: "transparent" }}
-                    handleComponent={() => null}
+        </View>
+    );
+};
+
+const EmptyLeaderboard = () => {
+    const { colors } = useTheme();
+
+    const opacity = useRef(new Animated.Value(0.45)).current;
+
+    useEffect(() => {
+        const anim = Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacity, {
+                    toValue: 0.9,
+                    duration: 700,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacity, {
+                    toValue: 0.45,
+                    duration: 700,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+
+        anim.start();
+
+        return () => anim.stop();
+    }, []);
+
+    const bone = (
+        width: number | `${number}%`,
+        height: number,
+        radius = 8
+    ) => (
+        <Animated.View
+            style={{
+                width,
+                height,
+                borderRadius: radius,
+                backgroundColor: colors.card,
+                opacity,
+            }}
+        />
+    );
+
+    return (
+        <View
+            style={{
+                flex: 1,
+                backgroundColor: colors.background,
+            }}
+        >
+            {/* XP Progress */}
+            <View
+                style={{
+                    height: 125,
+                    marginHorizontal: 10,
+                    paddingHorizontal: 25,
+                    justifyContent: "center",
+                    gap: 12,
+                }}
+            >
+                {/* badges */}
+                <View
+                    style={{
+                        height: 40,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                    }}
                 >
-                    <View style={{ flex: 1, borderTopLeftRadius: FEED_CARD_PROFILE_RADIUS + 10, borderTopRightRadius: FEED_CARD_PROFILE_RADIUS + 10 }}>
+                    {[1,2,3,4,5,6].map((i)=>(
+                        <View key={i}>
+                            {bone(32,32,999)}
+                        </View>
+                    ))}
+                </View>
+
+
+                {/* progress bar */}
+                {bone("100%",8,99)}
+
+
+                {/* levels */}
+                <View
+                    style={{
+                        flexDirection:"row",
+                        justifyContent:"space-between",
+                    }}
+                >
+                    {[1,2,3,4,5,6].map(i=>(
+                        <View key={i}>
+                            {bone(15,10)}
+                        </View>
+                    ))}
+                </View>
+            </View>
+
+
+            {/* Podium */}
+            <View
+                style={{
+                    height:300,
+                    flexDirection:"row",
+                    justifyContent:"center",
+                    alignItems:"flex-end",
+                    gap:10,
+                }}
+            >
+
+                {[75,125,50].map((height,index)=>(
+                    <View
+                        key={index}
+                        style={{
+                            alignItems:"center",
+                            justifyContent:"flex-end",
+                            gap:10,
+                        }}
+                    >
+
+                        {bone(55,55,999)}
+                        {bone(70,12)}
+                        {bone(45,10)}
+
+                        {bone(120,height,10)}
+
+                    </View>
+                ))}
+
+            </View>
+
+
+            {/* Leaderboard rows */}
+            <View
+                style={{
+                    flex:1,
+                    paddingHorizontal:10,
+                }}
+            >
+                {Array.from({length:6}).map((_,index)=>(
+                    <View
+                        key={index}
+                        style={{
+                            height:100,
+                            marginVertical:5,
+                            padding:10,
+                            flexDirection:"row",
+                            alignItems:"center",
+                            gap:15,
+                        }}
+                    >
+
+                        {bone(30,20)}
+                        {bone(50,50,999)}
+
                         <View
                             style={{
-                                ...StyleSheet.absoluteFillObject,
-                                opacity: 0.85,
-                                backgroundColor: colors.secondaryCard,
-                                borderRadius: FEED_CARD_PROFILE_RADIUS + 10,
-                            }}
-                        />
-                        <BottomSheetView
-                            style={{
-                                height: 450,
-                                marginTop: 10,
-                                marginHorizontal: 10,
-                                overflow: "hidden",
-                                alignSelf: "center",
-                                backgroundColor: colors.background,
-                                borderRadius: FEED_CARD_PROFILE_RADIUS,
+                                flex:1,
+                                gap:8,
                             }}
                         >
-                            <FeedProfile
-                                showMore
-                                showCloseButton
-                                showMessagesButton
-                                onClose={() => {
-                                    setShowProfile(false);
-                                    clearActiveProfile();
-                                }}
-                            />
-                        </BottomSheetView>
+                            {bone("60%",12)}
+                            {bone("35%",10)}
+                        </View>
+
+                        {bone(45,45,999)}
+
                     </View>
-                </BottomSheet>
-            )}
+                ))}
+            </View>
         </View>
     );
 };

@@ -132,16 +132,17 @@ export const Button = forwardRef<View, ButtonProps>(
 
     return (
       <GomealGlassView
-        style={{
-          height: 40,
-          width: 40,
-          justifyContent: "center",
-          alignItems: "center",
-          elevation: 1,
-          borderRadius: 999,
-        }}
-        glassEffectStyle="regular"
-        interactive
+          style={[
+              {
+                  justifyContent: "center",
+                  alignItems: "center",
+                  elevation: 1,
+                  borderRadius: 999,
+              },
+              style,
+          ]}
+          glassEffectStyle="regular"
+          interactive
       >
         <Gesture scaleAmount={0.999} haptic={!disabled}>
           {pressable}
@@ -296,7 +297,7 @@ export const DifficultyOptionButton: React.FC<DifficultyOptionButtonProps> = ({
           borderRadius: 999,
           backgroundColor: isSelected
             ? difficultyColors[value]
-            : colors.background,
+            : colors.secondaryCard,
           transform: [{ scale: circleScale }],
         }}
       />
@@ -551,6 +552,8 @@ export const ExpandingButton: React.FC<{
   expandedWidth?: number;
   expandedHeight?: number;
   borderRadius?: number;
+  collapsedSize?: number;
+  anchor?: "center" | "top" | "bottom" | "left" | "right" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
 }> = ({
   expanded,
   onPress,
@@ -562,22 +565,20 @@ export const ExpandingButton: React.FC<{
   expandedWidth = 175,
   expandedHeight = 105,
   borderRadius = 20,
+  collapsedSize = 40,
+  anchor = "center",
 }) => {
   const { colors } = useTheme();
 
-  const width = useSharedValue(40);
-  const height = useSharedValue(40);
-  const radius = useSharedValue(50);
+  const width = useSharedValue(collapsedSize);
+  const height = useSharedValue(collapsedSize);
+  const radius = useSharedValue(collapsedSize / 2);
 
   useEffect(() => {
-    width.value = withSpring(expanded ? expandedWidth : 40, SPRING);
-    height.value = withSpring(expanded ? expandedHeight : 40, SPRING);
-
-    radius.value = withSpring(
-      expanded ? borderRadius : 20,
-      SPRING
-    );
-  }, [expanded, expandedWidth, expandedHeight, borderRadius]);
+    width.value = withSpring(expanded ? expandedWidth : collapsedSize, SPRING);
+    height.value = withSpring(expanded ? expandedHeight : collapsedSize, SPRING);
+    radius.value = withSpring(expanded ? borderRadius : collapsedSize / 2, SPRING);
+  }, [expanded, expandedWidth, expandedHeight, borderRadius, collapsedSize]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     width: width.value,
@@ -593,73 +594,99 @@ export const ExpandingButton: React.FC<{
     </View>
   );
 
-  return (
-  <>
-      <Gesture scaleAmount={0.97}>
-        {clearBackground ? (
-          <Reanimated.View
-            style={[
-              animatedStyle,
-              {
-                position: "relative",
-                overflow: "hidden",
-                borderCurve: "continuous",
-                zIndex: expanded ? 999 : 1,
-                elevation: expanded ? 999 : 1,
-              },
-              style,
-              expanded && expandedStyle,
-            ]}
+  // Which edges pin in place; the opposite side(s) are where it grows toward.
+  const anchorStyle: StyleProp<ViewStyle> =
+    anchor === "center"
+      ? {}
+      : {
+          position: "absolute",
+          ...(anchor.includes("top") ? { top: 0 } : {}),
+          ...(anchor.includes("bottom") ? { bottom: 0 } : {}),
+          ...(anchor.includes("left") ? { left: 0 } : {}),
+          ...(anchor.includes("right") ? { right: 0 } : {}),
+          // pure "top" / "bottom" / "left" / "right": pin that edge + center the cross-axis
+          ...(anchor === "top" || anchor === "bottom" ? { left: 0, right: 0, alignSelf: "center" } : {}),
+          ...(anchor === "left" || anchor === "right" ? { top: 0, bottom: 0 } : {}),
+        };
+
+  const body = (
+    <Gesture scaleAmount={0.97}>
+      {clearBackground ? (
+        <Reanimated.View
+          style={[
+            animatedStyle,
+            anchorStyle,
+            {
+              overflow: "hidden",
+              borderCurve: "continuous",
+              zIndex: expanded ? 999 : 1,
+              elevation: expanded ? 999 : 1,
+            },
+            !expanded && style,
+            expanded && expandedStyle,
+          ]}
+        >
+          <GomealGlassView
+            style={[StyleSheet.absoluteFillObject, { overflow: "hidden", borderRadius }]}
+            glassEffectStyle="clear"
+            interactive
           >
-            <GomealGlassView
-              style={[StyleSheet.absoluteFillObject, { overflow: "hidden", borderRadius, }]}
-              glassEffectStyle="clear"
-              interactive
+            <AnimatedPressable
+              onPress={onPress}
+              hitSlop={8}
+              disabled={expanded}
+              style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
             >
-              <AnimatedPressable
-                onPress={onPress}
-                hitSlop={8}
-                disabled={expanded}
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {innerContent}
-              </AnimatedPressable>
-            </GomealGlassView>
-          </Reanimated.View>
-        ) : (
-          <AnimatedPressable
-            onPress={onPress}
-            hitSlop={8}
-            disabled={expanded}
-            style={[
-              animatedStyle,
-              {
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "transparent",
-                overflow: "hidden",
-              },
-              expanded && expandedStyle,
-            ]}
-          >
-            {expanded && (
-              <View
-                pointerEvents="none"
-                style={{
-                  ...StyleSheet.absoluteFillObject,
-                  backgroundColor: colors.background,
-                  opacity: 0.8,
-                }}
-              />
-            )}
-            {innerContent}
-          </AnimatedPressable>
-        )}
-      </Gesture>
-    </>
+              {innerContent}
+            </AnimatedPressable>
+          </GomealGlassView>
+        </Reanimated.View>
+      ) : (
+        <AnimatedPressable
+          onPress={onPress}
+          hitSlop={8}
+          disabled={expanded}
+          style={[
+            animatedStyle,
+            anchorStyle,
+            {
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "transparent",
+              overflow: "hidden",
+              zIndex: expanded ? 999 : 1,
+              elevation: expanded ? 999 : 1,
+            },
+            !expanded && style,
+            expanded && expandedStyle,
+          ]}
+        >
+          {expanded && (
+            <View
+              pointerEvents="none"
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: colors.background,
+                opacity: 0.8,
+                ...style,
+              }}
+            />
+          )}
+          {innerContent}
+        </AnimatedPressable>
+      )}
+    </Gesture>
+  );
+
+  // Anchored modes need a same-sized relative placeholder so the button
+  // doesn't collapse the space it used to occupy in the flex layout.
+  if (anchor === "center") {
+    return body;
+  }
+
+  return (
+    <View style={{ width: collapsedSize, height: collapsedSize, position: "relative" }}>
+      {body}
+    </View>
   );
 };
