@@ -15,7 +15,7 @@ from transformers import (
 class BoxDetector:
 
     MODEL = os.getenv(
-        "OWL_MODEL",
+        "IMAGE_MODEL",
         "google/owlv2-base-patch16-ensemble",
     )
 

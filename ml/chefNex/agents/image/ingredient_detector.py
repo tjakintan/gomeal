@@ -17,7 +17,7 @@ from transformers import (
 class IngredientDetector:
 
     MODEL = os.getenv(
-        "INGREDIENT_DETECTOR_MODEL",
+        "VLM_MODEL",
         "Qwen/Qwen2.5-VL-3B-Instruct",
     )
 
