@@ -17,18 +17,21 @@ export const getDirectMessagesFromPostId = async (
 
         if (sender_sub === receiver_sub) return
 
-        let conversation = await get_direct_conversation(sender_sub, receiver_sub);
+        let result = await get_direct_conversation(sender_sub, receiver_sub);
         let isNew = false;
 
-        if (!conversation) {
-            conversation = await start_direct_conversation(sender_sub, receiver_sub);
+        if (!result) {
+            result = await start_direct_conversation(sender_sub, receiver_sub);
             isNew = true;
         }
+
+        const { conversation, other_user } = result;
 
         const messages = await get_messages(conversation.id, sender_sub)
 
         return {
             conversation,
+            other_user,
             receiver_sub,
             sender_sub,
             isNew,
@@ -56,11 +59,16 @@ export const getDirectMessagesFromConversationId = async (
         );
 
         const receiver_sub = rows[0]?.user_sub;
-        const conversation = await get_direct_conversation(sender_sub, receiver_sub);
+
+        const result = await get_direct_conversation(sender_sub, receiver_sub);
+
+        if (!result) throw new Error("conversation_not_found");
+
+        const { conversation, other_user } = result;
+
         const messages = await get_messages(conversation.id, sender_sub);
 
-        return { conversation, receiver_sub, sender_sub, isNew: false, messages };
-        
+        return { conversation, other_user, receiver_sub, sender_sub, isNew: false, messages };
     } catch (err) {
         console.error('[getDirectMessagesFromConversationId]_failed', { sender_sub, conversation_id, err });
         throw err;
@@ -76,18 +84,21 @@ export const getDirectMessagesFromReceiverSub = async (
         if (!receiver_sub) throw new Error("receiver_not_found");
         if (sender_sub === receiver_sub) return;
 
-        let conversation = await get_direct_conversation(sender_sub, receiver_sub);
+        let result = await get_direct_conversation(sender_sub, receiver_sub);
         let isNew = false;
 
-        if (!conversation) {
-            conversation = await start_direct_conversation(sender_sub, receiver_sub);
+        if (!result) {
+            result = await start_direct_conversation(sender_sub, receiver_sub);
             isNew = true;
         }
+
+        const { conversation, other_user } = result;
 
         const messages = await get_messages(conversation.id, sender_sub);
 
         return {
             conversation,
+            other_user,
             receiver_sub,
             sender_sub,
             isNew,

@@ -220,6 +220,7 @@ export const get_notifications_message = async (receiver_sub: string): Promise<M
                 n.conversation_id,
                 n.created_at,
                 n.is_read,
+                u.sub,
                 u.avatar          AS actor_avatar,
                 u.profile_name    AS actor_profile_name,
                 m.content
@@ -241,6 +242,7 @@ export const get_notifications_message = async (receiver_sub: string): Promise<M
             actor_avatar:       row.actor_avatar,
             actor_profile_name: row.actor_profile_name,
             content:            row.content,
+            user_sub:           row.user_sub
         }));
 
     } catch (err) {

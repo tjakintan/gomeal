@@ -1,6 +1,7 @@
 import { FeedScopeType } from "@/types/feed.types";
 
-const ML_URL = `http://ml:${process.env.ML_PORT || 6969}`;
+const ML_HOST = process.env.ML_HOST || "ml";
+const ML_URL = `http://${ML_HOST}:${process.env.ML_PORT || 6969}`;
 
 export const getTrend = async ( user_sub: string, limit: number = 20 ): Promise<{ post_ids: number[]; user_subs: string[] }> => {
     

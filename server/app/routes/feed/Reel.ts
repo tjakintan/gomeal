@@ -84,6 +84,7 @@ export const fetch_reel_posts_by_ids = async (
 ): Promise<ReelFeedCard[]> => {
     if (!post_ids.length) return [];
 
+    // ensure it returns an array for user actions
     const result = await db.query(
         `SELECT
             p.id,
@@ -100,18 +101,25 @@ export const fetch_reel_posts_by_ids = async (
             u.last_name AS "lastName",
             u.level,
             u.avatar,
-            COUNT(DISTINCT CASE WHEN fa.action_type = 'post_love'  THEN fa.id END)::int AS post_love,
-            COUNT(DISTINCT CASE WHEN fa.action_type = 'post_star'  THEN fa.id END)::int AS post_star,
-            COUNT(DISTINCT CASE WHEN fa.action_type = 'post_cook'  THEN fa.id END)::int AS post_cook,
+
+            COUNT(DISTINCT CASE WHEN fa.action_type = 'post_love' THEN fa.id END)::int AS post_love,
+            COUNT(DISTINCT CASE WHEN fa.action_type = 'post_star' THEN fa.id END)::int AS post_star,
+            COUNT(DISTINCT CASE WHEN fa.action_type = 'post_cook' THEN fa.id END)::int AS post_cook,
             COUNT(DISTINCT CASE WHEN fa.action_type = 'post_share' THEN fa.id END)::int AS post_share,
-            ARRAY_REMOVE(
-                ARRAY_AGG(DISTINCT CASE WHEN fa2.user_sub = $2 THEN fa2.action_type END),
-                NULL
+
+            COALESCE(
+                JSONB_AGG(DISTINCT fa2.action_type)
+                    FILTER (WHERE fa2.action_type IS NOT NULL),
+                '[]'::jsonb
             ) AS user_actions
+
         FROM post p
         JOIN users u ON p.user_sub = u.sub
-        LEFT JOIN post_actions fa  ON fa.post_id = p.id
-        LEFT JOIN post_actions fa2 ON fa2.post_id = p.id AND fa2.user_sub = $2
+        LEFT JOIN post_actions fa
+            ON fa.post_id = p.id
+        LEFT JOIN post_actions fa2
+            ON fa2.post_id = p.id
+            AND fa2.user_sub = $2
         WHERE p.id = ANY($1)
             AND p.status = 'active'
             ${BLOCKED_USER_FILTER}

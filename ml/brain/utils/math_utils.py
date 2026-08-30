@@ -97,6 +97,34 @@ def compute_decay_value(delta_t: float, decay_rate: float) -> float:
     # Time since last update
     return math.exp(-decay_rate * delta_t)
 
+def compute_centroid(
+    embeddings: np.ndarray,
+) -> np.ndarray:
+    """
+    Compute the normalized centroid of a collection of embeddings.
+
+    Args:
+        embeddings:
+            Shape (N, D)
+
+    Returns:
+        Shape (D,)
+    """
+
+    if len(embeddings) == 0:
+        raise ValueError(
+            "Cannot compute centroid from empty embeddings."
+        )
+
+    centroid = embeddings.mean(axis=0)
+
+    norm = np.linalg.norm(centroid)
+
+    if norm > 0:
+        centroid /= norm
+
+    return centroid
+
 def compute_centroid_embedding(neurons: List[Any]) -> List[float]:
     """
         Computes normalized centroid embedding from neurons embeddings.
@@ -105,16 +133,12 @@ def compute_centroid_embedding(neurons: List[Any]) -> List[float]:
     if not neurons:
         raise ValueError("Cannot compute centroid from empty neuron list")
 
-    embeddings = np.array([n.embedding for n in neurons], dtype=np.float32)
+    embeddings = np.array(
+        [n.embedding for n in neurons],
+        dtype=np.float32,
+    )
 
-    centroid = embeddings.mean(axis=0)
-
-    # normalize
-    norm = np.linalg.norm(centroid)
-    if norm > 0:
-        centroid = centroid / norm
-
-    return centroid.tolist()
+    return compute_centroid(embeddings).tolist()
 
 def compute_neuron_activation_energy(activation: float, num_children: int, alpha: float = 0.05, method="linear"):
     """

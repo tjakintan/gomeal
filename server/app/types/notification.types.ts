@@ -85,6 +85,7 @@ export type MessageNotificationCard = {
     actor_avatar: Avatar;
     actor_profile_name: string;
     content: string;
+    user_sub: string;
 };
 
 export type CookNotificationCard = {

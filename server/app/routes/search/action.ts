@@ -1,46 +1,69 @@
 import db from "@/services/db";
-import { MinimumFeedCard } from "@/types/feed.types";
+import { SearchFeedCard } from "@/types/feed.types";
 import { MinimumProfile } from "@/types/profile.types";
 
-export const get_search_post = async (query: string, limit: number): Promise<MinimumFeedCard[]> => {
-
+export const get_search_post = async (
+    query: string,
+    limit: number
+): Promise<SearchFeedCard[]> => {
     try {
-
         if (!query.trim()) return [];
 
         const result = await db.query(
             `
             SELECT
-                id AS post_id,
-                dish_name,
-                image_url,
-                media_type
-            FROM post
-            WHERE status = 'active'
-            AND (
-                dish_name ILIKE '%' || $1 || '%' OR
-                description ILIKE '%' || $1 || '%'
-            )
-            ORDER BY created_at DESC
+                p.id AS post_id,
+                p.dish_name,
+                p.image_url,
+                p.media_type,
+                p.user_sub,
+
+                u.profile_name,
+                u.avatar,
+                u.tag_color,
+                u.first_name,
+                u.last_name
+
+            FROM post p
+
+            JOIN users u
+                ON u.sub = p.user_sub
+
+            WHERE p.status = 'active'
+                AND u.status = 'active'
+                AND (
+                    p.dish_name ILIKE '%' || $1 || '%' OR
+                    p.description ILIKE '%' || $1 || '%'
+                )
+
+            ORDER BY p.created_at DESC
             LIMIT $2
             `,
             [query, limit]
         );
 
-        return result.rows.map((row: any): MinimumFeedCard => ({
+        const posts = result.rows.map((row: any): SearchFeedCard => ({
             post_id: row.post_id,
+
             info: {
                 dish_name: row.dish_name,
                 dish_media_url: row.image_url,
                 dish_media_type: row.media_type,
             },
+
+            user_sub: row.user_sub,
+            profile_name: row.profile_name,
+            avatar: row.avatar,
+            tag_color: row.tag_color,
+            firstName: row.first_name,
+            lastName: row.last_name,
         }));
 
-    } catch (err) {
+        return posts
 
+    } catch (err) {
         console.error(err);
         throw new Error("failed_to_search_posts");
-
     }
 };
 
@@ -95,21 +118,36 @@ export const get_search_users = async (query: string, limit: number = 20): Promi
     }
 
 };
-export const get_search_posts_by_ids = async (post_ids: number[]): Promise<MinimumFeedCard[]> => {
-    
+
+export const get_search_posts_by_ids = async (
+    post_ids: number[]
+): Promise<SearchFeedCard[]> => {
     try {
         if (!post_ids.length) return [];
 
         const result = await db.query(
             `
             SELECT
-                id AS post_id,
-                dish_name,
-                image_url,
-                media_type
-            FROM post
-            WHERE status = 'active'
-                AND id = ANY($1::int[])
+                p.id AS post_id,
+                p.dish_name,
+                p.image_url,
+                p.media_type,
+
+                p.user_sub,
+                u.profile_name,
+                u.avatar,
+                u.tag_color,
+                u.first_name,
+                u.last_name
+
+            FROM post p
+
+            JOIN users u
+                ON u.sub = p.user_sub
+
+            WHERE p.status = 'active'
+                AND u.status = 'active'
+                AND p.id = ANY($1::int[])
             `,
             [post_ids]
         );
@@ -117,21 +155,30 @@ export const get_search_posts_by_ids = async (post_ids: number[]): Promise<Minim
         const rowsById = new Map(
             result.rows.map((row: any) => [
                 Number(row.post_id),
+
                 {
                     post_id: row.post_id,
+
                     info: {
                         dish_name: row.dish_name,
                         dish_media_url: row.image_url,
                         dish_media_type: row.media_type,
                     },
-                } as MinimumFeedCard,
+
+                    user_sub: row.user_sub,
+                    profile_name: row.profile_name,
+                    avatar: row.avatar,
+                    tag_color: row.tag_color,
+                    firstName: row.first_name,
+                    lastName: row.last_name,
+                } as SearchFeedCard,
             ])
         );
 
         return post_ids
             .map((id) => rowsById.get(Number(id)))
-            .filter(Boolean) as MinimumFeedCard[];
-            
+            .filter(Boolean) as SearchFeedCard[];
+
     } catch (err) {
         console.error(err);
         throw new Error("failed_to_get_search_posts_by_ids");
@@ -189,16 +236,15 @@ export const get_search_users_by_subs = async (user_subs: string[]): Promise<Min
         throw new Error("failed_to_get_search_users_by_subs");
     }
 };
+
 export const get_search = async (
     query: string,
     limit: number = 20
 ): Promise<{
     users: MinimumProfile[];
-    posts: MinimumFeedCard[];
+    posts: SearchFeedCard[];
 }> => {
-
     try {
-
         if (!query.trim()) {
             return {
                 users: [],
@@ -217,10 +263,7 @@ export const get_search = async (
         };
 
     } catch (err) {
-
         console.error(err);
         throw new Error("failed_to_get_search");
-
     }
-
 };

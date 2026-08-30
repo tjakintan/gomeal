@@ -1,7 +1,7 @@
 import db from "@/services/db";
 import { get_user_global_rank } from "./leaderboard";
 import { getUserPosts, getUserActionCounts } from "../feed/actions";
-import { ProfileResponse, } from "@/types/profile.types";
+import { ProfileResponse, UltraMinimumProfile, } from "@/types/profile.types";
 
 export const getProfile = async (user_sub: string): Promise<ProfileResponse> => {
 
@@ -88,6 +88,30 @@ export const getProfile = async (user_sub: string): Promise<ProfileResponse> => 
         throw err;
     }
 
+};
+
+export const get_minimal_profile = async (
+    user_sub: string
+): Promise<UltraMinimumProfile | null> => {
+    const result = await db.query(
+        `SELECT sub, profile_name, first_name, last_name, profile_img_url, badge, avatar
+         FROM users
+         WHERE sub = $1 AND status = 'active'`,
+        [user_sub]
+    );
+
+    if (!result.rows[0]) return null;
+
+    const row = result.rows[0];
+    return {
+        sub: row.sub,
+        profile_name: row.profile_name,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        profile_img_url: row.profile_img_url,
+        badge: row.badge,
+        avatar: row.avatar,
+    };
 };
 
 export const get_user_profile_name = async (user_sub: string): Promise<string> => {

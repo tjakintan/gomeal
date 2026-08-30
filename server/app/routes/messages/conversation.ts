@@ -1,5 +1,6 @@
 import db from "@/services/db";
 import { is_user_blocked } from "../user/block";
+import { get_minimal_profile } from "../user/getProfile";
 
 export const get_conversation_other_user_sub = async (
     conversation_id: number,
@@ -40,8 +41,13 @@ export const get_direct_conversation = async (
         [sender_sub, receiver_sub]
     );
 
-    return result.rows[0] ?? null;
+    const conversation = result.rows[0] ?? null;
+    if (!conversation) return null;
 
+    const other_user = await get_minimal_profile(receiver_sub);
+    if (!other_user) throw new Error("receiver_not_found");
+
+    return { conversation, other_user };
 };
 
 export const start_direct_conversation = async (
@@ -50,7 +56,6 @@ export const start_direct_conversation = async (
 ) => {
 
     const client = await db.connect();
-    
     try {
 
         await client.query("BEGIN");
@@ -75,7 +80,11 @@ export const start_direct_conversation = async (
         );
 
         await client.query("COMMIT");
-        return conversation;
+
+        const other_user = await get_minimal_profile(receiver_sub);
+        if (!other_user) throw new Error("receiver_not_found");
+
+        return { conversation, other_user };
 
     } catch (err) {
 

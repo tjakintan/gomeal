@@ -15,8 +15,11 @@ load_dotenv()
 from brain.boot import _boot_brain
 from brain.api.subscriber import _set_subscription_brain, _start_thread
 from routes.feed.rank.rank import _set_rank_brain
+
 from routes.router import router
+
 from services.socket_service import _sockets
+from chefNex.socket import _chefNex_sockets
 
 PORT = int(os.getenv("PORT", 6969))
 
@@ -36,6 +39,7 @@ sio = socketio.AsyncServer(cors_allowed_origins="*")
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 _sockets(sio)
+_chefNex_sockets(sio)
 
 app.state.ready = False
 _ready = False
