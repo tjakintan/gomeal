@@ -1,5 +1,5 @@
 from chefNex.intent.classifier import EmbeddingClassifier
-from ml.chefNex.intent import Intent, keyword_prefilter
+from chefNex.intent import Intent, keyword_prefilter
 from chefNex.intent.intent_prediction import IntentPrediction
 
 

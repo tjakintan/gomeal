@@ -1,7 +1,7 @@
 import json
 
 from services.db import query
-from ml.routes.embed.text import generate_embeddings
+from routes.embed.text import generate_embeddings
 
 def _embed_user_by_sub(user_sub: str):
 

@@ -1,7 +1,7 @@
 import logging
 from typing import Protocol
 
-from ml.chefNex.intent import Intent
+from chefNex.intent import Intent
 from chefNex.session.state import SessionState
 
 from chefNex.agents.ingredient import IngredientAgent

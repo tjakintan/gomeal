@@ -4,10 +4,10 @@ from pathlib import Path
 
 import numpy as np
 
-from ml.chefNex.intent import INTENT_REGISTRY, Intent, all_examples
+from chefNex.intent import INTENT_REGISTRY, Intent, all_examples
 from chefNex.intent.intent_prediction import IntentPrediction
 
-from ml.routes.embed import generate_embeddings
+from routes.embed.text import generate_embeddings
 
 CACHE_PATH = Path(__file__).parent / "chat_v1_centroids.json"
 

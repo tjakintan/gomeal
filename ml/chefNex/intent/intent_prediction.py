@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ml.chefNex.intent import Intent
+from chefNex.intent import Intent
 
 
 @dataclass(frozen=True)

@@ -7,8 +7,8 @@ from typing import Any
 import requests
 from PIL import Image as PILImage
 
-from ml.routes.embed.text import generate_embeddings
-from ml.routes.embed.image import generate_image_embeddings
+from routes.embed.text import generate_embeddings
+from routes.embed.image import generate_image_embeddings
 
 from routes.feed.scopes.scope import _create_scope
 from services.db import query
