@@ -13,7 +13,7 @@ const sendWelcomeEmail = async (toEmail: string, name?: string) => {
         .replace('{{name}}', name ? `, ${name}` : '');
 
     const command = new SendEmailCommand({
-        Source: process.env.EMAIL,
+        Source: process.env.NO_REPLY_EMAIL,
         Destination: {
             ToAddresses: [toEmail],
         },

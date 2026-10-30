@@ -14,7 +14,7 @@ const sendDeleteAccountEmail = async (
 ) => {
 
     const command = new SendEmailCommand({
-        Source: process.env.EMAIL,
+        Source: process.env.NO_REPLY_EMAIL,
 
         Destination: {
             ToAddresses: [toEmail],
