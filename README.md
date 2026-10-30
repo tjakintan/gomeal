@@ -114,8 +114,7 @@ IMAGE_MODEL_DEVICE=cpu
 
 # Prepared-dish component expansion
 LLM_BASE_URL=http://host.docker.internal:1234/v1
-LLM_API_KEY=your-api-key
-LLM_MODEL=qwen3-4b-instruct-2507
+LLM_API_KEY=lm-studio
 ```
 
 Start the service:
