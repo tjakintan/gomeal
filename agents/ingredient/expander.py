@@ -133,7 +133,6 @@ class IngredientExpander:
 
         self.model = (
             model
-            or os.getenv("LLM_MODEL")
             or os.getenv("VLM_MODEL", "Qwen/Qwen3-VL-4B-Instruct")
         )
 
