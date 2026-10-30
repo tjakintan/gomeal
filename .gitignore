@@ -1,0 +1,25 @@
+
+# Python environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Environment secrets
+.env
+config.env
+.env.*
+!.env.example
+
+# Model artifacts and caches
+.cache/
+huggingface/
+models/
+checkpoints/
+
+# Logs and OS files
+*.log
+.DS_Store
