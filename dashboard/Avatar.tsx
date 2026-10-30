@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Animated, Easing, DimensionValue, StyleSheet } from "react-native";
 import { useTheme } from "@/provider/ThemeProvider";
 import { SectionHeader } from "@/components/SectionComponent";
-import { Mood, useAvatar, useAvatarMood, DEFAULT_AVATAR, DEFAULT_AVATAR_BASE } from "@/dashboard/store/useAvatar";
+import { Mood, useAvatar, useAvatarMood, DEFAULT_AVATAR, DEFAULT_AVATAR_BASE } from "@/stores/useAvatar";
 import { Avatar, BadgeLevel } from "@/types/user.types";
 import { useUser } from "@/stores/useUser";
 import { SvgXml } from "react-native-svg";
@@ -18,12 +18,84 @@ import {
   Badge_level_5,
   Badge_level_6,
 } from "@/icons/badge_icon";
-import Bread from "./bread";
+import {Bread} from "./bread";
 import { formatBread } from "@/utils/time";
 import { ACCENT_COLORS, BOTTOM_INSETS } from "@/types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import Svg, {
+    Circle,
+} from "react-native-svg";
+import { ProgressCircle } from ".";
+
+
 const OPTION_AVATAR_SIZE = 65;
+
+
+const MOOD_TRAITS: Record<Mood, Partial<Avatar>> = {
+    idle: {
+        eyes: "happy",
+        mouth: "smile",
+    },
+    cooking: {
+        eyes: "wide",
+        mouth: "smile",
+    },
+    celebrating: {
+        eyes: "wink",
+        mouth: "laugh",
+    },
+    sad: {
+        eyes: "humble",
+        mouth: "sad",
+    },
+    happy: {
+        eyes: "happy",
+        mouth: "smile",
+    },
+    excited: {
+        eyes: "wide",
+        mouth: "laugh",
+    },
+    angry: {
+        eyes: "bow",
+        mouth: "angry",
+    },
+    sleepy: {
+        eyes: "humble",
+        mouth: "sad",
+    },
+    confused: {
+        eyes: "wide",
+        mouth: "agape",
+    },
+    shy: {
+        eyes: "humble",
+        mouth: "smile",
+    },
+    focused: {
+        eyes: "bow",
+        mouth: "smile",
+    },
+    surprised: {
+        eyes: "wide",
+        mouth: "agape",
+    },
+    love: {
+        eyes: "wink",
+        mouth: "smile",
+    },
+    sick: {
+        eyes: "humble",
+        mouth: "agape",
+    },
+    cool: {
+        eyes: "happy",
+        mouth: "laugh",
+        clothes: "openJacket",
+    },
+};
+
 
 const OptionRow = ({
   label,
@@ -127,6 +199,7 @@ const OptionRow = ({
         </>
     );
 };
+
 
 export const CreateAvatarScreen: React.FC<onBoardUserSectionProps> = ({ onNext, draft }) => {
     
@@ -298,6 +371,7 @@ export const CreateAvatarScreen: React.FC<onBoardUserSectionProps> = ({ onNext, 
         </View>
     );
 };
+
 
 export const EditAvatarScreen: React.FC<{
   onClose: () => void;
@@ -535,6 +609,7 @@ export const BadgeRender: React.FC<{ badge?: BadgeLevel; size?: number;}> = ({ b
     return <BadgeComponent size={size} />;
 };
 
+
 export const AvatarRender: React.FC<{
     avatar?: Avatar;
     badge?: BadgeLevel;
@@ -602,6 +677,7 @@ export const AvatarRender: React.FC<{
     );
 };
 
+
 export const LevelRender: React.FC<{ xp: number; level?: number; width?: DimensionValue}> = ({ xp, level = 0, width = '50%' }) => {
 
     const { colors, textStyles } = useTheme();
@@ -618,6 +694,7 @@ export const LevelRender: React.FC<{ xp: number; level?: number; width?: Dimensi
         </View>
     );
 };
+
 
 export const BreadRender: React.FC<{ bread: number; dark?: boolean; size?: DimensionValue }> = ({ bread, dark, size }) => {
 
@@ -637,6 +714,7 @@ export const BreadRender: React.FC<{ bread: number; dark?: boolean; size?: Dimen
     );
 };
 
+
 export const DynamicAvatarRenderer: React.FC<{
     avatar?: Avatar;
     badge?: BadgeLevel;
@@ -644,7 +722,11 @@ export const DynamicAvatarRenderer: React.FC<{
     size?: number;
     showBadge?: boolean;
     background?: boolean;
+    showAvatarBackground?: boolean,
     dark?: boolean;
+    level?: number;
+    xp?: number;
+    showProgress?: boolean;
 }> = ({
     avatar,
     badge,
@@ -653,82 +735,40 @@ export const DynamicAvatarRenderer: React.FC<{
     showBadge = false,
     background = false,
     dark = false,
+    level,
+    xp,
+    showProgress = false,
+    showAvatarBackground = false,
 }) => {
 
     const globalMood = useAvatarMood((s) => s.mood);
-    const resolvedMood = mood ?? globalMood;
+
     const userAvatar = useUser((s) => s.user?.avatar);
     const resolvedAvatar = avatar ?? userAvatar;
+
+    // Only the logged-in user's avatar follows the global mood.
+    // Everyone else's (feed cards, etc.) stays idle unless a `mood` prop is passed.
+    const isSelf = !avatar || avatar.seed === userAvatar?.seed;
+    const resolvedMood: Mood = mood ?? (isSelf ? globalMood : "idle");
+
     const userBadge = useUser((s) => s.user?.badge);
     const resolvedBadge = badge ?? userBadge;
+
+    const userXp = useUser((s) => s.user?.xp);
+    const resolvedXp = xp ?? userXp ?? 0;
 
     const { colors } = useTheme(dark ? "dark" : undefined);
     const { getSvg, setAvatar } = useAvatar(resolvedAvatar?.seed ?? "default");
     const opacity = useRef(new Animated.Value(1)).current;
 
-    const MOOD_TRAITS: Record<Mood, Partial<Avatar>> = {
-        idle: {
-            eyes: "happy",
-            mouth: "smile",
-        },
-        cooking: {
-            eyes: "wide",
-            mouth: "smile",
-        },
-        celebrating: {
-            eyes: "wink",
-            mouth: "laugh",
-        },
-        sad: {
-            eyes: "humble",
-            mouth: "sad",
-        },
-        happy: {
-            eyes: "happy",
-            mouth: "smile",
-        },
-        excited: {
-            eyes: "wide",
-            mouth: "laugh",
-        },
-        angry: {
-            eyes: "bow",
-            mouth: "angry",
-        },
-        sleepy: {
-            eyes: "humble",
-            mouth: "sad",
-        },
-        confused: {
-            eyes: "wide",
-            mouth: "agape",
-        },
-        shy: {
-            eyes: "humble",
-            mouth: "smile",
-        },
-        focused: {
-            eyes: "bow",
-            mouth: "smile",
-        },
-        surprised: {
-            eyes: "wide",
-            mouth: "agape",
-        },
-        love: {
-            eyes: "wink",
-            mouth: "smile",
-        },
-        sick: {
-            eyes: "humble",
-            mouth: "agape",
-        },
-        cool: {
-            eyes: "happy",
-            mouth: "laugh",
-            clothes: "openJacket",
-        },
-    };
+    // Number(undefined) is NaN (not nullish), so use || instead of ??
+    const XP_PER_LEVEL = Number(process.env.EXPO_PUBLIC_XP_PER_LEVEL) || 100;
+    const currentLevelXp = resolvedXp % XP_PER_LEVEL;
+    const progress = currentLevelXp / XP_PER_LEVEL;
+
+    // Outer ring now matches the background frame's own dimensions,
+    // not the inner avatar's ringSize
+    const outerSize = size * 2;
 
     useEffect(() => {
         if (!resolvedAvatar) return;
@@ -751,17 +791,35 @@ export const DynamicAvatarRenderer: React.FC<{
     }, [resolvedAvatar, resolvedMood]);
 
     const inner = (
-        <>
-            <Animated.View style={{ opacity, width: size, height: size }}>
-                <SvgXml xml={getSvg().toString()} width={size} height={size} />
+        <View
+            style={{
+                width: outerSize - 10,
+                height: outerSize - 10,
+                borderRadius: 999,
+                backgroundColor: showAvatarBackground
+                    ? colors.secondaryCard
+                    : "transparent",
+                justifyContent: "flex-end",
+                alignItems: "center",
+                overflow: "hidden",
+            }}
+        >
+            <Animated.View
+                style={{
+                    opacity,
+                    width: "100%",
+                    height: "100%",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                }}
+            >
+                <SvgXml
+                    xml={getSvg().toString()}
+                    width={(outerSize - 10) * 0.85}
+                    height={(outerSize - 10) * 0.85}
+                />
             </Animated.View>
-
-            {showBadge && resolvedBadge && (
-                <View style={{ position: "absolute", top: 0, right: 0 }}>
-                    <BadgeRender badge={resolvedBadge} size={size * 0.35} />
-                </View>
-            )}
-        </>
+        </View>
     );
 
     if (!resolvedAvatar) return null;
@@ -771,18 +829,46 @@ export const DynamicAvatarRenderer: React.FC<{
     return (
         <View
             style={{
-                height: size * 1.5,
-                width: size * 1.5,
+                height: outerSize,
+                width: outerSize,
                 borderRadius: 999,
-                borderWidth: 2,
-                borderColor: colors.secondaryCard,
-                backgroundColor: colors.background,
-                justifyContent: "flex-end",
+                justifyContent: "center",
                 alignItems: "center",
-                overflow: "hidden"
+                backgroundClip: "red"
             }}
         >
-            {inner}
+            
+            {showProgress ? (
+                <ProgressCircle
+                    size={outerSize}
+                    strokeWidth={4}
+                    progress={progress}
+                    color={colors.button}
+                    trackColor={colors.secondaryCard}
+                >
+                    {inner}
+                </ProgressCircle>               
+            ) : (
+                <View
+                    style={{
+                        height: outerSize,
+                        width: outerSize,
+                        borderRadius: 999,
+                        justifyContent: "center",
+                        alignItems: "center",     
+                        borderWidth: 3,
+                        borderColor: colors.secondaryCard                   
+                    }}
+                >
+                    {inner}
+                </View>
+            )}
+
+            {showBadge && resolvedBadge && (
+                <View style={{ position: "absolute", top: 0, right: 0 }}>
+                    <BadgeRender badge={resolvedBadge} size={size * 0.75} />
+                </View>
+            )}
         </View>
     );
 };

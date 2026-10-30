@@ -43,7 +43,9 @@ export type MinimumProfile = {
     bio?: string | null;
     website?: string | null;
     profile_img_url?: string | null;
-     tag_color?: string | null;
+    tag_color?: string | null;
+    level?: number; 
+    xp?: number;
 };
 
 export type UltraMinimumProfile = {

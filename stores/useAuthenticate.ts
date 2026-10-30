@@ -45,7 +45,7 @@ export type AppleSignUpResponse =
         };
     };
 
-type OnboardingDraft = Partial<User> & {
+export type OnboardingDraft = Partial<User> & {
     exists?: boolean;
     sub?: string;
 };

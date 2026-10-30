@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, forwardRef } from "react";
-import { View, Text, TextInput, TextInputProps, ViewStyle, Keyboard, TouchableWithoutFeedback, Pressable, StyleProp} from "react-native";
+import React, { useState, useRef, useEffect, forwardRef, useCallback, useMemo } from "react";
+import { View, Text, TextInput, TextInputProps, ViewStyle, Keyboard, TouchableWithoutFeedback, Pressable, StyleProp, FlexAlignType} from "react-native";
 import { useTheme } from "@/provider/ThemeProvider";
 import { InputProps, DigitsInputProps, DobInputProps  } from "@/types/components";
 import { Button } from "./ButtonComponent";
@@ -22,7 +22,8 @@ type FocusBoxProps = {
     children: React.ReactNode;
 };
 
-const FocusBox: React.FC<FocusBoxProps> = ({
+
+const FocusBox = React.memo<FocusBoxProps>(({
   focused,
   disabled = false,
   focusedColor,
@@ -61,12 +62,14 @@ const FocusBox: React.FC<FocusBoxProps> = ({
       {children}
     </Animated.View>
   );
-};
+});
+
 
 export const Input = forwardRef<TextInput, InputProps>(({
   label,
   value,
   defaultValue = "",
+  maxLength,
   onChangeText,
   multiline = false,
   disabled = false,
@@ -76,7 +79,10 @@ export const Input = forwardRef<TextInput, InputProps>(({
   onIconPress,
   children,
   style,
+  maxHeight,
   containerStyle,
+  growDirection = "bottom",
+  iconBackground = false,
   bottomSheet = false,
   ...props
 }, ref) => {
@@ -85,35 +91,101 @@ export const Input = forwardRef<TextInput, InputProps>(({
 
   const minInputHeight = 40;
   const maxInputHeight = 100;
-  const [inputHeight, setInputHeight] = useState(multiline ? 100 : 40);
-  
+  const actualMaxHeight = maxHeight ?? maxInputHeight;
+
+  const [inputHeight, setInputHeight] = useState(minInputHeight);
+
   const [internal, setInternal] = useState(defaultValue);
   const isControlled = value !== undefined;
   const text = isControlled ? value : internal;
 
   const [focused, setFocused] = useState(false);
 
-  const handleFocus = (e: any) => {
+  const handleFocus = useCallback((e: any) => {
     props.onFocus?.(e);
     setFocused(true);
-  };
+  }, [props.onFocus]);
 
-  const handleBlur = (e: any) => {
+  const handleBlur = useCallback((e: any) => {
     props.onBlur?.(e);
     setFocused(false);
-  };
+  }, [props.onBlur]);
 
-  const handleChange = (t: string) => {
+  const handleChange = useCallback((t: string) => {
     if (!isControlled) setInternal(t);
     onChangeText?.(t);
-  };
+  }, [isControlled, onChangeText]);
 
+  const handleContentSizeChange = useCallback((e: any) => {
+    if (!multiline) return;
+    const contentHeight = e.nativeEvent.contentSize.height;
+    const clamped = Math.max(minInputHeight, Math.min(actualMaxHeight, contentHeight));
+    setInputHeight(clamped);
+  }, [multiline, actualMaxHeight]);
+
+  useEffect(() => {
+    if (text === "") setInputHeight(minInputHeight);
+  }, [text]);
+
+  
   const InputComponent = bottomSheet ? BottomSheetTextInput : TextInput;
+
+  const setRef = useCallback(
+    (instance: TextInput | null | undefined) => {
+      if (typeof ref === "function") {
+        ref(instance ?? null);
+      } else if (ref) {
+        (ref as React.MutableRefObject<TextInput | null>).current = instance ?? null;
+      }
+    },
+    [ref]
+  );
+
+  const containerRowStyle = useMemo(() => ({
+    ...containerStyle,
+    flexDirection: "row" as const,
+    alignItems: growDirection === "top" ? "flex-end" as const : "flex-start" as const,
+    justifyContent: "center" as const,
+    opacity: disabled ? 0.5 : 1,
+    gap: 10,
+  }), [containerStyle, disabled, growDirection]);
+
+  const focusBoxStyle = useMemo(
+    () => [
+      {
+        flex: 1,
+        backgroundColor: colors.button,
+        borderRadius: 17,
+      },
+      containerStyle,
+    ],
+    [colors.button, containerStyle]
+  );
+
+  const inputStyle = useMemo(
+    () => [
+      {
+        minHeight: multiline ? minInputHeight : 40,
+        maxHeight: multiline ? actualMaxHeight : 40,
+
+        fontSize: 16,
+        color: colors.text,
+        backgroundColor: colors.secondaryCard,
+
+        paddingVertical: multiline ? 10 : 5,
+        paddingHorizontal: 10,
+
+        textAlignVertical: multiline ? "top" as const : "center" as const,
+      },
+      style,
+    ],
+    [multiline, actualMaxHeight, colors.text, colors.secondaryCard, style]
+  );
 
   return (
     <View style={{ width: "100%" }}>
-      
-     {label && (
+
+      {label && (
         <View className="items-start justify-center">
           <Text
             className={textStyles.caption}
@@ -131,72 +203,36 @@ export const Input = forwardRef<TextInput, InputProps>(({
         </View>
       )}
 
-      <View
-        style={{
-          ...containerStyle,
-          flexDirection: "row",
-          alignItems: multiline ? "flex-start" : "center",
-          justifyContent: "center",
-          opacity: disabled ? 0.5 : 1,
-          gap: 10
-        }}
-      >
+      <View style={containerRowStyle}>
 
         {leftIcon && (
-          <Button onPress={onIconPress}>{leftIcon}</Button>
+          <Button clearBackground={iconBackground} onPress={onIconPress}>{leftIcon}</Button>
         )}
 
         <FocusBox
           focused={focused}
           disabled={disabled}
-          style={[
-            {
-              flex: 1,
-              backgroundColor: colors.button,
-              borderRadius: 17,
-            },
-            containerStyle,
-          ]}
+          style={focusBoxStyle}
         >
           <InputComponent
+            ref={setRef as any}
             multiline={multiline}
-            scrollEnabled={multiline}
-
-            onContentSizeChange={(event) => {
-              if (!multiline) return;
-
-              const nextHeight = Math.min(
-                Math.max(event.nativeEvent.contentSize.height, minInputHeight),
-                maxInputHeight,
-              );
-
-              setInputHeight(nextHeight);
-              props.onContentSizeChange?.(event);
-            }}
+            scrollEnabled={inputHeight >= actualMaxHeight}
+            maxLength={maxLength}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            onContentSizeChange={handleContentSizeChange}
             value={text}
             onChangeText={handleChange}
             placeholderTextColor={colors.secondaryText}
             editable={!disabled}
-            style={[
-              {
-                height: multiline ? inputHeight : 40,
-                fontSize: 15,
-                color: colors.text,
-                backgroundColor: colors.secondaryCard,
-                paddingVertical: multiline ? 10 : 5,
-                paddingHorizontal: 10,
-                textAlignVertical: multiline ? "top" : "center",
-              },
-              style,
-            ]}
+            style={inputStyle}
             {...props}
           />
         </FocusBox>
 
         {rightIcon && (
-          <Button onPress={onIconPress}>{rightIcon}</Button>
+          <Button clearBackground={iconBackground} onPress={onIconPress}>{rightIcon}</Button>
         )}
 
         {children}
@@ -206,6 +242,7 @@ export const Input = forwardRef<TextInput, InputProps>(({
     </View>
   );
 });
+
 
 export const DigitsInput: React.FC<DigitsInputProps> = ({
   length = 6,
@@ -320,7 +357,7 @@ export const DigitsInput: React.FC<DigitsInputProps> = ({
       {label && (
         <View className="items-start justify-center">
           <Text
-            className={textStyles.caption}
+            className={textStyles.body}
             style={{
               paddingHorizontal: 10,
               paddingVertical: 5,
@@ -423,6 +460,7 @@ type DobPartInputProps = {
   onKeyPress?: TextInputProps["onKeyPress"];
 };
 
+
 const DobPartInput = forwardRef<TextInput, DobPartInputProps>(({
   value,
   placeholder,
@@ -474,6 +512,7 @@ const DobPartInput = forwardRef<TextInput, DobPartInputProps>(({
     </FocusBox>
   );
 });
+
 
 export const DobInput: React.FC<DobInputProps> = ({
   value = "",

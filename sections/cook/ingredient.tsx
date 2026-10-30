@@ -2,31 +2,54 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useCart } from "@/stores/useCart";
 import { Button } from "@/components/ButtonComponent";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { AddIcon, CheckIcon, FullCartIcon } from "@/icons/Icon";
 import { Media } from "@/media/media";
 import { SectionHeader } from "@/components/SectionComponent";
 import { useCook } from "@/stores/useCook";
-import { Ingredient } from "@/types";
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { ACCENT_COLORS, Ingredient } from "@/types";
 import { GroceryPickerScreen } from "../user/grocery";
 import { ScrollView } from "react-native-gesture-handler";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+import { usePostHog } from "posthog-react-native";
 
-export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> = ({
+export const IngredientScreen: React.FC<{
+    post_id: number;
+    onDone?: () => void;
+    dark: boolean;
+}> = ({
+    post_id,
     onDone,
     dark = false,
 }) => {
+
+    const posthog = usePostHog();
+
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
-    const { CookIngredients } = useCook();
 
-    const {
-        loadingCart,
-        loadIngredientStatus,
-        isIngredientInAnyCart,
-    } = useCart();
+    const CookIngredients = useCook(
+        (state) => state.CookIngredients
+    );
 
-    const [showGroceryScreen, setShowGroceryScreen] = useState(false);
-    const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+    const loadingCart = useCart(
+        (state) => state.loadingCart
+    );
+
+    const ingredientStatusById = useCart(
+        (state) => state.ingredientStatusById
+    );
+
+    const loadIngredientStatus = useCart(
+        (state) => state.loadIngredientStatus
+    );
+
+    const openSlidingOverlay = useSlidingOverlay(
+        (s) => s.openSlidingOverlay
+    );
+
+    const closeSlidingOverlay = useSlidingOverlay(
+        (s) => s.closeSlidingOverlay
+    );
 
     useEffect(() => {
         CookIngredients.forEach((ingredient) => {
@@ -34,13 +57,35 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
         });
     }, [CookIngredients, loadIngredientStatus]);
 
-    const openGroceryForIngredient = (ingredient: Ingredient) => {
+    const openGroceryForIngredient = (
+        ingredient: Ingredient
+    ) => {
         const ingredientId = Number(ingredient.id);
 
-        if (isIngredientInAnyCart(ingredientId).in_cart) return;
+        posthog.capture("[Cook] => ingredient_added_to_grocery", { post_id, ingredient_id: ingredientId });
 
-        setSelectedIngredient(ingredient);
-        setShowGroceryScreen(true);
+        openSlidingOverlay(
+            <GroceryPickerScreen
+                ingredients={[
+                    {
+                        id: ingredientId,
+                        name: ingredient.name,
+                        quantity:
+                            Number(ingredient.quantity) || 1,
+                        unit: ingredient.unit ?? null,
+                    },
+                ]}
+                onIngredientsAdded={(ingredientIds) => {
+                    ingredientIds.forEach((id) => {
+                        loadIngredientStatus(id);
+                    });
+                }}
+                onClose={() => {
+                    closeSlidingOverlay();
+                }}
+                dark={dark}
+            />
+        );
     };
 
     return (
@@ -55,11 +100,16 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
                 showBackground
                 titleClassName={textStyles.bodyMedium}
                 dark={dark}
-                leftIcon={<FullCartIcon size={30} color={colors.button} />}
+                leftIcon={
+                    <FullCartIcon
+                        size={30}
+                        color={colors.button}
+                    />
+                }
             />
 
             <ScrollView
-                style={{flex: 1}}
+                style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
                     gap: 12,
@@ -69,10 +119,25 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
             >
                 {CookIngredients.map((item, index) => {
                     const ingredientId = Number(item.id);
-                    const { in_cart, quantity, unit } = isIngredientInAnyCart(ingredientId);
+
+                    const status =
+                        ingredientStatusById[ingredientId];
+
+                    const inCart = Boolean(
+                        status?.in_cart
+                    );
+
+                    const cartQuantity =
+                        status?.quantity ?? null;
+
+                    const cartUnit =
+                        status?.unit ?? null;
 
                     return (
-                        <TouchableOpacity key={`${item.id ?? item.name}-${index}`} activeOpacity={1}>
+                        <TouchableOpacity
+                            key={`${item.id ?? item.name}-${index}`}
+                            activeOpacity={1}
+                        >
                             <View
                                 style={{
                                     flexDirection: "row",
@@ -97,57 +162,142 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
                                         <Media
                                             uri={item.media_url}
                                             mediaType="image"
-                                            style={{ width: 70, height: 60 }}
+                                            style={{
+                                                width: 70,
+                                                height: 60,
+                                            }}
                                             imageContentFit="cover"
                                         />
                                     ) : (
-                                        <FullCartIcon color={colors.text} size={28} />
+                                        <FullCartIcon
+                                            color={colors.text}
+                                            size={28}
+                                        />
                                     )}
                                 </View>
 
-                                <View style={{ gap: 10, height: 130, width: 155 }}>
-                                    <View style={{ height: 78, padding: 5 }}>
+                                <View
+                                    style={{
+                                        height: 130,
+                                        width: 155,
+                                    }}
+                                >
+                                    <View
+                                        style={{
+                                            height: 78,
+                                            padding: 5,
+                                        }}
+                                    >
                                         <Text
-                                            className={textStyles.bodyMedium}
+                                            className={
+                                                textStyles.bodyMedium
+                                            }
                                             numberOfLines={1}
                                             ellipsizeMode="tail"
-                                            style={{ color: colors.text }}
+                                            style={{
+                                                color: colors.text,
+                                            }}
                                         >
                                             {item.name}
                                         </Text>
 
-                                        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-                                            <Text style={{ color: colors.secondaryText }} className={textStyles.body}>
+                                        <View
+                                            style={{
+                                                flexDirection: "row",
+                                                alignItems: "baseline",
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <Text
+                                                style={{
+                                                    color: colors.secondaryText,
+                                                }}
+                                                className={
+                                                    textStyles.body
+                                                }
+                                            >
                                                 Qty:
                                             </Text>
+
                                             <Text
-                                                className={textStyles.body}
+                                                className={
+                                                    textStyles.body
+                                                }
                                                 numberOfLines={1}
                                                 ellipsizeMode="tail"
-                                                style={{ color: colors.button }}
+                                                style={{
+                                                    color: colors.button,
+                                                }}
                                             >
                                                 {item.quantity}
                                             </Text>
-                                            <Text className={textStyles.small} style={{ color: colors.secondaryText, fontWeight: "500" }}>
+
+                                            <Text
+                                                className={
+                                                    textStyles.small
+                                                }
+                                                style={{
+                                                    color: colors.secondaryText,
+                                                    fontWeight: "500",
+                                                }}
+                                            >
                                                 {item.unit}
                                             </Text>
                                         </View>
 
-                                        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-                                            <Text style={{ color: colors.secondaryText }} className={textStyles.body}>
+                                        <View
+                                            style={{
+                                                flexDirection: "row",
+                                                alignItems: "baseline",
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <Text
+                                                style={{
+                                                    color: colors.secondaryText,
+                                                }}
+                                                className={
+                                                    textStyles.body
+                                                }
+                                            >
                                                 In list:
                                             </Text>
-                                            {in_cart && quantity ? (
+
+                                            {inCart ? (
                                                 <>
-                                                    <Text style={{ color: colors.button }} className={textStyles.body}>
-                                                        {quantity}
+                                                    <Text
+                                                        style={{
+                                                            color: colors.button,
+                                                        }}
+                                                        className={
+                                                            textStyles.body
+                                                        }
+                                                    >
+                                                        {cartQuantity ?? 1}
                                                     </Text>
-                                                    <Text className={textStyles.small} style={{ color: colors.secondaryText, fontWeight: "500" }}>
-                                                        {unit ?? ""}
+
+                                                    <Text
+                                                        className={
+                                                            textStyles.small
+                                                        }
+                                                        style={{
+                                                            color: colors.secondaryText,
+                                                            fontWeight:
+                                                                "500",
+                                                        }}
+                                                    >
+                                                        {cartUnit ?? ""}
                                                     </Text>
                                                 </>
                                             ) : (
-                                                <Text style={{ color: colors.danger }} className={textStyles.body}>
+                                                <Text
+                                                    style={{
+                                                        color: colors.danger,
+                                                    }}
+                                                    className={
+                                                        textStyles.body
+                                                    }
+                                                >
                                                     No
                                                 </Text>
                                             )}
@@ -155,10 +305,14 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
 
                                         {!!item.category && (
                                             <Text
-                                                className={textStyles.small}
+                                                className={
+                                                    textStyles.small
+                                                }
                                                 numberOfLines={1}
                                                 ellipsizeMode="tail"
-                                                style={{ color: colors.secondaryText }}
+                                                style={{
+                                                    color: colors.secondaryText,
+                                                }}
                                             >
                                                 {item.category}
                                             </Text>
@@ -169,30 +323,56 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
                                         style={{
                                             height: 45,
                                             flexDirection: "row",
-                                            justifyContent: "flex-end",
+                                            justifyContent:
+                                                "flex-end",
                                             alignItems: "center",
                                             paddingTop: 8,
                                             borderTopWidth: 1,
-                                            borderColor: colors.text,
+                                            borderColor:
+                                                colors.text,
                                         }}
                                     >
                                         <Button
                                             style={{
                                                 height: 30,
                                                 width: 50,
-                                                backgroundColor: in_cart ? colors.button : colors.danger,
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                opacity: in_cart ? 0.7 : 1,
+                                                backgroundColor:
+                                                    inCart
+                                                        ? ACCENT_COLORS.teal
+                                                        : colors.danger,
+                                                alignItems:
+                                                    "center",
+                                                justifyContent:
+                                                    "center",
+                                                opacity: inCart
+                                                    ? 0.7
+                                                    : 1,
                                             }}
-                                            disabled={in_cart || loadingCart}
+                                            disabled={
+                                                inCart ||
+                                                loadingCart
+                                            }
                                             background
-                                            onPress={() => openGroceryForIngredient(item)}
+                                            onPress={() =>
+                                                openGroceryForIngredient(
+                                                    item
+                                                )
+                                            }
                                         >
-                                            {in_cart ? (
-                                                <CheckIcon color={colors.background} size={15} />
+                                            {inCart ? (
+                                                <CheckIcon
+                                                    color={
+                                                        colors.background
+                                                    }
+                                                    size={25}
+                                                />
                                             ) : (
-                                                <AddIcon color={colors.background} size={15} />
+                                                <AddIcon
+                                                    color={
+                                                        colors.background
+                                                    }
+                                                    size={15}
+                                                />
                                             )}
                                         </Button>
                                     </View>
@@ -202,27 +382,6 @@ export const IngredientScreen: React.FC<{ onDone?: () => void; dark: boolean }> 
                     );
                 })}
             </ScrollView>
-
-            {showGroceryScreen && selectedIngredient && (
-                <View
-                    style={{
-                        ...StyleSheet.absoluteFillObject,
-                        backgroundColor: colors.background,
-                    }}
-                >
-                    <GroceryPickerScreen
-                        ingredient={selectedIngredient}
-                        onIngredientAdded={(ingredientId) => {
-                            loadIngredientStatus(ingredientId);
-                        }}
-                        onClose={() => {
-                            setSelectedIngredient(null);
-                            setShowGroceryScreen(false);
-                        }}
-                        dark={dark}
-                    />
-                </View>
-            )}
         </View>
     );
 };

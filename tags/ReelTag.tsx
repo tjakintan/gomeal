@@ -1,52 +1,117 @@
-import { Media } from "../media/media";
-import { formatCount } from "@/utils/time";
+import { ReelMedia, MediaRef, getReelReservedBottom, ScrubState, SCRUB_ZONE_HEIGHT } from "@/media/reelMedia";
+import { formatClock, formatCount } from "@/utils/time";
 import { useTheme } from "@/provider/ThemeProvider";
-import { ReelFeedCard} from "@/types/feed.types";
-import { useReel } from "@/stores/useReel";
+import { REEL_TAG_HEIGHT, REEL_TAG_RADIUS, REEL_TAG_WIDTH, ReelFeedCard, SWIPE_THRESHOLD} from "@/types/feed.types";
+import { useReel, useReelChrome } from "@/stores/useReel";
 import { FeedActionCountsTypes, FeedActionType } from "@/types/feed.types";
-import React, { JSX, useEffect, useMemo, useRef, useState } from "react";
+import React, { forwardRef, JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Dimensions, Image, PanResponder, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { FeedLoveIcon, FeedStarIcon } from "@/icons/feed_icon";
 import { Button } from "@/components/ButtonComponent";
-import { AddIcon, FatIcon, ShareIcon } from "@/icons/Icon";
-import { AvatarRender } from "@/dashboard/Avatar";
-import { useAvatarMood } from "@/dashboard/store/useAvatar";
+import { AddIcon, FatIcon, ShareFillIcon, ShareIcon, ListFillIcon, ListIcon } from "@/icons/Icon";
+import { AvatarRender, DynamicAvatarRenderer } from "@/dashboard/Avatar";
+import { useAvatarMood } from "@/stores/useAvatar";
 import { useFeed } from "@/stores/useFeed";
 import { LinearGradient } from "expo-linear-gradient";
 import { setFeedActionCount } from "@/api/feed.api";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { capitalize } from "@/utils/text";
+import { capitalize, limitLength } from "@/utils/text";
+import { shallow } from "zustand/shallow";
+import { REEL_CONTROLS_HEIGHT } from "@/types/feed.types";
+import { StepData } from "@/types";
 
 type Props = {
     card?: ReelFeedCard;
     height?: number;
+    isActive: boolean;
     onSwipeUp: () => void;
     onSwipeDown: () => void;
+    onVideoEnd: (post_id: number) => boolean;
     onSetActiveProfile: (post_id: number) => void;
     onOpenCook: (post_id: number) => void;
+    onOpenSteps: (steps: StepData[], dishName: string) => void;
     onSetSharePost: (post_id: number) => void;
     style?: StyleProp<ViewStyle>;
+    
+    isLandscape?: boolean;
+    landscapeSheetOpen?: boolean;
+    onOrientationChange?: (landscape: boolean) => void;
+    orientationLocked?: boolean;
 };
 
-export const DASHBOARD_HEIGHT = 150;
-export const REEL_TAG_HEIGHT = Dimensions.get("window").height - 305;
-export const REEL_TAG_WIDTH = Dimensions.get("window").width ;
-export const REEL_TAG_RADIUS = 0;
-const SWIPE_THRESHOLD = 60;
 
-const ReelTag: React.FC<Props> = ({ card, style, height, onSwipeUp, onSwipeDown, onSetActiveProfile, onSetSharePost, onOpenCook }) => {
+const DESC_LIMIT = 80;      
+const GRADIENT_HEADROOM = 24;
 
-    const { post_id, info, avatar, profile_name, firstName, lastName, level } = card ?? {};
+
+const ReelTag = React.memo(forwardRef<MediaRef, Props>(({
+    card,
+    isActive,
+    height,
+    onSwipeUp,
+    onSwipeDown,
+    onVideoEnd,
+    onOpenSteps,
+    onSetActiveProfile,
+    onSetSharePost,
+    onOpenCook,
+    isLandscape = false,
+    onOrientationChange,
+    orientationLocked = false,
+    landscapeSheetOpen = false,
+}, ref) => {
+
+    const chrome = useReelChrome();
 
     const insets = useSafeAreaInsets();
+
+    const { post_id, info, avatar, xp, badge, profile_name, firstName, lastName, level, steps } = card ?? {};
+
+    const reservedBottom = getReelReservedBottom(insets.bottom);
+
     const tagHeight = height ?? REEL_TAG_HEIGHT;
-    const infoBottomPadding = insets.bottom;
+
+    const infoBottomPadding = insets.bottom + 15;
+    
     const { colors, textStyles } = useTheme("dark");
 
     const onSwipeUpRef = useRef(onSwipeUp);
     const onSwipeDownRef = useRef(onSwipeDown);
 
     const [hide, setHide] = useState(false);
+
+    const [descExpanded, setDescExpanded] = useState(false);
+
+    const [infoHeight, setInfoHeight] = useState(0);
+
+    const description = info?.dish_description ?? "";
+    const isLongDesc = description.length > DESC_LIMIT;
+    const shownDesc = !descExpanded && isLongDesc
+        ? description.slice(0, DESC_LIMIT).trim() + "…"
+        : description;
+
+    const [scrub, setScrub] = useState<ScrubState | null>(null);
+    const scrubbingRef = useRef(false);
+
+    const handleScrub = useCallback((s: ScrubState | null) => {
+        setScrub(s);
+
+        const now = s !== null;
+        if (now === scrubbingRef.current) return;
+        scrubbingRef.current = now;
+
+        if (now) {
+            useReel.setState({ isScrubbing: true });
+        } else {
+            setTimeout(() => {
+                if (!scrubbingRef.current) useReel.setState({ isScrubbing: false });
+            }, 250);
+        }
+    }, []);
+
+    useEffect(() => () => {
+        if (scrubbingRef.current) useReel.setState({ isScrubbing: false });
+    }, []);
 
     const panResponder = useRef(
         PanResponder.create({
@@ -78,11 +143,15 @@ const ReelTag: React.FC<Props> = ({ card, style, height, onSwipeUp, onSwipeDown,
 
         })
     ).current;
+    
 
     useEffect(() => {
         onSwipeUpRef.current = onSwipeUp;
         onSwipeDownRef.current = onSwipeDown;
     }, [onSwipeUp, onSwipeDown]);
+
+
+    useEffect(() => { setDescExpanded(false); }, [post_id]);
 
     return (
         <View
@@ -94,101 +163,90 @@ const ReelTag: React.FC<Props> = ({ card, style, height, onSwipeUp, onSwipeDown,
                     height: tagHeight,
                     width: REEL_TAG_WIDTH,
                     borderRadius: REEL_TAG_RADIUS,
-                    backgroundColor: colors.background,
                     overflow: "hidden",
                 }}
             >
+
                 <View
                     style={{ ...StyleSheet.absoluteFillObject }}
                     pointerEvents="box-none"
                 >
-
-                    <Media
+                    <ReelMedia
+                        ref={ref}
+                        loop={false}
                         uri={info?.dish_media_url ?? ""}
-                        mediaType={info?.dish_media_type ?? "image"}
-                        style={{height: "100%", width: "100%"}}
-                        iconSize={55}
+                        duration={info?.dish_media_duration}
+                        style={{ height: "100%", width: "100%" }}
+                        bottomOffset={insets.bottom}
                         onLongPress={() => setHide(true)}
+                        onEnd={() => onVideoEnd(post_id ?? 0)} 
                         onInteractionEnd={() => setHide(false)}
-                        muteControl="center"
-                        imageContentFit="contain"
-                        videoContentFit="cover"
+                        onScrub={handleScrub}
+                        videoContentFit="contain"
+                        autoPlay={isActive ? undefined : false}
+                        isLandscape={isLandscape}
+                        onOrientationChange={onOrientationChange}
+                        orientationLocked={orientationLocked}
                     />
-
                 </View>
 
-                <LinearGradient
-                    pointerEvents="none"
-                    colors={[
-                        "rgba(0, 0, 0, 0.85)",
-                        "rgba(0, 0, 0, 0.45)",
-                        "rgba(0, 0, 0, 0)",
-                    ]}
-                    locations={[0, 0.55, 1]}
-                    start={{ x: 0.5, y: 1 }}
-                    end={{ x: 0.5, y: 0.1 }}
-                    style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: 100,   // <-- controls how tall the gradient is
-                        shadowColor: "#000",
-                        shadowOpacity: 0.35,
-                        shadowRadius: 18,
-                        shadowOffset: { width: 0, height: 6 },
-                        elevation: 10,
-                    }}
-                />
-                
-                <View
-                    style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        gap: 5,
-                        paddingHorizontal: 10,
-                        paddingBottom: infoBottomPadding,
-                        alignItems: "flex-start",
-                    }}
-                    pointerEvents={hide ? "none" : "auto"}
+                <Animated.View
+                    pointerEvents="box-none"
+                    style={[StyleSheet.absoluteFillObject, { opacity: chrome }]}
                 >
-                    <Animated.View
-                        style={{
-                            opacity: hide ? 0.1 : 1,
-                        }}
-                    >
-
-                        <Button 
+                    {infoHeight > 0 && (
+                        <LinearGradient
+                            pointerEvents="none"
+                            colors={[
+                                "rgba(0, 0, 0, 0.85)",
+                                "rgba(0, 0, 0, 0.45)",
+                                "rgba(0, 0, 0, 0)",
+                            ]}
+                            locations={[0, 0.55, 1]}
+                            start={{ x: 0.5, y: 1 }}
+                            end={{ x: 0.5, y: 0 }}  
                             style={{
-                                width: "auto",
-                                gap: 15,
-                                flexDirection: "column", 
-                                alignItems: "flex-start"
+                                position: "absolute",
+                                bottom: reservedBottom,
+                                left: 0,
+                                right: 0,
+                                height: infoHeight + GRADIENT_HEADROOM,
                             }}
-                            onPress={() => onSetActiveProfile(post_id ?? 0)}
+                        />
+                    )}
+                    
+                    <View
+                        onLayout={(e) => setInfoHeight(e.nativeEvent.layout.height)}
+                        style={{
+                            position: "absolute",
+                            bottom: (REEL_CONTROLS_HEIGHT + (SCRUB_ZONE_HEIGHT / 3)) + 15,
+                            left: 0,
+                            right: 0,
+                            paddingBottom: infoBottomPadding,
+                        }}
+                        pointerEvents={hide || scrub ? "none" : "box-none"}
+                    >
+                        <Animated.View
+                            style={{
+                                gap: 10,
+                                opacity: scrub ? 0 : hide ? 0.1 : 1,
+                                paddingHorizontal: 5
+                            }}
                         >
-                            <View
-                                style={{
-                                    gap: 10,
-                                    flexDirection: "row",
-                                    alignItems: "flex-end"
-                                }}
+                            {/* profile row */}
+                            <Button
+                                style={{ width: "auto", padding: 0, justifyContent: "flex-start", alignItems: "flex-end", gap: 5, paddingLeft: 7, flexDirection: "row" }}
+                                onPress={() => onSetActiveProfile(post_id ?? 0)}
                             >
-                                <View 
-                                    style={{
-                                        height: 40,
-                                        width: 40, 
-                                        borderWidth: 1,
-                                        borderRadius: 999,
-                                        borderColor: colors.text,
-                                        overflow: "hidden" ,                   
-                                    }}
-                                    className="items-center justify-center"
-                                >
-                                    <AvatarRender avatar={avatar} size={30} />
-                                </View>
+                                <DynamicAvatarRenderer 
+                                    avatar={avatar} 
+                                    size={25} 
+                                    xp={xp} 
+                                    badge={badge} 
+                                    background
+                                    showBadge 
+                                    showProgress 
+                                />
 
                                 <View
                                     style={{
@@ -196,11 +254,12 @@ const ReelTag: React.FC<Props> = ({ card, style, height, onSwipeUp, onSwipeDown,
                                     }}
                                 >
                                     <Text
-                                        className={textStyles.caption}
+                                        className={textStyles.sectionText}
                                         numberOfLines={1}
                                         ellipsizeMode="tail"
+                                        onPress={() => onSetActiveProfile(post_id ?? 0)}
                                     >
-                                        {profile_name}
+                                        @{limitLength(profile_name ?? "", 25)}
                                     </Text>
 
                                     <Text
@@ -210,24 +269,23 @@ const ReelTag: React.FC<Props> = ({ card, style, height, onSwipeUp, onSwipeDown,
                                         style={{
                                             color: colors.secondaryText,
                                             opacity: 0.8,
-                                            fontSize: 13,
+                                            fontSize: 14,
                                         }}
                                     >
-                                        {capitalize(firstName ?? "")}{" "}
-                                        {capitalize(lastName ?? "")}
+                                        {capitalize(limitLength(firstName ?? "", 25))}{" "}
+                                        {capitalize(limitLength(lastName ?? "", 35))}
                                     </Text>
                                 </View>
 
-                            </View>
+                            </Button>
 
+                            {/* dish name + description */}
                             <Button 
                                 style={{
-                                    height: 50,
                                     gap: 3,
                                     width: 300, 
                                     flexDirection: "column",   
-                                    alignItems: "flex-start",    
-                                    paddingHorizontal: 10,
+                                    alignItems: "flex-start",  
                                     paddingVertical: 2,
                                 }}
                                 onPress={() => onOpenCook(post_id ?? 0)}
@@ -235,217 +293,603 @@ const ReelTag: React.FC<Props> = ({ card, style, height, onSwipeUp, onSwipeDown,
                             >
                                 <Text
                                     style={{ opacity: 0.95, color: colors.text }}
-                                    className={textStyles.body}
+                                    className={textStyles.sectionText}
                                     numberOfLines={1}
                                     ellipsizeMode="tail"
+                                    onPress={() => onOpenCook(post_id ?? 0)}
                                 >
                                     {info?.dish_name ?? "Name"}
                                 </Text>
 
                                 <Text
-                                    style={{ opacity: 0.75, color: colors.text }}
-                                    className={textStyles.small}
-                                    numberOfLines={2}
-                                    ellipsizeMode="tail"
+                                    style={{ opacity: 0.75, color: colors.text, fontSize: 15 }}
+                                    className={textStyles.body}
                                 >
-                                    {info?.dish_description ?? "desc"}
+                                    {shownDesc}
+                                    {isLongDesc && (
+                                        <Text
+                                            onPress={() => setDescExpanded((p) => !p)}
+                                            className={textStyles.body}
+                                            style={{ color: colors.button, fontWeight: "700" }}
+                                        >
+                                            {descExpanded ? "  Show less..." : "  Read more..."}
+                                        </Text>
+                                    )}
                                 </Text>
 
                             </Button>
 
-                        </Button>
-                    
-                    </Animated.View>
-                </View>
+                            <View
+                                style={{
+                                    paddingHorizontal: 7
+                                }}
+                            >
+                                <FunctionRow 
+                                    post_id={post_id ?? 0} 
+                                    onSetSharePost={onSetSharePost}
+                                    onOpenSteps={() => onOpenSteps(steps ?? [], info?.dish_name ?? "")}
+                                />
+                            </View>
+                        
+                        </Animated.View>
 
-                <View
-                    style={{
-                        position: "absolute",
-                        bottom: tagHeight / 5,
-                        right: 5,
-                        gap: 5,
-                        padding: 5,
-                        maxWidth: REEL_TAG_WIDTH - 25,
-                        alignItems: "flex-start",
-                    }}
-                    pointerEvents={hide ? "none" : "auto"}
-                >
-                    <Animated.View
+                    </View>
+
+                </Animated.View>
+                
+                {scrub && (
+                    <View
+                        pointerEvents="none"
                         style={{
-                            opacity: hide ? 0.1 : 1,
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            bottom: reservedBottom + 30,
+                            alignItems: "center",
                         }}
                     >
-                        <FunctionRow 
-                            post_id={post_id ?? 0} 
-                            onSetSharePost={onSetSharePost}
-                        />
-                    </Animated.View>
+                        <Text
+                            style={{
+                                color: colors.text,
+                                fontSize: 34,
+                                fontWeight: "600",
+                                fontVariant: ["tabular-nums"],
+                            }}
+                        >
+                            {formatClock(scrub.time)}
+                            <Text style={{ opacity: 0.6 }}> / {formatClock(scrub.duration)}</Text>
+                        </Text>
+                    </View>
+                )}
 
-                </View>
-                
             </View>
 
         </View>
     )
-};
+}));
 
-export const FunctionRow: React.FC<{post_id: number, onSetSharePost: (post_id: number) => void}> = ({ post_id, onSetSharePost }) => {
 
-    const setMood = useAvatarMood((s) => s.setMood);
-    const { toggleUserReelAction } = useReel();
-    const updatePostEverywhere = useFeed((s) => s.updatePostEverywhere);
+export const LandscapeReelTag = React.memo(forwardRef<MediaRef, Props>(({
+    card,
+    isActive,
+    height,
+    onSwipeUp,
+    onSwipeDown,
+    onVideoEnd,
+    onOpenSteps,
+    onSetActiveProfile,
+    onSetSharePost,
+    onOpenCook,
+    isLandscape = false,
+    onOrientationChange,
+    orientationLocked = false,
+    landscapeSheetOpen = false,
+}, ref) => {
 
-    
+    const chrome = useReelChrome();
+    const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme("dark");
 
-    const reel = useReel((state) => state.reels.find((r) => r.post_id === post_id));
-    const counts = reel?.action_counts;
+    const {
+        post_id,
+        info,
+        avatar,
+        xp,
+        badge,
+        profile_name,
+        firstName,
+        lastName,
+        steps,
+    } = card ?? {};
 
+    const [infoHeight, setInfoHeight] = useState(0);
+
+    const tagHeight = height ?? Dimensions.get("window").width * 9 / 16;
+    const [hide, setHide] = useState(false);
+    const [descExpanded, setDescExpanded] = useState(false);
+    const [scrub, setScrub] = useState<ScrubState | null>(null);
+    const scrubbingRef = useRef(false);
+
+    const onSwipeUpRef = useRef(onSwipeUp);
+    const onSwipeDownRef = useRef(onSwipeDown);
+
+    const description = info?.dish_description ?? "";
+    const isLongDesc = description.length > 120;
+    const shownDesc = !descExpanded && isLongDesc
+        ? `${description.slice(0, 120).trim()}…`
+        : description;
+
+    const handleScrub = useCallback((state: ScrubState | null) => {
+        setScrub(state);
+
+        const active = state !== null;
+        if (active === scrubbingRef.current) return;
+
+        scrubbingRef.current = active;
+
+        if (active) {
+            useReel.setState({ isScrubbing: true });
+        } else {
+            setTimeout(() => {
+                if (!scrubbingRef.current) {
+                    useReel.setState({ isScrubbing: false });
+                }
+            }, 250);
+        }
+    }, []);
+
+    useEffect(() => {
+        onSwipeUpRef.current = onSwipeUp;
+        onSwipeDownRef.current = onSwipeDown;
+    }, [onSwipeUp, onSwipeDown]);
+
+    useEffect(() => {
+        setDescExpanded(false);
+        setHide(false);
+    }, [post_id]);
+
+    useEffect(() => () => {
+        if (scrubbingRef.current) {
+            useReel.setState({ isScrubbing: false });
+        }
+    }, []);
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => false,
+            onMoveShouldSetPanResponder: (_, gesture) =>
+                Math.abs(gesture.dy) > Math.abs(gesture.dx),
+
+            onPanResponderRelease: (_, gesture) => {
+                if (gesture.dy < -SWIPE_THRESHOLD) {
+                    onSwipeUpRef.current();
+                } else if (gesture.dy > SWIPE_THRESHOLD) {
+                    onSwipeDownRef.current();
+                }
+                setHide(false);
+            },
+
+            onPanResponderTerminate: () => setHide(false),
+        })
+    ).current;
+
+    const mutedUI = hide || !!scrub;
+
+    return (
+        <View
+            style={{
+                height: tagHeight,
+                width: "100%",
+                overflow: "hidden",
+            }}
+            {...panResponder.panHandlers}
+        >
+            {/* Full-bleed video */}
+            <View
+                pointerEvents="box-none"
+                style={{ ...StyleSheet.absoluteFillObject }}
+            >
+                <ReelMedia
+                    ref={ref}
+                    loop={false}
+                    uri={info?.dish_media_url ?? ""}
+                    duration={info?.dish_media_duration}
+                    style={{ width: "100%", height: "100%" }}
+                    bottomOffset={insets.bottom}
+                    onLongPress={() => setHide(true)}
+                    onInteractionEnd={() => setHide(false)}
+                    onEnd={() => onVideoEnd(post_id ?? 0)}
+                    onScrub={handleScrub}
+                    videoContentFit="contain"
+                    autoPlay={isActive ? undefined : false}
+                    isLandscape={isLandscape}
+                    landscapeSheetOpen={landscapeSheetOpen}
+                    onOrientationChange={onOrientationChange}
+                    orientationLocked={orientationLocked}
+                />
+            </View>
+
+            {/* Subtle top gradient */}
+            <LinearGradient
+                pointerEvents="none"
+                colors={[
+                    "rgba(0,0,0,0.32)",
+                    "transparent",
+                ]}
+                locations={[0, 1]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 110,
+                }}
+            />
+
+            <Animated.View
+                pointerEvents="box-none"
+                style={[StyleSheet.absoluteFillObject, { opacity: chrome }]}
+            >
+                {/* Bottom readability gradient */}
+                {!landscapeSheetOpen && infoHeight > 0 && (
+                    <LinearGradient
+                        pointerEvents="none"
+                        colors={[
+                            "rgba(0,0,0,0.75)",
+                            "rgba(0,0,0,0.35)",
+                            "rgba(0,0,0,0)",
+                        ]}
+                        locations={[0, 0.6, 1]}
+                        start={{ x: 0.5, y: 1 }}
+                        end={{ x: 0.5, y: 0 }}
+                        style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            bottom: getReelReservedBottom(insets.bottom),
+                            height: infoHeight + 24,
+                        }}
+                    />
+                )}
+
+                {/* Bottom-left creator and caption */}
+                {!landscapeSheetOpen && (
+                    <Animated.View
+                        onLayout={(e) => setInfoHeight(e.nativeEvent.layout.height)}
+                        pointerEvents={mutedUI ? "none" : "box-none"}
+                        style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            bottom: getReelReservedBottom(insets.bottom) + SCRUB_ZONE_HEIGHT / 2 + 6,
+                            paddingLeft: Math.max(insets.left, 16),
+                            paddingRight: Math.max(insets.right, 16),
+                            opacity: scrub ? 0 : hide ? 0.1 : 1,
+                            gap: 3,
+                        }}
+                    >
+                        <Button
+                            onPress={() => onSetActiveProfile(post_id ?? 0)}
+                            style={{
+                                width: "auto",
+                                padding: 0,
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "flex-start",
+                                gap: 10,
+                            }}
+                        >
+                            <DynamicAvatarRenderer
+                                avatar={avatar}
+                                size={25}
+                                xp={xp}
+                                badge={badge}
+                                background
+                                showBadge
+                                showProgress
+                            />
+
+                            <View style={{ flexShrink: 1 }}>
+                                <Text
+                                    className={textStyles.sectionText}
+                                    numberOfLines={1}
+                                    style={{ color: "#fff", fontSize: 16 }}
+                                >
+                                    {limitLength(profile_name ?? "", 25)}
+                                </Text>
+
+                                <Text
+                                    className={textStyles.body}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                    style={{
+                                        color: colors.secondaryText,
+                                        opacity: 0.8,
+                                        fontSize: 14,
+                                    }}
+                                >
+                                    {capitalize(limitLength(firstName ?? "", 25))}{" "}
+                                    {capitalize(limitLength(lastName ?? "", 35))}
+                                </Text>
+                            </View>
+
+                        </Button>
+
+                        <Pressable onPress={() => onOpenCook(post_id ?? 0)}>
+                            <Text
+                                className={textStyles.sectionText}
+                                numberOfLines={1}
+                                style={{ color: "#fff", fontSize: 17 }}
+                            >
+                                {info?.dish_name ?? "Name"}
+                            </Text>
+
+                            <Text
+                                className={textStyles.body}
+                                style={{
+                                    color: "#fff",
+                                    fontSize: 14,
+                                    lineHeight: 19,
+                                }}
+                            >
+                                {shownDesc}
+
+                                {isLongDesc && (
+                                    <Text
+                                        onPress={() => setDescExpanded(value => !value)}
+                                        style={{ color: "#fff", fontWeight: "700" }}
+                                    >
+                                        {descExpanded ? " Show less" : " Read more"}
+                                    </Text>
+                                )}
+                            </Text>
+                        </Pressable>
+
+                        <View style={{ paddingTop: 2 }}>
+                            <FunctionRow
+                                post_id={post_id ?? 0}
+                                onSetSharePost={onSetSharePost}
+                                onOpenSteps={() =>
+                                    onOpenSteps(steps ?? [], info?.dish_name ?? "")
+                                }
+                            />
+                        </View>
+
+                    </Animated.View>
+                )}
+
+            </Animated.View>
+
+            {/* Scrub time */}
+            {scrub && (
+                <View
+                    pointerEvents="none"
+                    style={{
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        bottom: getReelReservedBottom(insets.bottom) + 30,
+                        alignItems: "center",
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: "#fff",
+                            fontSize: 30,
+                            fontWeight: "600",
+                            fontVariant: ["tabular-nums"],
+                        }}
+                    >
+                        {formatClock(scrub.time)}
+                        <Text style={{ opacity: 0.65 }}>
+                            {" "}/ {formatClock(scrub.duration)}
+                        </Text>
+                    </Text>
+                </View>
+            )}
+        </View>
+    );
+}));
+
+
+const ACTION_HEIGHT = 40;
+const ACTION_BACKGROUND = "rgba(0,0,0,0.35)";
+
+
+const ActionPill: React.FC<{
+    onPress: () => void;
+    count: number;
+    children: React.ReactNode;
+}> = ({ onPress, count, children }) => {
+    const { colors } = useTheme("dark");
+
+    return (
+        <Pressable
+            onPress={onPress}
+            hitSlop={6}
+            style={{
+                height: ACTION_HEIGHT,
+                paddingHorizontal: 14,
+                borderRadius: 999,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                backgroundColor: ACTION_BACKGROUND,
+            }}
+        >
+            {children}
+            <Text
+                style={{
+                    color: colors.text,
+                    fontSize: 15,
+                    fontVariant: ["tabular-nums"],
+                }}
+            >
+                {formatCount(count)}
+            </Text>
+        </Pressable>
+    );
+};
+
+
+const ActionCircle: React.FC<{
+    onPress: () => void;
+    children: React.ReactNode;
+}> = ({ onPress, children }) => {
+    const { colors } = useTheme("dark");
+
+    return (
+        <Pressable
+            onPress={onPress}
+            hitSlop={6}
+            style={{
+                height: ACTION_HEIGHT,
+                width: ACTION_HEIGHT,
+                borderRadius: 999,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: ACTION_BACKGROUND,
+            }}
+        >
+            {children}
+        </Pressable>
+    );
+};
+
+
+export const FunctionRow: React.FC<{
+    post_id: number;
+    onSetSharePost: (post_id: number) => void;
+    onOpenSteps: () => void;
+}> = ({ post_id, onSetSharePost, onOpenSteps }) => {
+
+    const setMood = useAvatarMood((s) => s.setMood);
+    const togglePostAction = useFeed((s) => s.togglePostAction);
+    const { colors } = useTheme("dark");
+
+    const reel = useFeed((s) =>
+        s.posts.find((p) => String(p.post_id) === String(post_id))
+    );
+
+    const counts: FeedActionCountsTypes = reel?.action_counts ?? {
+        post_cook: 0,
+        post_love: 0,
+        post_share: 0,
+        post_star: 0,
+        post_view: 0,
+    };
     const userActions = reel?.user_actions ?? [];
-
     const [animateLove, setAnimateLove] = useState(0);
 
-    const handleAction = async (action: keyof FeedActionCountsTypes) => {
-
-        const alreadyDone = userActions.includes(action as FeedActionType);
-        const delta = alreadyDone ? -1 : 1;
-
-        if (action === "post_share") {
-            onSetSharePost(post_id);
-            return;
-        }
-
+    const handleAction = async (action: "post_love" | "post_star") => {
         if (action === "post_star") {
             setMood("focused", 3000);
         }
-        
-        if (action === "post_love" && !alreadyDone) {
+
+        if (action === "post_love" && !userActions.includes("post_love")) {
             setAnimateLove((prev) => prev + 1);
             setMood("excited", 3000);
         }
 
-        toggleUserReelAction(post_id, action as FeedActionType);
-
-        updatePostEverywhere(post_id, (post) => {
-            const currentActions: FeedActionType[] = Array.isArray(post.user_actions) 
-                ? post.user_actions 
-                : [];
-
-            const nextActions = alreadyDone
-                ? currentActions.filter((item: FeedActionType) => item !== action)
-                : currentActions.includes(action as FeedActionType)
-                    ? currentActions
-                    : [...currentActions, action as FeedActionType];
-
-            return {
-                ...post,
-                user_actions: nextActions,
-                action_counts: {
-                    ...post.action_counts,
-                    [action]: Math.max((post.action_counts?.[action] ?? 0) + delta, 0),
-                },
-            };
-        });
-
-        try {
-            await setFeedActionCount(post_id, action as FeedActionType);
-        } catch (err) {
-            console.error("[handleAction] failed to emit set-count:", err);
-        }
+        await togglePostAction(post_id, action);
     };
 
-    type ReelActionKey = keyof Pick<
-        FeedActionCountsTypes,
-        "post_star" | "post_share" | "post_love"
-    >;
-
-    const actionIcons: Record<ReelActionKey, JSX.Element> = useMemo(() => ({
-        post_star: (
-            <FeedStarIcon
-                size={40}
-                color={colors.text}
-                fillColor="yellow"
-                starred={userActions.includes("post_star")}
-            />
-        ),
-        post_share: (
-            <ShareIcon color={colors.text} size={30} />
-        ),
-        post_love: (
-            <FeedLoveIcon
-                color={colors.text}
-                fillColor="red"
-                liked={userActions.includes("post_love")}
-                animationKey={animateLove}
-                size={30}
-            />
-        ),
-    }), [userActions, colors.text, animateLove]);
-
     return (
-        <View 
+        <View
             style={{
-                gap: 20,
-                paddingVertical: 5,
-                flexDirection: "column",
+                flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
-            }} 
+            }}
         >
-            {Object.entries(actionIcons).map(([key, Icon]) => {
-                const action = key as ReelActionKey;
-                return (
-                    <View key={action} className="flex-col items-center justify-between">
-                        <Button 
-                            onPress={() => handleAction(action)} 
-                            onLongPress={() => {}}
-                        >
-                            {Icon}
-                        </Button>
-                        <Text className={textStyles.caption}>
-                            {formatCount(counts?.[action] ?? 0)}
-                        </Text>
-                    </View>
-                );
-            })}
+
+            <View 
+                style={{
+                    flexDirection: "row",
+                    gap: 10,
+                }}
+            >
+
+                <ActionPill count={counts.post_love ?? 0} onPress={() => handleAction("post_love")}>
+                    <FeedLoveIcon
+                        color={colors.text}
+                        fillColor="red"
+                        liked={userActions.includes("post_love")}
+                        animationKey={animateLove}
+                        size={22}
+                    />
+                </ActionPill>
+
+                <ActionPill count={counts.post_star ?? 0} onPress={() => handleAction("post_star")}>
+                    <FeedStarIcon
+                        size={24}
+                        color={colors.text}
+                        fillColor="yellow"
+                        starred={userActions.includes("post_star")}
+                    />
+                </ActionPill>
+
+            </View>
+
+            <View 
+                style={{
+                    flexDirection: "row",
+                    gap: 10,
+                }}
+            >
+
+                <ActionCircle onPress={() => {onOpenSteps()}}>
+                    <ListIcon color={colors.text} size={20} />
+                </ActionCircle>
+
+                <ActionCircle onPress={() => onSetSharePost(post_id)}>
+                    <ShareIcon color={colors.text} size={20} />
+                </ActionCircle>
+
+            </View>
+
         </View>
     );
 };
 
-export const EmptyReelTag: React.FC<{ delay?: number; height?: number;}> = ({ delay = 0, height, }) => {
 
+
+export const EmptyReelTag: React.FC<{
+    delay?: number;
+    height?: number;
+}> = ({ delay = 0, height }) => {
     const { colors } = useTheme("dark");
     const insets = useSafeAreaInsets();
     const tagHeight = height ?? REEL_TAG_HEIGHT;
-    const infoBottomPadding = insets.bottom;
     const opacity = useRef(new Animated.Value(0.45)).current;
 
     useEffect(() => {
         const anim = Animated.loop(
             Animated.sequence([
                 Animated.timing(opacity, {
-                    toValue: 0.9,
-                    duration: 700,
+                    toValue: 0.8,
+                    duration: 800,
                     delay,
                     useNativeDriver: true,
                 }),
                 Animated.timing(opacity, {
-                    toValue: 0.45,
-                    duration: 700,
+                    toValue: 0.35,
+                    duration: 800,
                     useNativeDriver: true,
                 }),
             ])
         );
 
         anim.start();
-
         return () => anim.stop();
     }, [delay, opacity]);
 
     const bone = (
         width: number | `${number}%`,
         height: number,
-        radius = 8,
+        radius = 7,
         style?: StyleProp<ViewStyle>
     ) => (
         <Animated.View
@@ -454,7 +898,7 @@ export const EmptyReelTag: React.FC<{ delay?: number; height?: number;}> = ({ de
                     width,
                     height,
                     borderRadius: radius,
-                    backgroundColor: colors.card,
+                    backgroundColor: colors.secondaryCard,
                     opacity,
                 },
                 style,
@@ -472,76 +916,87 @@ export const EmptyReelTag: React.FC<{ delay?: number; height?: number;}> = ({ de
                 backgroundColor: colors.background,
             }}
         >
-            {bone("100%", tagHeight, REEL_TAG_RADIUS)}
+            {/* Media placeholder */}
+            {bone("100%", tagHeight, REEL_TAG_RADIUS, {
+                position: "absolute",
+                top: 0,
+                left: 0,
+            })}
 
-            <View
+            {/* Bottom readability gradient */}
+            <LinearGradient
                 pointerEvents="none"
+                colors={[
+                    "rgba(0,0,0,0)",
+                    "rgba(0,0,0,0.35)",
+                    "rgba(0,0,0,0.8)",
+                ]}
+                locations={[0, 0.45, 1]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
                 style={{
                     position: "absolute",
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: "rgba(0, 0, 0, 0.55)",
+                    height: tagHeight * 0.48,
                 }}
             />
 
+            {/* Creator, dish and description */}
             <View
                 style={{
                     position: "absolute",
-                    bottom: 0,
                     left: 0,
                     right: 0,
-                    paddingHorizontal: 10,
-                    paddingBottom: infoBottomPadding,
+                    bottom: REEL_CONTROLS_HEIGHT + SCRUB_ZONE_HEIGHT / 3 + 15,
+                    paddingHorizontal: 12,
+                    paddingBottom: insets.bottom + 15,
+                    gap: 12,
                 }}
             >
+                {/* Creator */}
                 <View
                     style={{
-                        height: 50,
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 8,
                     }}
                 >
-                    {bone(40, 40, 999)}
+                    {bone(28, 28, 999)}
 
-                    <View
-                        style={{
-                            height: 50,
-                            justifyContent: "center",
-                            gap: 6,
-                            flex: 1,
-                            paddingRight: 45,
-                        }}
-                    >
-                        {bone("72%", 15, 6)}
-                        {bone("92%", 11, 5)}
-                        {bone("55%", 11, 5)}
+                    <View style={{ flex: 1, gap: 6 }}>
+                        {bone("45%", 12, 5)}
+                        {bone("65%", 10, 5)}
                     </View>
                 </View>
-            </View>
 
-            <View
-                style={{
-                    position: "absolute",
-                    bottom: tagHeight / 3,
-                    right: 10,
-                    gap: 18,
-                    alignItems: "center",
-                }}
-            >
-                {[1, 2, 3].map((item) => (
-                    <View
-                        key={item}
-                        style={{
-                            alignItems: "center",
-                            gap: 5,
-                        }}
-                    >
-                        {bone(38, 38, 999)}
-                        {bone(24, 10, 5)}
+                {/* Dish name and description */}
+                <View style={{ gap: 8 }}>
+                    {bone("72%", 16, 5)}
+                    {bone("95%", 12, 5)}
+                    {bone("68%", 12, 5)}
+                </View>
+
+                {/* Action pills */}
+                <View
+                    style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: 2,
+                    }}
+                >
+                    <View style={{ flexDirection: "row", gap: 10 }}>
+                        {bone(82, 40, 999)}
+                        {bone(82, 40, 999)}
                     </View>
-                ))}
+
+                    <View style={{ flexDirection: "row", gap: 10 }}>
+                        {bone(40, 40, 999)}
+                        {bone(40, 40, 999)}
+                    </View>
+                </View>
             </View>
         </View>
     );

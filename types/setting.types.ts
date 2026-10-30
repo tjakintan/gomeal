@@ -33,6 +33,7 @@ export type NotificationSettings = {
     likes: boolean;
     messages: boolean;
     cook: boolean;
+    stars: boolean;
     cookingReminderTime: string | null;
     timezone: string;
 };
@@ -41,6 +42,7 @@ export const defaultNotificationSettings: NotificationSettings = {
     likes: true,
     messages: true,
     cook: true,
+    stars: true,
     cookingReminderTime: "08:00",
     timezone: "UTC",
 };

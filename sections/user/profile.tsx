@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, ViewStyle, Animated } from "react-native";
+import { useState, type ReactNode } from "react";
+import { View, Text, useWindowDimensions } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useProfile } from "@/stores/useProfile";
@@ -7,15 +7,12 @@ import { SectionHeader } from "@/components/SectionComponent";
 import { BadgeRender } from "@/dashboard/Avatar";
 import { MinTag } from "@/tags/MinTag";
 import { MinimumFeedCard, UserActionedPostsType } from "@/types/feed.types";
-import { EggsIcon, LikeIcon, TagIcon, CookIcon, ShareIcon, GridIcon, LikeOutlineIcon, StarIcon, ShareOutlineIcon, DeleteIcon, StatsIcon, PostIcon } from "@/icons/Icon";
-import { FeedLoveIcon, FeedStarIcon } from "@/icons/feed_icon";
+import { CookIcon, GridIcon, LikeOutlineIcon, StarIcon, ShareOutlineIcon, DeleteIcon, StatsIcon, PostIcon } from "@/icons/Icon";
 import { Button } from "@/components/ButtonComponent";
-import { formatCount } from "@/utils/time";
 import { SpinningLogoImage } from "@/utils/Logo";
-import { useCook } from "@/stores/useCook";
-import { useReward } from "@/dashboard/store/useReward";
-import { BOTTOM_INSETS } from "@/types";
-import { NAV_SIZE } from "../Navigate";
+import { useReward } from "@/stores/useReward";
+import { usePostHog } from "posthog-react-native";
+import { XPIcon, LevelIcon, RankIcon, CookPotIcon } from "@/dashboard/bread";
 
 type ProfileItem = {
     label: string;
@@ -30,28 +27,32 @@ type ProfilePostFilterMeta = {
     filter: keyof UserActionedPostsType;
 };
 
-const PROFILE_POST_FILTERS: ProfilePostFilterMeta[] = [
-    { icon: GridIcon, label: "post", filter: "post_made" },
-    { icon: LikeOutlineIcon, label: "like", filter: "post_love" },
-    { icon: CookIcon, label: "cook", filter: "post_cook" },
-    { icon: StarIcon, label: "star", filter: "post_star" },
-    { icon: ShareOutlineIcon, label: "share", filter: "post_share" },
-];
+const STAT_ICONS: Record<string, React.ReactNode> = {
+    Rank: <RankIcon size={18} />,
+    Level: <LevelIcon size={18} />,
+    XP: <XPIcon size={18} />,
+    Cooked: <CookPotIcon size={18} />,
+};
 
 export function Profile() {
 
-    const { data } = useProfile();
+    const data = useProfile((s) => s.data);
     const { colors, textStyles } = useTheme();
 
     const renderValue = (value: ReactNode) => {
         if (typeof value === "string" || typeof value === "number") {
-            return <Text className={textStyles.caption}>{value}</Text>;
+            return <Text className={textStyles.body}>{value}</Text>;
         }
 
         return value;
     };
 
-    const DetailPill = ({ label, value, width = 100, color = colors.secondaryCard }: ProfileItem) => (
+    const DetailPill = ({
+        label,
+        value,
+        width = 120,
+        color = colors.secondaryCard,
+    }: ProfileItem) => (
         <View
             style={{
                 height: 40,
@@ -62,10 +63,15 @@ export function Profile() {
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 8,
+                gap: 6,
             }}
         >
-            <Text className={textStyles.caption}>{label}: </Text>
+            {STAT_ICONS[label]}
+
+            <Text className={textStyles.body}>
+                {label}:
+            </Text>
+
             {renderValue(value ?? "-")}
         </View>
     );
@@ -77,19 +83,13 @@ export function Profile() {
         ],
         [
             { label: "XP", value: data?.profile?.xp, color: "#bbadfc" },
-            {
-                label: "Cooked",
-                value: data?.stats?.num_cooks,
-                color: "#faacac",
-            },
-        ],
-        [
+            { label: "Cooked", value: data?.stats?.num_cooks, color: "#faacac" },
             {
                 label: "Badge",
                 value: <BadgeRender badge={data?.profile?.badge} size={20} />,
                 color: "#a5dbff",
             },
-        ]
+        ],
     ];
 
     return (
@@ -106,20 +106,28 @@ export function Profile() {
                 >
                     <SectionHeader 
                         title="Stats" 
-                        titleClassName={textStyles.h3}
+                        titleClassName={textStyles.section}
                         subtitle="Stats you've accumulated while using gomeal"
                         showDivider
                         leftIcon={<StatsIcon size={25} color={colors.text} />}
                     />
 
-                    <View style={{ padding: 10}} className="flex-row gap-5">
-                        {statItems.map((column, columnIndex) => (
+                    <View style={{ padding: 10, gap: 8 }}>
+                        {statItems.map((row, rowIndex) => (
                             <View
-                                key={`stats-column-${columnIndex}`}
-                                className={`flex-col gap-2`}
+                                key={`stats-row-${rowIndex}`}
+                                style={{
+                                    flexDirection: "row",
+                                    justifyContent: "center",
+                                    gap: 5,
+                                }}
                             >
-                                {column.map((item) => (
-                                    <DetailPill key={item.label} {...item} />
+                                {row.map((item) => (
+                                    <DetailPill
+                                        key={item.label}
+                                        {...item}
+                                        width={`${100 / row.length}%` as unknown as number}
+                                    />
                                 ))}
                             </View>
                         ))}
@@ -133,9 +141,14 @@ export function Profile() {
     );
 };
 
+
 function ProfilePostSection() {
     
-    const { data, deletePost } = useProfile();
+    const posthog = usePostHog();
+    const data = useProfile((s) => s.data);
+    const deletePost = useProfile((s) => s.deletePost);
+
+    const { width } = useWindowDimensions();
     
     const { reward } = useReward();
     const { colors, textStyles } = useTheme();
@@ -147,16 +160,24 @@ function ProfilePostSection() {
     const posts: MinimumFeedCard[] = (data?.activity?.[active] ?? []).filter(
         (post) => !removedPostIds.has(Number(post.post_id))
     );
+    
+    const PROFILE_POST_FILTERS: ProfilePostFilterMeta[] = [
+        { icon: GridIcon, label: "post", filter: "post_made" },
+        { icon: LikeOutlineIcon, label: "like", filter: "post_love" },
+        { icon: CookIcon, label: "cook", filter: "post_cook" },
+        { icon: StarIcon, label: "star", filter: "post_star" },
+        { icon: ShareOutlineIcon, label: "share", filter: "post_share" },
+    ];
 
     return (
         <View
             style={{
-                minHeight: 200,
+                minHeight: 150,
             }}
         >
             <SectionHeader 
                 title="Posts" 
-                titleClassName={textStyles.h3}
+                titleClassName={textStyles.section}
                 subtitle="Posts that you've been interacting with, swipe down to refresh. To remove a post click the trash icon"
                 showDivider
                 leftIcon={<PostIcon size={25} color={colors.text} />}
@@ -235,7 +256,6 @@ function ProfilePostSection() {
                         contentContainerStyle={{
                             gap: 10,
                             paddingHorizontal: 10,
-                            paddingBottom: NAV_SIZE,
                             alignItems: "center",
                         }}
                     >
@@ -269,6 +289,8 @@ function ProfilePostSection() {
 
                                                         if (!ok) return;
 
+                                                        posthog.capture("[Post] => post_deleted", { post_id: postId });
+
                                                         setRemovedPostIds((current) => {
                                                             const next = new Set(current);
                                                             next.add(postId);
@@ -285,6 +307,7 @@ function ProfilePostSection() {
                                                     backgroundColor: "transparent"
                                                 }}
                                                 disabled={isDeleting}
+                                                clearBackground={!isDeleting}
                                             >
                                                 {isDeleting ? (
                                                     <SpinningLogoImage size={20} />
@@ -298,7 +321,7 @@ function ProfilePostSection() {
                                     <MinTag
                                         minCard={post}
                                         style={{
-                                            height: 150,
+                                            width: width - 20,
                                         }}
                                         containerStyle={{
                                             borderRadius: 15

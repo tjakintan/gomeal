@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { View, TouchableWithoutFeedback, Keyboard, Animated, StyleSheet, AppState } from "react-native";
+import { View, Animated, StyleSheet, AppState, Pressable, Keyboard } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Slot } from "expo-router";
 import "@/style/global.css";
 import { ThemeProvider, useTheme } from "@/provider/ThemeProvider";
+import { PermissionProvider } from "@/provider/PermissionProvider";
 import { FontProvider } from "@/provider/FontProvider";
 import * as SplashScreen from "expo-splash-screen";
 import { useUser } from "@/stores/useUser";
@@ -14,6 +15,11 @@ import BootScreen from "./boot";
 import { startCacheSweep, stopCacheSweep, sweepStaleCaches } from "@/stores/cache";
 import { pauseSocket, resumeSocket } from "@/api/socket";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import { AnalyticsProvider } from "@/provider/AnalyticsProvider";
+import { useBanner } from "@/stores/useBanner";
+import { CameraProvider } from "@/provider/CameraProvider";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+
 
 const withTimeout = <T,>(
   promise: Promise<T>,
@@ -27,6 +33,7 @@ const withTimeout = <T,>(
   return Promise.race([promise.finally(() => clearTimeout(timeoutId)), timeout]);
 };
 
+
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -36,7 +43,10 @@ const queryClient = new QueryClient({
     },
 });
 
+
 function LayoutContent() {
+
+  const banner = useBanner();
   const { colors } = useTheme();
   const user = useUser((state) => state.user);
   const loadFeed = useFeed((state) => state.loadFeed);
@@ -75,32 +85,33 @@ function LayoutContent() {
 
     let mounted = true;
 
-    const boot = async () => {
-        try {
-            bootOpacity.setValue(1);
-            setShowBootOverlay(true);
-            setBooting(true);
+  const boot = async () => {
+      try {
+          bootOpacity.setValue(1);
+          setShowBootOverlay(true);
+          setBooting(true);
 
-            await withTimeout(
-                Promise.all([
-                    loadFeed(undefined, undefined, true, false),
-                    loadTrend(),
-                ]),
-                7000,
-                "feed_boot_timeout"
-            );
-        } catch (err) {
-            if ((err as Error).message === "feed_boot_timeout") {
-                console.warn("[boot] Feed timed out, showing stale or empty");
-                // Don't throw — still fade out normally
-            } else {
-                console.log("[app_boot_error]", err);
-            }
-        } finally {
-            if (!mounted) return;
-            fadeOutBoot();
-        }
-    };
+          await withTimeout(
+              Promise.all([
+                  loadFeed(undefined, undefined, true, false),
+                  loadTrend(),
+              ]),
+              7000,
+              "feed_boot_timeout"
+          );
+      } catch (err) {
+          if ((err as Error).message === "feed_boot_timeout") {
+              console.warn("[boot] Feed timed out, showing stale or empty");
+              banner.error("Having trouble connecting — showing what we have.");
+          } else {
+              console.log("[app_boot_error]", err);
+              banner.error("Something went wrong loading your feed.");
+          }
+      } finally {
+          if (!mounted) return;
+          fadeOutBoot();
+      }
+  };
 
     boot();
     return () => { mounted = false; };
@@ -132,46 +143,50 @@ function LayoutContent() {
       return () => sub.remove();
   }, [user?.sub]);
 
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <BottomSheetModalProvider>
+                <Pressable
+                    style={{ flex: 1, backgroundColor: colors.background }}
+                    onPress={Keyboard.dismiss}
+                >
+                    <Slot />
 
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          
-          <Slot />
-
-        </TouchableWithoutFeedback>
-
-        {showBootOverlay && (
-          <Animated.View
-            pointerEvents={booting ? "auto" : "none"}
-            style={{
-              ...StyleSheet.absoluteFillObject,
-              opacity: bootOpacity,
-              zIndex: 999,
-            }}
-          >
-            <BootScreen />
-          </Animated.View>
-        )}
-
-      </View>
-
-    </GestureHandlerRootView>
-  );
+                    {showBootOverlay && (
+                        <Animated.View
+                            pointerEvents={booting ? "auto" : "none"}
+                            style={{
+                                ...StyleSheet.absoluteFillObject,
+                                opacity: bootOpacity,
+                                zIndex: 999,
+                            }}
+                        >
+                            <BootScreen />
+                        </Animated.View>
+                    )}
+                </Pressable>
+            </BottomSheetModalProvider>
+        </GestureHandlerRootView>
+    );
 }
+
 
 export default function RootLayout() {
   return (
-    <KeyboardProvider>
-        <QueryClientProvider client={queryClient}>
-          <FontProvider>
-            <ThemeProvider>
-                <LayoutContent />
-            </ThemeProvider>
-          </FontProvider>
-        </QueryClientProvider>
-    </KeyboardProvider>
+    <AnalyticsProvider>
+      <KeyboardProvider>
+          <QueryClientProvider client={queryClient}>
+            <FontProvider>
+              <ThemeProvider>
+                  <PermissionProvider>
+                    <CameraProvider>
+                        <LayoutContent />
+                    </CameraProvider>
+                  </PermissionProvider>
+              </ThemeProvider>
+            </FontProvider>
+          </QueryClientProvider>
+      </KeyboardProvider>
+    </AnalyticsProvider>
   );
 }

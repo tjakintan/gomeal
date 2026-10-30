@@ -1,0 +1,3 @@
+WORKSPACE=ios/GoMeal.xcworkspace
+SCHEME=GoMeal
+CONFIGURATION=Debug

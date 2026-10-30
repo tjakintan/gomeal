@@ -1,10 +1,15 @@
 import { create } from "zustand";
 import { useFeed } from "@/stores/useFeed";
 import { Animated, Dimensions } from "react-native";
-import { FeedActionCountsTypes, FeedActionType, ReelFeedCard } from "@/types/feed.types";
-import { setFeedActionCount } from "@/api/feed.api";
+import { isVideoPost, ReelFeedCard } from "@/types/feed.types";
+import { createContext, useContext } from "react";
 
 const { width, height } = Dimensions.get("window");
+
+const VISIBLE = new Animated.Value(1);
+
+export const ReelChromeContext = createContext<Animated.AnimatedNode>(VISIBLE);
+export const useReelChrome = () => useContext(ReelChromeContext);
 
 type ReelOrigin = {
     x: number;
@@ -13,10 +18,22 @@ type ReelOrigin = {
     height: number;
 };
 
+type PostId = string | number;
+
 type ReelState = {
     origin: ReelOrigin | null;
-    reels: ReelFeedCard[];
-    history: ReelFeedCard[];
+    originPostId: number | null,
+
+    // Identity + order only. Post data lives exclusively in
+    // useFeed.posts — there is exactly one array of post objects in the
+    // whole app now, so nothing can desync from anything else.
+    order: PostId[];
+    history: PostId[];
+
+    isScrubbing: boolean;
+    isDismissing: boolean;
+    videoRect: { top: number; height: number } | null;
+
     loading: boolean;
     isVisible: boolean;
     isAnimating: boolean;
@@ -24,6 +41,7 @@ type ReelState = {
     slideY: Animated.Value;
     feedBarY: Animated.Value;
     animationRef: Animated.CompositeAnimation | null;
+
     init: (initialPost: ReelFeedCard) => void;
     nextReel: () => void;
     prevReel: () => void;
@@ -35,14 +53,21 @@ type ReelState = {
         onOpen?: () => void
     ) => void;
     close: (onClose?: () => void) => void;
-    updateCounts: (post_id: number, action: keyof FeedActionCountsTypes, increment?: number) => Promise<void>;
-    toggleUserReelAction: (post_id: number, action: FeedActionType) => void;
 };
+
+const getPostById = (id: PostId): ReelFeedCard | null =>
+    (useFeed.getState().posts.find((p) => p.post_id === id) as ReelFeedCard | undefined) ?? null;
 
 export const useReel = create<ReelState>((set, get) => ({
 
     origin: null,
-    reels: [],
+    originPostId: null,
+
+    isScrubbing: false,
+    isDismissing: false,
+    videoRect: null,
+
+    order: [],
     history: [],
     loading: true,
     isVisible: false,
@@ -53,107 +78,114 @@ export const useReel = create<ReelState>((set, get) => ({
     animationRef: null,
 
     init: (initialPost) => {
-        const existingReels = get().reels;
-        const cachedFeedReels = useFeed.getState().reels ?? [];
-        const localReels = cachedFeedReels.length ? cachedFeedReels : existingReels;
+        const existingOrder = get().order;
+        const cachedPosts = (useFeed.getState().posts ?? []).filter(isVideoPost);;
+        const localIds = cachedPosts.length
+            ? cachedPosts.map((p) => p.post_id)
+            : existingOrder;
+
+        useFeed.getState().upsertPosts([initialPost]);
 
         set({
-            loading: localReels.length <= 10,
+            loading: localIds.length <= 10,
             history: [],
-            reels: [
-                initialPost,
-                ...localReels.filter((r) => r.post_id !== initialPost.post_id),
+            order: [
+                initialPost.post_id,
+                ...localIds.filter((id) => id !== initialPost.post_id),
             ],
         });
 
         useFeed.getState().setActiveReelPost(initialPost);
 
-        if (localReels.length > 10) {
+        if (localIds.length > 10) {
             return;
         }
 
         setTimeout(() => {
+
             useFeed.getState()
                 .loadReel(undefined, null, true, true)
                 .then((freshReels) => {
-                    const currentReels = get().reels;
-
-                    if (!freshReels.length) {
+                    const videos = freshReels.filter(isVideoPost);     
+                    
+                    if (!videos.length) {
                         set({ loading: false });
                         return;
                     }
 
-                    const mergedReels = freshReels.map((r) => {
-                        const existing = currentReels.find((e) => e.post_id === r.post_id);
-
-                        return {
-                            ...r,
-                            user_actions: existing?.user_actions ?? r.user_actions ?? [],
-                        };
-                    });
+                    const freshIds = videos.map((r) => r.post_id);
 
                     set({
                         loading: false,
-                        reels: [
-                            initialPost,
-                            ...mergedReels.filter((r) => r.post_id !== initialPost.post_id),
+                        order: [
+                            initialPost.post_id,
+                            ...freshIds.filter((id) => id !== initialPost.post_id),
                         ],
                     });
-                    
+
                 })
                 .catch((err) => {
                     console.error("Failed to hydrate reels:", err);
                     set({ loading: false });
                 });
+
         }, 300);
     },
 
     setReels: (freshReels) => {
+        const videos = freshReels.filter(isVideoPost);                
+        useFeed.getState().upsertPosts(videos);
+
         set({
             loading: false,
             history: [],
-            reels: freshReels,
+            order: videos.map((r) => r.post_id),
         });
-        useFeed.getState().setActiveReelPost(freshReels[0] ?? null); 
+
+        useFeed.getState().setActiveReelPost(videos[0] ?? null);
     },
 
     nextReel: () => {
-        const { reels, history } = get();
-        if (reels.length < 2) return;
-        const [top, ...rest] = reels;
-        set({ reels: rest, history: [...history, top] });
-        useFeed.getState().setActiveReelPost(rest[0] ?? null);
+        const { order, history } = get();
+        if (order.length < 2) return;
+
+        const [top, ...rest] = order;
+        set({ order: rest, history: [...history, top] });
+
+        useFeed.getState().setActiveReelPost(getPostById(rest[0]));
     },
 
     prevReel: () => {
-        const { reels, history } = get();
+        const { order, history } = get();
         if (history.length === 0) return;
-        const last = history[history.length - 1];
-        set({ reels: [last, ...reels], history: history.slice(0, -1) });
-        useFeed.getState().setActiveReelPost(last);
+
+        const lastId = history[history.length - 1];
+        set({ order: [lastId, ...order], history: history.slice(0, -1) });
+
+        useFeed.getState().setActiveReelPost(getPostById(lastId));
     },
 
     clear: () => set({ history: [], loading: false }),
 
     open: (post, origin, onOpen) => {
-
+        useFeed.getState().upsertPosts([post]);
         useFeed.getState().setActiveReelPost(post);
 
         set({
-            isVisible:true,
+            isVisible: true,
             origin: origin ?? {
-                x:0,
-                y:0,
+                x: 0,
+                y: 0,
                 width,
-                height
-            }
+                height,
+            },
+            originPostId: post.post_id, 
         });
 
         onOpen?.();
     },
 
     close: (onClose) => {
-
         const { origin, slideX, slideY, feedBarY } = get();
 
         if (origin) {
@@ -169,8 +201,12 @@ export const useReel = create<ReelState>((set, get) => ({
         }
 
         set({
-            isVisible:false,
-            origin:null,
+            isVisible: false,
+            origin: null,
+            originPostId: null,
+            isScrubbing: false,
+            isDismissing: false,
+            videoRect: null,
         });
 
         useFeed.getState().setActiveReelPost(null);
@@ -178,102 +214,16 @@ export const useReel = create<ReelState>((set, get) => ({
         onClose?.();
     },
 
-    updateCounts: async (post_id, action, increment = 1) => {
-
-        const post = get().reels.find((r) => r.post_id === post_id); 
-        if (!post) return;
-
-        set((state) => ({ 
-            
-            reels: state.reels.map((r): ReelFeedCard => {
-
-                if (r.post_id !== post_id) return r;
-                const current = r.action_counts ?? {
-                    post_love: 0,
-                    post_cook: 0,
-                    post_star: 0,
-                    post_share: 0,
-                };
-
-                const updated = {
-                    ...r,
-                    action_counts: {
-                        ...current,
-                        [action]: (current[action] ?? 0) + increment,
-                    },
-                };
-
-                useFeed.setState((feedState) => ({
-                    reels: (feedState.reels ?? []).map((fr) =>
-                        fr.post_id === post_id ? { ...fr, action_counts: updated.action_counts } : fr
-                    ),
-                }));
-
-                return updated;
-
-            }),
-        }));
-
-        try {
-
-            const fresh_counts = await setFeedActionCount(post_id, action);
-
-            set((state) => ({
-                reels: state.reels.map((r) =>
-                    r.post_id === post_id ? { ...r, action_counts: {...r.action_counts, ...fresh_counts} } : r
-                ),
-            }));
-
-            useFeed.setState((feedState) => ({
-                reels: (feedState.reels ?? []).map((fr) =>
-                    fr.post_id === post_id ? { ...fr, action_counts: {...fr.action_counts, ...fresh_counts} } : fr
-                ),
-            }));
-
-        } catch (err) {
-
-            set((state) => ({
-                reels: state.reels.map((r) =>
-                    r.post_id === post_id ? { ...r, action_counts: {...r.action_counts, ...post.action_counts} } : r
-                ),
-            }));
-
-            useFeed.setState((feedState) => ({
-                reels: (feedState.reels ?? []).map((fr) =>
-                    fr.post_id === post_id ? { ...fr, action_counts: {...fr.action_counts, ...post.action_counts} } : fr
-                ),
-            }));
-            console.error("Failed to update action:", err);
-        }
-    },
-
-    toggleUserReelAction: (post_id, action) => {
-
-        set((state) => ({
-
-            reels: state.reels.map((r) => {
-
-                if (r.post_id !== post_id) return r;
-                const actions = r.user_actions ?? [];
-                const has = actions.includes(action);
-
-                const updated = {
-                    ...r,
-                    user_actions: has
-                        ? actions.filter((a) => a !== action)
-                        : [...actions, action],
-                };
-
-                useFeed.setState((feedState) => ({
-                    reels: (feedState.reels ?? []).map((fr) =>
-                        fr.post_id === post_id ? { ...fr, user_actions: updated.user_actions } : fr
-                    ),
-                }));
-
-                return updated;
-
-            }),
-        }));
-    },
-
 }));
+
+// Live post data for a given id — always resolves against the single
+// posts array, so it reflects any in-flight optimistic toggle immediately.
+export const useReelPost = (post_id: PostId) =>
+    useFeed((state) => state.posts.find((p) => p.post_id === post_id));
+
+export const useCurrentReelPost = () => {
+    const topId = useReel((s) => s.order[0]);
+    return useFeed((state) =>
+        topId == null ? null : state.posts.find((p) => p.post_id === topId) ?? null
+    );
+};

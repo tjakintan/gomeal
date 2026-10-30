@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image } from "react-native";
+import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "@/provider/ThemeProvider";
@@ -8,12 +8,13 @@ import { usePostIngredient, usePostNutrition } from "@/stores/usePost";
 import { ServingsIcon } from "@/icons/Icon";
 import { NutritionData, PostSectionInfoProps, Unit, nutrients_label_icon } from "@/types";
 import { SectionHeader } from "@/components/SectionComponent";
+import Disclaimer from "@/components/DisclaimerComponent";
+import { POST_MENU_HEIGHT } from ".";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const Nutrition: React.FC<PostSectionInfoProps> = ({
-    isFocused,
-    onCompleteChange,
-}) => {
+const Nutrition: React.FC<PostSectionInfoProps> = () => {
 
+    const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme();
     const { ingredients } = usePostIngredient();
     const { servings, setServings, getPercents, reset_nutrition } = usePostNutrition();
@@ -30,73 +31,101 @@ const Nutrition: React.FC<PostSectionInfoProps> = ({
     });
 
     return (
-        <View className="flex-1 flex-col p-2 gap-1 justify-start">
+        <View 
+            style={{
+                paddingBottom: POST_MENU_HEIGHT + insets.bottom
+            }}
+           className="flex-1 flex-col px-2 gap-1 justify-start"
+        >
 
             <SectionHeader
                 title="Nutrition"
-                subtitle="Total Nutritional value."
+                subtitle="Total daily nutritional value."
                 showDivider
             />
 
-            <View style={{flex: 1}} className="flex-row p-1">
-                <ScrollView 
+            <View style={{ flex: 1 }} className="flex-row p-1">
+                <ScrollView
                     contentContainerClassName="gap-1 p-1 items-center justify-between"
                     showsVerticalScrollIndicator={false}
                 >
-
                     {nutrients_label_icon.map(({ key, label, icon: Icon, color }) => {
                         const percents = getPercents(data ?? []);
                         const percent = percents[key] ?? 0;
 
                         return (
-                            <View key={key}className="w-full flex-row items-center gap-5 p-1">
-
-                                <View style={{width: 40, height: 40, borderRadius: 5, backgroundColor: colors.background, borderColor: colors.secondaryCard, borderWidth: 1}} className="items-center justify-center">
-                                    <Icon size={30} color={colors.text}/>
+                            <TouchableOpacity
+                                key={key}
+                                className="w-full flex-row items-center gap-5 p-1"
+                                activeOpacity={1}
+                            >
+                                <View
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 5,
+                                        backgroundColor: colors.background,
+                                        borderColor: colors.secondaryCard,
+                                        borderWidth: 1,
+                                    }}
+                                    className="items-center justify-center"
+                                >
+                                    <Icon size={30} color={colors.text} />
                                 </View>
 
-                                <View style={{flex: 1}} className="gap-2">
-
+                                <View style={{ flex: 1 }} className="gap-2">
                                     <View className="flex-row justify-between">
-                                        <Text className={textStyles.sectionText}>{label}:</Text>
-                                        <Text className={textStyles.caption}>{percent.toFixed(0)}%</Text>
+                                        <Text className={textStyles.sectionText}>
+                                            {label}:
+                                        </Text>
+
+                                        <Text className={textStyles.caption}>
+                                            {percent.toFixed(0)}%
+                                        </Text>
                                     </View>
 
-                                    <View 
+                                    <View
                                         style={{
-                                            width: '100%',
+                                            width: "100%",
                                             height: 10,
                                             backgroundColor: colors.secondaryCard,
                                             borderRadius: 5,
-                                            overflow: 'hidden'
+                                            overflow: "hidden",
                                         }}
                                     >
-                                        <View 
+                                        <View
                                             style={{
                                                 width: `${Math.round(percent)}%`,
-                                                height: '100%',
+                                                height: "100%",
                                                 backgroundColor: color,
-                                            }} 
+                                            }}
                                         />
                                     </View>
                                 </View>
-
-                            </View>
+                            </TouchableOpacity>
                         );
-
                     })}
-
                 </ScrollView>
 
-                <View style={{width: 100}} className="p-1 gap-5 items-center justify-center flex-col">
+                <View
+                    style={{ width: 100 }}
+                    className="p-1 gap-5 items-center justify-center flex-col"
+                >
                     <ServingsIcon />
-                    <NutritionServingsButton value={servings} onChange={setServings} />
+                    <NutritionServingsButton
+                        value={servings}
+                        onChange={setServings}
+                    />
                 </View>
-
             </View>
 
+            <Disclaimer
+                title="DISCLAIMER"
+                message="Nutrition values are estimates based on the ingredients and quantities provided. Actual nutritional values may vary depending on ingredients, brands, preparation methods, and serving sizes. Always verify nutritional information when dietary accuracy is important."
+            />
+
         </View>
-    )
+    );
 }
 
 export default Nutrition;

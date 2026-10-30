@@ -2,8 +2,9 @@ import { Animated, useColorScheme } from "react-native";
 import { useSettingsStore } from "@/stores/useSettings";
 import { ThemePalette } from "@/types/layout.types";
 import { ACCENT_COLORS } from "@/types";
-import { useEffect, useRef } from "react";
-    
+import { useEffect, useRef, useState } from "react";
+import ImageColors from "react-native-image-colors"
+
 export const themeColors: Record<"light" | "dark", ThemePalette> = {
     light: {
         background: "#ffffff",
@@ -17,7 +18,7 @@ export const themeColors: Record<"light" | "dark", ThemePalette> = {
         button: "#4A90D9",
         buttonSecondary: "#cccccc",
 
-        messageSent: "#2563EB",
+        messageSent: "#6894f4",
         messageReceived: "#E5E7EB",
 
         messageSentText: "#FFFFFF",
@@ -168,5 +169,63 @@ export const useDarkTextStyles = () => {
   return themedStyles;
 };
 
+export function useProfileImageTextColor(imageUrl?: string | null) {
+    const [textColor, setTextColor] = useState("#FFFFFF");
 
+    useEffect(() => {
+        if (!imageUrl) {
+            setTextColor("#FFFFFF");
+            return;
+        }
 
+        let cancelled = false;
+
+        ImageColors.getColors(imageUrl, {
+            fallback: "#000000",
+            cache: true,
+            key: imageUrl,
+        })
+            .then((result) => {
+                if (cancelled) return;
+
+                const hex =
+                    result.platform === "ios"
+                        ? result.background
+                        : result.platform === "android"
+                        ? result.average ?? result.dominant
+                        : result.dominant;
+
+                setTextColor(
+                    hex ? getContrastingTextColor(hex) : "#FFFFFF"
+                );
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setTextColor("#FFFFFF");
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [imageUrl]);
+
+    return textColor;
+}
+
+function getContrastingTextColor(hex: string): string {
+    const normalized = hex.replace("#", "").trim();
+
+    if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+        return "#FFFFFF";
+    }
+
+    const r = parseInt(normalized.slice(0, 2), 16);
+    const g = parseInt(normalized.slice(2, 4), 16);
+    const b = parseInt(normalized.slice(4, 6), 16);
+
+    // Approximate perceived brightness
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+    return brightness > 200 ? "#000000" : "#FFFFFF";
+}

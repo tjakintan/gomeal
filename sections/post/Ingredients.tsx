@@ -14,12 +14,16 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { DEFAULT_INGREDIENT_SEARCH_CACHE_TIME } from "@/types/Time.types";
 import { SectionHeader } from "@/components/SectionComponent";
 import { Media } from "@/media/media";
+import { useKeyboardDismiss, useKeyboardHeight } from "@/components/keyboardComponent";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { POST_MENU_HEIGHT } from ".";
 
 
 const Ingredients: React.FC<PostSectionInfoProps> = ({
     isFocused,
-    onCompleteChange,
 }: PostSectionInfoProps) => {
+
+    const insets = useSafeAreaInsets();
 
     // Access Zustand store
     const {
@@ -28,6 +32,8 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
         updateIngredient,
         removeIngredient,
     } = usePostIngredient();
+
+    const { keyboardHeight, isKeyboardVisible } = useKeyboardHeight()
 
     // themes
     const { colors, textStyles } = useTheme();
@@ -63,7 +69,14 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
     }, [isFocused]);
 
     return (
-        <View className="flex-1 flex-col p-2 gap-1 justify-start">
+        <View
+            style={{ 
+                flex: 1,
+                flexDirection: "column",
+                gap: 5,
+                justifyContent: "flex-start"
+            }}
+        >
 
             <SectionHeader 
                 title="Ingredients"
@@ -72,26 +85,27 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
             />
             
             {/* Search input for ingredient */}
-            <View style={{maxHeight: 200, overflow: "hidden"}}>
+            <View style={{maxHeight: 200, overflow: "hidden", paddingHorizontal: 10 }}>
 
                 <Input
                     multiline={false}
                     value={search}
                     disabled={false}
-                    leftIcon={isLoading ? <SpinningLogoImage size={30} /> : <SearchIcon color={colors.text} size={20}/>}
+                    leftIcon={isLoading ? <SpinningLogoImage size={30} /> : <SearchIcon color={colors.text} size={25}/>}
                     onIconPress={() => {}}
                     onSubmitEditing={() => setSearch(search)}
                     onChangeText={(value) => setSearch(value)}
                 />
     
                 {/* List of ingredient names after search to add */}
-                {showSearchResults && (
+                {showSearchResults && results.length > 0 && (
                     <View
                         style={{
-                            height: 125,
+                            maxHeight: 125,
                             overflow: "hidden",
                             marginTop: 10,
                             borderRadius: 15,
+                            padding: 5,
                             backgroundColor: colors.card
                         }}
                     >
@@ -102,7 +116,7 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
                                         style={{
                                             width: "100%",
                                             alignItems: "flex-start",
-                                            padding: 5,
+                                            padding: 8,
                                             borderRadius: 0,
                                         }}
                                         onPress={async () => {
@@ -147,19 +161,23 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
                             flexGrow: 1,
                             padding: 10,
                             gap: 25,
+                            paddingBottom: POST_MENU_HEIGHT + insets.bottom
                         }}
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="on-drag"
                         enableResetScrollToCoords={false} 
                         showsVerticalScrollIndicator={false}
-                        extraScrollHeight={-130} 
+                        extraScrollHeight={keyboardHeight} 
                     >
                         {ingredients.map((ingredient, index) => (
-                                <View
+                                <TouchableOpacity
                                     key={index}
                                     style={{
                                         height: 125,
                                         borderRadius: 15,
                                     }}
                                     className="gap-1 flex-row items-center justify-between"
+                                    activeOpacity={1}
                                 >
 
                                     {/* ingredient image */}
@@ -205,7 +223,12 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
                                         </View>                            
 
                                         {/* ingredient quantity, unit */}
-                                        <View className="flex-1 p-1 gap-3 flex-row items-center justify-center">
+                                        <View 
+                                            style={{
+                                                gap: 40, 
+                                                flexDirection: "row",
+                                            }}
+                                        >
                                             
                                             <IngredientQuantityButton
                                                 value={Number(ingredient.quantity) || 0}
@@ -221,7 +244,7 @@ const Ingredients: React.FC<PostSectionInfoProps> = ({
 
                                     </View>
 
-                                </View>
+                                </TouchableOpacity>
                         ))}                    
                 
                     </KeyboardAwareScrollView>

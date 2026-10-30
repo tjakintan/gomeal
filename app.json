@@ -3,7 +3,7 @@
     "name": "GoMeal",
     "slug": "gomeal",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/logo/gomeal_app.png",
     "scheme": "gomeal",
     "userInterfaceStyle": "automatic",
@@ -19,6 +19,7 @@
           "NSAllowsArbitraryLoads": true
         },
         "ITSAppUsesNonExemptEncryption": false,
+        "PHPhotoLibraryPreventAutomaticLimitedAccessAlert": true,
         "NSMotionUsageDescription": "GoMeal uses motion data to detect device orientation when capturing meal photos and videos.",
         "NSCameraUsageDescription": "GoMeal uses your camera to take meal photos and videos to share as posts and recipe steps.",
         "NSMicrophoneUsageDescription": "GoMeal uses your microphone to record audio when capturing meal videos for posts and recipe steps.",
@@ -83,15 +84,6 @@
         }
       ],
       "expo-font",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/logo/gomeal-wordmark.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#111827",
-          "imageWidth": 150
-        }
-      ],
       [
         "expo-camera",
         {

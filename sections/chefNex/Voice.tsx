@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Animated } from "react-native";
 
 import { useTheme } from "@/provider/ThemeProvider";
 import { Button } from "@/components/ButtonComponent";
-import { useChefNexVoice } from "@/stores/useChefNex";
+import { useChefNexVoice } from "@/stores/chefNex/useChefNexVoice";
 
 // Reanimated
 import AnimatedReanimated, {
@@ -46,7 +46,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
 // Safe Area
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Gesture Handler
 import {
@@ -56,9 +56,18 @@ import {
 
 // Expo Image (avatars, artwork, etc.)
 import { Image } from "expo-image";
+import { GradientHeader } from "@/components/GradientComponent";
+import { BackIcon } from "@/icons/Icon";
 
 
-const chefNexVoiceRing: React.FC = () => {
+const MENU_HEIGHT = 65;
+
+
+const voiceScreen: React.FC<{
+    active?: boolean
+}> = ({
+    active = false,
+}) => {
 
     const orbScale = useSharedValue(1);
     const haloRotation = useSharedValue(0);
@@ -82,10 +91,22 @@ const chefNexVoiceRing: React.FC = () => {
         });
     }, []);
 
-}
 
-const ChefNexVoiceScreen: React.FC<{isActive?: boolean; dark: boolean }> = ({ isActive, dark }) => {
+    return (
+        <>
+        
+        </>
+    );
+};
 
+
+const ChefNexVoiceScreen: React.FC<{
+    isActive?: boolean; 
+    dark?: boolean;
+    onClose?: () => void; 
+}> = ({ isActive, dark, onClose }) => {
+
+    const insets = useSafeAreaInsets();
     const { colors, textStyles} = useTheme(dark ? "dark" : undefined);
     const {
         messages,
@@ -113,6 +134,53 @@ const ChefNexVoiceScreen: React.FC<{isActive?: boolean; dark: boolean }> = ({ is
                 backgroundColor: colors.background
             }}
         >
+            <GradientHeader
+                height={MENU_HEIGHT}
+                baseColor={colors.background}
+                direction="top"
+                style={{
+                    paddingTop: insets.top,
+                }}
+                contentStyle={{
+                    height: MENU_HEIGHT,
+                    paddingHorizontal: 20,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                }}
+                zIndex={10}
+            >
+                {/* LEFT */}
+                <View
+                    style={{
+                        width: 40,
+                        alignItems: "flex-start",
+                        justifyContent: "center",
+                    }}
+                >
+                    <Button
+                        onPress={() => {
+                            onClose?.();
+                        }}
+                        clearBackground
+                    >
+                        <BackIcon color={colors.text} />
+                    </Button>
+                </View>
+
+                <Text
+                    className={textStyles.sectionText}
+                    style={{
+                        color: colors.text,
+                        textAlign: "center",
+                        flex: 1,
+                    }}
+                    pointerEvents="none"
+                >
+                    Speak...
+                </Text>
+
+            </GradientHeader>
 
         </View>
     )

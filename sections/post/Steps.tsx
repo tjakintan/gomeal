@@ -12,12 +12,11 @@ import { Media } from "@/media/media";
 import { SectionHeader } from "@/components/SectionComponent";
 import { useSlidingOverlay } from "@/stores/useSlideOverlay";
 import TimerScreen from "@/utils/Timer";
+import { POST_MENU_HEIGHT } from ".";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Steps: React.FC<PostSectionInfoProps> = ({
-    isFocused,
     onMediaSelected,
-    stepIndex,
-    onCompleteChange,
 }: PostSectionInfoProps) => {
 
     const {
@@ -25,19 +24,19 @@ const Steps: React.FC<PostSectionInfoProps> = ({
         addStep,
         updateStep,
         removeStep,
-        clearSteps,
     } = usePostSteps();
 
     const { openTimer } = useTimer();
     const { openSlidingOverlay, closeSlidingOverlay} = useSlidingOverlay()
 
+    const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme();
 
     return (
 
         <>
         
-            <View className="flex-1 p-2 flex-col justify-start">
+            <View className="flex-1 px-2 flex-col justify-start">
 
                 <SectionHeader
                     title="Steps"
@@ -56,7 +55,10 @@ const Steps: React.FC<PostSectionInfoProps> = ({
                         </View>
                     ) : (
                         <KeyboardAwareScrollView  
-                            contentContainerStyle={{ paddingHorizontal: 10, }}
+                            contentContainerStyle={{ 
+                                paddingHorizontal: 10, 
+                                paddingBottom: POST_MENU_HEIGHT + insets.bottom
+                            }}
                             enableResetScrollToCoords={false}  
                             showsVerticalScrollIndicator={false}
                             extraScrollHeight={-70} 

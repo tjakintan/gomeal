@@ -1,4 +1,5 @@
 import { StepData } from "@/types";
+import { useCallback } from "react";
 
 export const formatCount = (num: number): string => {
     if (num < 1000) return `${num}`;
@@ -28,6 +29,11 @@ export const formatTimerDisplay = (seconds: number): string => {
     const s = seconds % 60;
     if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+};
+
+export const formatClock = (seconds: number) => {
+    const t = Math.max(0, Math.floor(seconds));
+    return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 };
 
 export const formatTime = (
@@ -138,3 +144,19 @@ export const formatMonthDayYear = (
         year: "numeric",
     });
 };
+
+export const formatRecordingTime = useCallback(
+    (seconds: number) => {
+        const minutes = Math.floor(
+            seconds / 60
+        );
+
+        const remainingSeconds =
+            seconds % 60;
+
+        return `${String(minutes).padStart(2, "0")}:${String(
+            remainingSeconds
+        ).padStart(2, "0")}`;
+    },
+    []
+);

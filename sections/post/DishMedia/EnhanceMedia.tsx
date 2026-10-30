@@ -12,10 +12,11 @@ import {
 } from "@/icons/Icon";
 import ViewShot from "react-native-view-shot";
 import { DraggableSticker, AddStickerPicker, Sticker, EditVideoLengthTen } from "./EnhanceMediaFunc";
-import { MediaType } from "@/types";
+import { ACCENT_COLORS } from "@/types";
 import { Media } from "@/media/media";
+import { ImageMediaType } from "@/types/media.types";
 
-const DishEnhanceMedia: React.FC<{ uri: string | null, mediaType: MediaType, onClose: () => void, onEnhanceDone: (enhancedUri: string) => void; }> = ({ uri, mediaType, onClose, onEnhanceDone }) => {
+const DishEnhanceMedia: React.FC<{ uri: string | null, mediaType: ImageMediaType, onClose: () => void, onEnhanceDone: (enhancedUri: string) => void; }> = ({ uri, mediaType, onClose, onEnhanceDone }) => {
     
     const { colors, textStyles } = useTheme("dark");
     const viewShotRef = useRef<ViewShot>(null);
@@ -88,9 +89,9 @@ const DishEnhanceMedia: React.FC<{ uri: string | null, mediaType: MediaType, onC
             <View style={{ padding: 10, gap: 10, justifyContent: "center", alignItems: "center"}}>
 
                 {/* remove and set media section */}
-                <View className="w-full gap-5 flex-row items-center justify-start">
+                <View className="w-full gap-5 flex-row items-center justify-between">
 
-                    <Button onPress={removeMedia} background>
+                    <Button style={{ backgroundColor: colors.danger }} onPress={removeMedia} background>
                         <XIcon color={colors.text} />
                     </Button>
 
@@ -100,7 +101,7 @@ const DishEnhanceMedia: React.FC<{ uri: string | null, mediaType: MediaType, onC
                     </Button>
                     */}
                         
-                    <Button onPress={setEnhancedMedia} background>
+                    <Button style={{ backgroundColor: ACCENT_COLORS.teal }} onPress={setEnhancedMedia} background>
                         <CheckIcon color={colors.text} />
                     </Button>
 

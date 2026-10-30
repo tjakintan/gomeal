@@ -26,7 +26,7 @@ import {
     AppleIcon,
 } from "@/icons/Icon";
 import { SpinningLogoImage } from "@/utils/Logo";
-import { User } from "@/types/user.types";
+import { usePostHog } from "posthog-react-native";
 import { SectionHeader } from "@/components/SectionComponent";
 import { CreateAvatarScreen } from "@/dashboard/Avatar";
 import { getDobParts, isValidDob } from "@/utils/time";
@@ -36,9 +36,11 @@ import {
   statusCodes,
 } from "@react-native-google-signin/google-signin";
 import * as AppleAuthentication from "expo-apple-authentication";
-import { useOnboarding } from "@/stores/useAuthenticate";
+import { OnboardingDraft, useOnboarding } from "@/stores/useAuthenticate";
 
 const WelcomeScreen: React.FC<{ onNext?: () => void }> = () => {
+
+    const posthog = usePostHog();
     const { colors } = useTheme();
 
     const {
@@ -52,8 +54,17 @@ const WelcomeScreen: React.FC<{ onNext?: () => void }> = () => {
         isLastStep,
     } = useOnboarding();
 
+    const handleSubmitStep = async (data?: OnboardingDraft) => {
+        const wasLastStep = isLastStep();
+        await submitStep(data);
+        if (wasLastStep) {
+            posthog.capture("[Auth] => onboarding_completed");
+        }
+    };
+
     useEffect(() => {
         reset();
+        posthog.capture("[Auth] => onboarding_started");
 
         GoogleSignin.configure({
             webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
@@ -148,7 +159,7 @@ const WelcomeScreen: React.FC<{ onNext?: () => void }> = () => {
                     return (
                         <AnimatedSection key={section}>
                             <ActiveSection
-                                onNext={submitStep}
+                                onNext={handleSubmitStep}
                                 onBack={backStep}
                                 draft={draft}
                             />
@@ -189,6 +200,7 @@ const AnimatedSection: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
 const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
 
+    const posthog = usePostHog();
     const { colors, textStyles } = useTheme();
     const { continueWithGoogle, continueWithApple } = useOnboarding();
     const [activeButton, setActiveButton] = useState<"email" | "google" | "apple" | null>(null);
@@ -198,6 +210,7 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
 
     const handleEmailContinue = () => {
         setActiveButton("email");
+        posthog.capture("[Auth] => auth_method_selected", { method: "email" });
         try {
             onNext?.();
         } finally {
@@ -207,34 +220,32 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
 
     const handleGoogleSignup = async () => {
         setActiveButton("google");
+        posthog.capture("[Auth] => auth_method_selected", { method: "google" });
         try {
-            await GoogleSignin.hasPlayServices({
-                showPlayServicesUpdateDialog: true,
-            });
-
+            await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
             const userInfo = await GoogleSignin.signIn();
             const idToken = userInfo.data?.idToken;
 
             if (!idToken) {
+                posthog.capture("[Auth] => auth_method_failed", { method: "google", reason: "missing_id_token" });
                 console.log("Google sign in failed: missing idToken");
                 return;
             }
 
             await continueWithGoogle(idToken);
+            posthog.capture("[Auth] => auth_method_completed", { method: "google" });
         } catch (error: any) {
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                posthog.capture("[Auth] => auth_method_cancelled", { method: "google" });
                 return;
             }
-
-            if (error.code === statusCodes.IN_PROGRESS) {
-                return;
-            }
-
+            if (error.code === statusCodes.IN_PROGRESS) return;
             if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                posthog.capture("[Auth] => auth_method_failed", { method: "google", reason: "play_services_unavailable" });
                 console.log("Google Play Services not available");
                 return;
             }
-
+            posthog.capture("[Auth] => auth_method_failed", { method: "google", reason: "unknown_error" });
             console.error("Google sign in error:", error);
         } finally {
             setActiveButton(null);
@@ -243,6 +254,7 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
 
     const handleAppleSignup = async () => {
         setActiveButton("apple");
+        posthog.capture("[Auth] => auth_method_selected", { method: "apple" });
         try {
             const credential = await AppleAuthentication.signInAsync({
                 requestedScopes: [
@@ -250,20 +262,22 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
                     AppleAuthentication.AppleAuthenticationScope.EMAIL,
                 ],
             });
-
             const identityToken = credential.identityToken;
 
             if (!identityToken) {
+                posthog.capture("[Auth] => auth_method_failed", { method: "apple", reason: "missing_identity_token" });
                 console.log("Apple sign in failed: missing identityToken");
                 return;
             }
 
             await continueWithApple(identityToken, credential.fullName ?? undefined);
+            posthog.capture("[Auth] => auth_method_completed", { method: "apple" });
         } catch (error: any) {
             if (error.code === "ERR_REQUEST_CANCELED") {
+                posthog.capture("[Auth] => auth_method_cancelled", { method: "apple" });
                 return;
             }
-
+            posthog.capture("[Auth] => auth_method_failed", { method: "apple", reason: "unknown_error" });
             console.error("Apple sign in error:", error);
         } finally {
             setActiveButton(null);
@@ -378,10 +392,18 @@ const Identity: React.FC<onBoardUserSectionProps> = ({ onNext }) => {
         </View>
     );
 };
+
 const Email: React.FC<onBoardUserSectionProps> = () => {
+
+    const posthog = usePostHog();
     const { colors } = useTheme();
     const { loading, error, submitEmail } = useOnboarding();
     const [email, setEmail] = useState("");
+
+    const handleSubmit = () => {
+        posthog.capture("[Auth] => email_submitted");
+        submitEmail(email);
+    };
 
     return (
         <View style={{ flex: 1 }} className="w-full p-2 gap-2 justify-start">
@@ -404,7 +426,7 @@ const Email: React.FC<onBoardUserSectionProps> = () => {
                             <EmailIcon color={colors.text} />
                         )
                     }
-                    onSubmitEditing={() => submitEmail(email)}
+                    onSubmitEditing={handleSubmit}
                     returnKeyType="done"
                     multiline={false}
                     style={{ fontSize: 15 }}
@@ -416,6 +438,8 @@ const Email: React.FC<onBoardUserSectionProps> = () => {
 };
 
 const ConfirmEmail: React.FC<onBoardUserSectionProps> = ({ draft }) => {
+
+    const posthog = usePostHog();
     const { textStyles } = useTheme();
 
     const {
@@ -433,6 +457,20 @@ const ConfirmEmail: React.FC<onBoardUserSectionProps> = ({ draft }) => {
     const [code, setCode] = useState("");
     const [inputKey, setInputKey] = useState(0);
 
+    const handleVerify = async () => {
+        await verifyEmailCode(code);
+        posthog.capture("[Auth] => otp_verified");
+    };
+
+    const handleResend = async () => {
+        const sent = await resendEmailCode();
+        posthog.capture("[Auth] => otp_resend_requested");
+        if (sent) {
+            setCode("");
+            setInputKey((key) => key + 1);
+        }
+    };
+
     useEffect(() => {
         if (countdown === 60) {
             sendEmailCode();
@@ -448,15 +486,6 @@ const ConfirmEmail: React.FC<onBoardUserSectionProps> = ({ draft }) => {
 
         return () => clearInterval(timer);
     }, [countdown]);
-
-    const handleResend = async () => {
-        const sent = await resendEmailCode();
-
-        if (sent) {
-            setCode("");
-            setInputKey((key) => key + 1);
-        }
-    };
 
     return (
         <View style={{ flex: 1 }} className="w-full p-2 gap-2 justify-start">
@@ -486,7 +515,7 @@ const ConfirmEmail: React.FC<onBoardUserSectionProps> = ({ draft }) => {
                 <View className="p-1">
                     <Button
                         style={{ width: 100 }}
-                        onPress={() => verifyEmailCode(code)}
+                        onPress={handleVerify}
                         disabled={!code || loading}
                         background={!loading}
                     >
@@ -525,6 +554,8 @@ const ConfirmEmail: React.FC<onBoardUserSectionProps> = ({ draft }) => {
 };
 
 const Personal: React.FC<onBoardUserSectionProps> = ({ onNext, draft }) => {
+
+    const posthog = usePostHog();
     const { colors, textStyles } = useTheme();
 
     const [dob, setDob] = useState("");
@@ -554,6 +585,8 @@ const Personal: React.FC<onBoardUserSectionProps> = ({ onNext, draft }) => {
                 return;
             }
         }
+
+        posthog.capture("[Auth] => personal_info_submitted", { has_dob: !!dob.trim() });
         onNext?.({ firstName, lastName, profile_name, dob: dob || undefined });
     };
 

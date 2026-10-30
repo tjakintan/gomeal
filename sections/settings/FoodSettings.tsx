@@ -4,15 +4,21 @@ import { useTheme } from "@/provider/ThemeProvider";
 import { CheckButton } from "@/components/ButtonComponent";
 import { Input } from "@/components/InputComponent";
 import { DietaryData, dietaryDescriptions, dietaryIcons } from "@/types";
-import React from "react";
+import React, { useMemo } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SectionHeader } from "@/components/SectionComponent";
 
-const diets = Object.keys(dietaryDescriptions) as Array<keyof DietaryData>;
 
 const FoodSettings: React.FC = () => {
-  
+
     const { colors, textStyles } = useTheme();
+
+    const diets = useMemo(
+        () =>
+            (Object.keys(dietaryDescriptions) as Array<keyof DietaryData>)
+                .filter((key) => key !== "other"),
+        []
+    );
 
     const updateFood = useSettingsStore((state) => state.updateFood);
     const food = useSettingsStore((state) => state.settings.food);
@@ -42,22 +48,22 @@ const FoodSettings: React.FC = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
                 width: "100%",
-                gap: 4,
-                padding: 4,
+                gap: 20,
             }}
             extraScrollHeight={0}
         >
 
             {/* diets */}
-            <View className="p-5 gap-3 overflow-hidden">
+            <View className="gap-3 overflow-hidden">
 
                 <SectionHeader
                     title="Dietary"
+                    subtitle="Choose the dietary preferences used to personalize your recipe feed."
                     showDivider
                     titleClassName={textStyles.section}
                 />  
 
-                <View className="gap-1">
+                <View style={{ paddingHorizontal: 10}}>
                     {diets.map((key) => {
                         const checked = food.diets[key] === true;
 
@@ -89,6 +95,9 @@ const FoodSettings: React.FC = () => {
                             
                             <CheckButton
                                 value={checked}
+                                style={{
+                                    borderRadius: 999
+                                }}
                                 onChange={(v) => updateDiet(key, v)}
                             />
 
@@ -97,17 +106,14 @@ const FoodSettings: React.FC = () => {
                     })}
                 </View>
 
-                <Text className={textStyles.small}>
-                    Choose the dietary preferences used to personalize your recipe feed.
-                </Text>
-
             </View>
 
             {/* calories */}
-            <View className="p-5 gap-3 overflow-hidden">
+            <View className=" gap-3 overflow-hidden">
 
                 <SectionHeader
                     title="Calories"
+                    subtitle="Set a calorie range for recipes shown in your feed."
                     showDivider
                     titleClassName={textStyles.section}
                 /> 
@@ -117,6 +123,7 @@ const FoodSettings: React.FC = () => {
                         flexDirection: "row",
                         justifyContent: "flex-start",
                         gap: 15,
+                        paddingHorizontal: 10
                     }}
                 >
 
@@ -165,10 +172,6 @@ const FoodSettings: React.FC = () => {
                     </View>
 
                 </View>
-
-                <Text className={textStyles.small}>
-                    Set a calorie range for recipes shown in your feed.
-                </Text>
 
             </View>
 

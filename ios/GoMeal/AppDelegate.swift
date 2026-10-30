@@ -49,6 +49,20 @@ class AppDelegate: ExpoAppDelegate {
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
     return super.application(application, continue: userActivity, restorationHandler: restorationHandler) || result
   }
+
+  // orientation
+  public override func application(
+    _ application: UIApplication,
+    supportedInterfaceOrientationsFor window: UIWindow?
+  ) -> UIInterfaceOrientationMask {
+    let active = UserDefaults.standard.bool(
+      forKey: "GoMealOrientationEnabled"
+    )
+
+    return active
+      ? [.portrait, .landscapeLeft, .landscapeRight]
+      : .portrait
+  }
 }
 
 class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import BottomSheet, { BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
 import PagerView from 'react-native-pager-view';
 import Animated from 'react-native-reanimated';
 import { Animated as RNAnimated } from 'react-native';
@@ -8,15 +7,13 @@ import { Button } from '../../components/ButtonComponent';
 import { SectionHeader } from '../../components/SectionComponent';
 import { useTheme } from '@/provider/ThemeProvider';
 import { usePost, usePostSteps } from '../../stores/usePost';
-import { ACCENT_COLORS, BOTTOM_HEIGHT, BOTTOM_INSETS, BOTTOM_SNAP_POINTS, POST_SECTIONS_INDEX, PostSection } from '@/types';
+import { ACCENT_COLORS, POST_SECTIONS_INDEX, PostSection } from '@/types';
 import { DishMedia, DishInfo, Ingredients, Steps, Dietary, Nutrition } from '@/sections/post/exports';
-import { AddIcon, EditIcon, BackIcon, XIcon, CheckIcon } from '@/icons/Icon';
-import { useAvatarMood } from '@/dashboard/store/useAvatar';
-import { useReward } from '@/dashboard/store/useReward';
+import { BackIcon, XIcon, CheckIcon, QuestionIcon, RefreshIcon } from '@/icons/Icon';
+import { useAvatarMood } from '@/stores/useAvatar';
+import { useReward } from '@/stores/useReward';
 import { SpinningLogoImage } from '@/utils/Logo';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as StoreReview from "expo-store-review";
-import { NAV_SIZE } from '../Navigate';
 import { useOverlay } from '@/stores/useOverlay';
 import HowToPage from './How-to';
 import { useProfile } from "@/stores/useProfile";
@@ -25,15 +22,23 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSlidingOverlay } from '@/stores/useSlideOverlay';
 import { useAnimatedThemeColors } from '@/stores/useTheme';
+import { usePostHog } from 'posthog-react-native';
+import { useBanner } from '@/stores/useBanner';
+import { GradientHeader } from '@/components/GradientComponent';
 
 const REVIEW_KEY = "asr_k1";
+export const POST_MENU_HEIGHT = 70;
+
 const hasSeenReviewPrompt = async () => {
     const value = await AsyncStorage.getItem(REVIEW_KEY);
     return value === "true";
 };
+
+
 const setSeenReviewPrompt = async () => {
     await AsyncStorage.setItem(REVIEW_KEY, "true");
 };
+
 
 const SECTION_KEYS = [
     'DishMedia',
@@ -44,12 +49,19 @@ const SECTION_KEYS = [
     'Nutrition',
 ] as const;
 
-const PostScreen: React.FC<{
-}> = () => {
 
+const PostScreen: React.FC<{
+    dark?: boolean;
+    onClose?: () => void;
+}> = ({ dark = false, onClose }) => {
+
+    const posthog = usePostHog();
+    const banner = useBanner();
     const { updateStep } = usePostSteps();
-    const { openOverlay, closeOverlay } = useOverlay();
-    const closeSlidingOverlay = useSlidingOverlay((s) => s.closeSlidingOverlay)
+
+    //overlay
+    const openOverlay = useOverlay((s) => s.openOverlay);
+    const closeOverlay = useOverlay((s) => s.closeOverlay);
 
     const insets = useSafeAreaInsets();
     const currentSectionRef = useRef<PagerView>(null);
@@ -58,30 +70,41 @@ const PostScreen: React.FC<{
     const [stepsIndex, setStepsIndex] = useState(0);
     const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
 
-    const { reset, submit, loading } = usePost();
+    const profile = useProfile((s) => s.data);
+    const reset = usePost((s) => s.reset);
+    const submit = usePost((s) => s.submit);
+    const loading = usePost((s) => s.loading);
     const canPost = usePost((state) => state.canPost());
 
     const { reward } = useReward();
     const setMood = useAvatarMood((s) => s.setMood);
 
     const activeSection = SECTION_KEYS[currentSectionIndex];
-    const nextSection = SECTION_KEYS[currentSectionIndex + 1] ?? null;
     const isLastSection = currentSectionIndex === SECTION_KEYS.length - 1;
     const showBackButton = currentSectionIndex > 0;
-
-    const profile = useProfile((s) => s.data);
 
     const post = async () => {
         const isFirstPost = profile?.stats.num_posts === 0;
 
-        const result = await submit();
+        let result;
+        try {
+            result = await submit();
+        } catch (err) {
+            posthog.capture("[Post] => post_submit_failed", { is_first_post: isFirstPost });
+            banner.error("Couldn't post your dish. Check your connection and try again.");
+            return;
+        }
+
+        posthog.capture(
+            result.success ? "[Post] => post_submitted" : "[Post] => post_submit_failed",
+            { is_first_post: isFirstPost }
+        );
 
         if (result.success) {
             setMood("celebrating", 3000);
             reward("CREATE_POST");
 
             const alreadySeen = await hasSeenReviewPrompt();
-            const isFirstPost = profile?.stats.num_posts === 0;
 
             if (isFirstPost && !alreadySeen) {
                 openOverlay({
@@ -90,31 +113,40 @@ const PostScreen: React.FC<{
                             title="Enjoying GoMeal?"
                             description="Thanks for sharing your first meal! Would you mind leaving a quick review?"
                             onContinue={async () => {
-                                await setSeenReviewPrompt(); 
-
-                                if (await StoreReview.isAvailableAsync()) {
-                                    await StoreReview.requestReview();
+                                try {
+                                    await setSeenReviewPrompt();
+                                    if (await StoreReview.isAvailableAsync()) {
+                                        await StoreReview.requestReview();
+                                        posthog.capture("[Post] => review_prompt_accepted");
+                                    }
+                                } finally {
+                                    closeOverlay();
                                 }
-
-                                closeOverlay();
                             }}
                         />
                     ),
                 });
             }
+
+            close();
+            return;
         }
 
-        closeSheet();
+        banner.error("Couldn't post your dish. Try again.");
     };
 
-    const closeSheet = () => {
-        closeSlidingOverlay();
+    const close = () => {
+        if (!loading) {
+            posthog.capture("[Post] => post_flow_abandoned", { section: activeSection });
+        }
+        onClose?.()
         setMediaSource('post_main');
     };
 
     const goToSection = (pageIndex: number) => {
         currentSectionRef.current?.setPage(pageIndex);
         setCurrentSectionIndex(pageIndex);
+        posthog.capture("[Post] => section_viewed", { section: SECTION_KEYS[pageIndex] });
     };
 
     const goToPreviousSection = () => {
@@ -167,15 +199,21 @@ const PostScreen: React.FC<{
         }
     };
 
-    const forceDark = activeSection === "DishMedia";
-    const { colors, textStyles } = useTheme(forceDark ? "dark" : undefined); 
-    const animatedColors = useAnimatedThemeColors(forceDark);      
+    const forceDark = dark || activeSection === "DishMedia";
+    const { colors, textStyles } = useTheme(
+        forceDark ? "dark" : undefined
+    );
+    const animatedColors = useAnimatedThemeColors(forceDark);
+    
+    useEffect(() => {
+        posthog.capture("[Post] => post_flow_started");
+    }, []);
 
     return (
         <RNAnimated.View
             style={[
                 StyleSheet.absoluteFillObject,
-                { backgroundColor: animatedColors.background, paddingTop: insets.top, paddingBottom: insets.bottom },
+                { backgroundColor: animatedColors.background, paddingTop: insets.top},
             ]}
         >
             <SectionHeader
@@ -206,21 +244,18 @@ const PostScreen: React.FC<{
                             mediaSource={mediaSource}
                             stepIndex={stepsIndex}
                             onMediaSelected={handleMediaSelected}
-                            onCompleteChange={() => {}}
                         />
                     </View>
 
                     <View key="DishInfo">
                         <DishInfo
                             isFocused={activeSection === "DishInfo"}
-                            onCompleteChange={() => {}}
                         />
                     </View>
 
                     <View key="Ingredients">
                         <Ingredients
                             isFocused={activeSection === "Ingredients"}
-                            onCompleteChange={() => {}}
                         />
                     </View>
 
@@ -229,139 +264,140 @@ const PostScreen: React.FC<{
                             isFocused={activeSection === "Steps"}
                             stepIndex={stepsIndex}
                             onMediaSelected={handleMediaSelected}
-                            onCompleteChange={() => {}}
                         />
                     </View>
 
                     <View key="Dietary">
                         <Dietary
                             isFocused={activeSection === "Dietary"}
-                            onCompleteChange={() => {}}
                         />
                     </View>
 
                     <View key="Nutrition">
                         <Nutrition
                             isFocused={activeSection === "Nutrition"}
-                            onCompleteChange={() => {}}
                         />
                     </View>
                 </PagerView>
             </View>
 
             {/* Function Row */}
-            <Animated.View
-                style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 12,
-                    marginVertical: 12,
-                }}
+            <GradientHeader
+                height={POST_MENU_HEIGHT}
+                direction="bottom"
+                baseColor={colors.background}
             >
-                <Button
+                <Animated.View
                     style={{
-                        width: 55,
-                        height: 55,
-                        borderRadius: 999,
-                        backgroundColor: colors.danger,
+                        height: POST_MENU_HEIGHT,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        paddingBottom: insets.bottom,
+                        gap: 12,
                     }}
-                    onPress={closeSheet}
-                    background
                 >
-                    <XIcon color={colors.text} size={24} />
-                </Button>
-
-                <Button
-                    style={{
-                        width: 55,
-                        height: 55,
-                        borderRadius: 999,
-                    }}
-                    onPress={reset}
-                    background
-                >
-                    <MaterialIcons
-                        name="refresh"
-                        size={24}
-                        color={colors.text}
-                    />
-                </Button>
-
-                {showBackButton && (
                     <Button
                         style={{
                             width: 55,
                             height: 55,
                             borderRadius: 999,
+                            backgroundColor: colors.danger,
                         }}
-                        onPress={goToPreviousSection}
+                        onPress={close}
                         background
                     >
-                        <BackIcon color={colors.text} size={24} />
+                        <XIcon color={colors.text} size={24} />
                     </Button>
-                )}
 
-                {isLastSection ? (
                     <Button
-                        onPress={post}
-                        disabled={!canPost || loading}
                         style={{
                             width: 55,
                             height: 55,
                             borderRadius: 999,
-                            backgroundColor: ACCENT_COLORS.teal,
-                            opacity: canPost ? 1 : 0.5,
+                            backgroundColor: colors.buttonSecondary,
                         }}
+                        onPress={reset}
                         background
                     >
-                        {loading ? (
-                            <SpinningLogoImage size={20} />
-                        ) : (
-                            <CheckIcon color={colors.text} size={28} />
-                        )}
+                        <RefreshIcon color={colors.text} size={24} />
                     </Button>
-                ) : (
+
+                    {showBackButton && (
+                        <Button
+                            style={{
+                                width: 55,
+                                height: 55,
+                                borderRadius: 999,
+                            }}
+                            onPress={goToPreviousSection}
+                            background
+                        >
+                            <BackIcon color={colors.text} size={24} />
+                        </Button>
+                    )}
+
+                    {isLastSection ? (
+                        <Button
+                            onPress={post}
+                            disabled={!canPost || loading}
+                            style={{
+                                width: 55,
+                                height: 55,
+                                borderRadius: 999,
+                                backgroundColor: loading ? "transparent" : ACCENT_COLORS.teal,
+                                opacity: canPost ? 1 : 0.5,
+                            }}
+                            background={loading ? false : true}
+                        >
+                            {loading ? (
+                                <SpinningLogoImage size={20} />
+                            ) : (
+                                <CheckIcon color={colors.text} size={28} />
+                            )}
+                        </Button>
+                    ) : (
+                        <Button
+                            onPress={goToNextSection}
+                            style={{
+                                width: 55,
+                                height: 55,
+                                borderRadius: 999,
+                                backgroundColor: colors.button,
+                                justifyContent: "center",
+                            }}
+                            background
+                        >
+                            <BackIcon rotate={180} color={colors.text} size={24} />
+                        </Button>
+                    )}
+
                     <Button
-                        onPress={goToNextSection}
+                        onPress={() =>
+                            openOverlay({
+                                title: "How To's",
+                                custom: <HowToPage />,
+                            })
+                        }
+                        background
                         style={{
                             width: 55,
                             height: 55,
                             borderRadius: 999,
-                            backgroundColor: colors.button,
-                            justifyContent: "center",
                         }}
-                        background
                     >
-                        <BackIcon rotate={180} color={colors.text} size={24} />
+                        <Text
+                            style={{
+                                color: colors.text,
+                                fontWeight: "700",
+                                fontSize: 21,
+                            }}
+                        >
+                            <QuestionIcon color={colors.text} size={24} />
+                        </Text>
                     </Button>
-                )}
-
-                <Button
-                    onPress={() =>
-                        openOverlay({
-                            title: "How To's",
-                            custom: <HowToPage />,
-                        })
-                    }
-                    background
-                    style={{
-                        width: 55,
-                        height: 55,
-                        borderRadius: 999,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: colors.text,
-                            fontWeight: "700",
-                            fontSize: 18,
-                        }}
-                    >
-                        ?
-                    </Text>
-                </Button>
-            </Animated.View>
+                </Animated.View>
+            </GradientHeader>
 
         </RNAnimated.View>
     );

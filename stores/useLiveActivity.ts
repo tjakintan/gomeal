@@ -43,14 +43,14 @@ export const useLiveActivity = create<LiveActivityState>((set) => ({
                 String(post.post_id),
                 post.steps?.length || 1,
                 1,
-                firstStep?.step_desc ??
-                    firstStep?.description ??
-                    firstStep?.desc ??
-                    "",
+                firstStep?.step_desc ?? firstStep?.description ?? firstStep?.desc ?? "",
                 stepsJson,
+                post.profile_name ?? "",
+                post.info.dish_media_url ?? null, 
                 timer?.timerEndsAt,
                 timer?.timerLabel
             );
+
         } catch (error) {
             console.warn("failed_to_start_activity", error);
         } finally {

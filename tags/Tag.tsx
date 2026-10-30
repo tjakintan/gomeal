@@ -10,25 +10,30 @@ import {
     VegetarianIcon, VeganIcon, GlutenFreeIcon,
     DairyFreeIcon, NutFreeIcon, KetoIcon,
     HalalIcon, PescatarianIcon, KosherIcon, VegetablesIcon,
-    MoreIcon
+    MoreIcon,
+    StarIcon,
+    CookPotIcon,
+    ViewsIcon,
+    LikeIcon,
+    FridgeIcon
 } from "@/icons/Icon";
 import { FeedActionType, FeedCard } from "@/types/feed.types";
 import { DynamicAvatarRenderer } from "@/dashboard/Avatar";
 import { Media } from "@/media/media";
-import { LinearGradient } from "expo-linear-gradient";
-import { Mood, useAvatarMood } from "@/dashboard/store/useAvatar";
-import { useFeed } from "@/stores/useFeed";
+import { Mood, useAvatarMood } from "@/stores/useAvatar";
+import { useFeed, useFeedPlayback } from "@/stores/useFeed";
 import { setFeedActionCount } from "@/api/feed.api";
 import { FeedLoveIcon } from "@/icons/feed_icon";
 import { useSettingsStore } from "@/stores/useSettings";
 import { capitalize, limitLength } from "@/utils/text";
+import { useReel } from "@/stores/useReel";
+import { useOverlay } from "@/stores/useOverlay";
+import PostStats from "@/components/PostStatsComponent";
 
-const GAP = 5; 
-const CONTENT_MIN_RATIO = 0.4;
-const CONTENT_MAX_RATIO = 0.5;
 
 type Props = {
     card: FeedCard; 
+    dark?: boolean;
     onPressProfile?: () => void;
     onPressMedia?: (layout: {
         x:number;
@@ -38,26 +43,61 @@ type Props = {
     }) => void;
     onPressInfo?: () => void;
     style?: StyleProp<ViewStyle>;
-    flipEnabled?: boolean;
     height?: number;
     width?: number | `${number}%`;
 };
 
+export const FunctionRow: React.FC<{
+    icon: React.ReactNode;
+    count: number;
+    color: string;
+}> = ({ icon, count, color }) => (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+        {icon}
+        <Text style={{ color, fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
+            {formatCount(count)}
+        </Text>
+    </View>
+);
+
 const Tag: React.FC<Props> = ({
-    card, onPressProfile, onPressMedia, onPressInfo, style, flipEnabled,
+    card, onPressProfile, onPressMedia, onPressInfo, style, dark,
     height = 285,
     width = 195,
 }) => {
-    const { info, post_id, firstName, tag_color, lastName, dietary,num_ingredients, profile_name, level, avatar, action_counts } = card;
 
-    // zustand
-    const { colors, textStyles } = useTheme();
+    const { info, post_id, firstName, tag_color, lastName, dietary,num_ingredients, profile_name, level, avatar, xp, badge, action_counts, user_actions } = card;
+
+    const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
+
     const allowFeedColors = useSettingsStore((state) => state.settings.feed.allowFeedColors);
+
+    const updatePostEverywhere = useFeed((s) => s.updatePostEverywhere);
+
+    const u_card = useFeed((s) =>
+        s.posts.find((post) => String(post.post_id) === String(post_id))
+    );
+
+    const openOverlay = useOverlay((s) => s.openOverlay);
+
+    const openStats = () =>
+        openOverlay({ custom: <PostStats dark={dark} card={u_card ?? card} /> });
+
+    const counts = u_card?.action_counts ?? action_counts;
+
+    const isReelOrigin = useReel(
+        (s) => s.isVisible && s.originPostId === post_id
+    );
+
+    const [localMood, setLocalMood] = useState<Mood>("idle");
+    const moodTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
 
     const mediaRef = useRef<View>(null);
 
-    // Render dietary icons 
+
     type IconComponent = React.FC<{ size?: number; color?: string }>;
+
 
     const dietaryIcons: Partial<Record<keyof DietaryData, IconComponent>> = {
         vegetarian:  VegetarianIcon,
@@ -71,79 +111,171 @@ const Tag: React.FC<Props> = ({
         kosher:      KosherIcon,
     };
 
+
     const activeDiets = (Object.keys(dietaryIcons) as (keyof DietaryData)[]).filter(
-        (key) => dietary[key] === true
+        (key) => dietary?.[key] === true
     );
 
-    const usableHeight = height - GAP; 
-    const contentHeight = Math.round(
-        Math.min(
-            Math.max(usableHeight * CONTENT_MIN_RATIO, usableHeight * CONTENT_MIN_RATIO),
-            usableHeight * CONTENT_MAX_RATIO
-        )
-    );
+    const globalMuted = useFeedPlayback((s) => s.muted);
+    const setGlobalMuted = useFeedPlayback((s) => s.setMuted);
+    const isActive = useFeedPlayback((s) => !s.paused && s.activeId === post_id);
 
     // ── heart state ─────────────────────────────────────────────────────────
-    const setMood = useAvatarMood((s) => s.setMood);
-    const { updatePostEverywhere } = useFeed();
-    const userActions: FeedActionType[] = card.user_actions ?? [];
-    const isLoved = userActions.includes("post_love" as FeedActionType);
     const [animateLove, setAnimateLove] = useState(0);
+
+
+    const userActions: FeedActionType[] =
+        Array.isArray(u_card?.user_actions)
+            ? u_card.user_actions
+            : Array.isArray(user_actions)
+                ? user_actions
+                : [];
+
+
+    const initialLoved = userActions.includes("post_love");
+
+
+    const [localLoved, setLocalLoved] = useState(initialLoved);
+    const [localLoveCount, setLocalLoveCount] = useState(
+        u_card?.action_counts?.post_love ??
+        action_counts?.post_love ??
+        0
+    );
+
 
     const handleLove = async () => {
         if (!post_id) return;
 
-        const alreadyLoved = userActions.includes("post_love" as FeedActionType);
-        const delta = alreadyLoved ? -1 : 1;
+        // IMPORTANT:
+        // Use local state, not userActions, because the post may
+        // not exist in useFeed.posts (e.g. ChefNex similar posts).
+        const wasLoved = localLoved;
+        const nextLoved = !wasLoved;
+        const delta = nextLoved ? 1 : -1;
 
-        if (!alreadyLoved) {
+        // Immediately update the UI.
+        setLocalLoved(nextLoved);
+        setLocalLoveCount((count) => Math.max(count + delta, 0));
+
+        if (nextLoved) {
             setAnimateLove((prev) => prev + 1);
 
-            setMood("love");
-
-            setTimeout(() => {
-                setMood("idle");
-            }, 3000);
+            if (moodTimer.current) clearTimeout(moodTimer.current);
+            setLocalMood("love");
+            moodTimer.current = setTimeout(() => setLocalMood("idle"), 3000);
         }
 
+        // Sync Zustand if the post happens to be in the store.
         updatePostEverywhere(post_id, (post) => {
-            const currentActions: FeedActionType[] = post.user_actions ?? [];
-            const nextActions = alreadyLoved
-                ? currentActions.filter((a: FeedActionType) => a !== "post_love")
-                : [...currentActions, "post_love" as FeedActionType];
+            const currentActions: FeedActionType[] =
+                Array.isArray(post.user_actions)
+                    ? post.user_actions
+                    : [];
+
+            const nextActions = nextLoved
+                ? [
+                    ...currentActions.filter(
+                        (a) => a !== "post_love"
+                    ),
+                    "post_love" as FeedActionType,
+                ]
+                : currentActions.filter(
+                    (a) => a !== "post_love"
+                );
 
             return {
                 ...post,
                 user_actions: nextActions,
                 action_counts: {
                     ...post.action_counts,
-                    post_love: Math.max((post.action_counts?.post_love ?? 0) + delta, 0),
+                    post_love: Math.max(
+                        (post.action_counts?.post_love ?? 0) + delta,
+                        0
+                    ),
                 },
             };
         });
 
         try {
-            await setFeedActionCount(post_id, "post_love");
+            const freshCounts = await setFeedActionCount(
+                post_id,
+                "post_love" as FeedActionType
+            );
+
+            // Server is now authoritative for the count.
+            if (freshCounts?.post_love !== undefined) {
+                setLocalLoveCount(freshCounts.post_love);
+
+                // Also sync Zustand if the post exists there.
+                updatePostEverywhere(post_id, (post) => ({
+                    ...post,
+                    action_counts: {
+                        ...post.action_counts,
+                        post_love: freshCounts.post_love,
+                    },
+                }));
+            }
         } catch (err) {
-            // rollback
+            // API failed → restore the UI.
+            setLocalLoved(wasLoved);
+            setLocalLoveCount((count) =>
+                Math.max(count - delta, 0)
+            );
+
+            // Roll back Zustand if applicable.
             updatePostEverywhere(post_id, (post) => {
-                const currentActions: FeedActionType[] = post.user_actions ?? [];
-                const rolledBack = alreadyLoved
-                    ? [...currentActions, "post_love" as FeedActionType]
-                    : currentActions.filter((a: FeedActionType) => a !== "post_love");
+                const currentActions: FeedActionType[] =
+                    Array.isArray(post.user_actions)
+                        ? post.user_actions
+                        : [];
+
+                const rollbackActions = wasLoved
+                    ? [
+                        ...currentActions.filter(
+                            (a) => a !== "post_love"
+                        ),
+                        "post_love" as FeedActionType,
+                    ]
+                    : currentActions.filter(
+                        (a) => a !== "post_love"
+                    );
 
                 return {
                     ...post,
-                    user_actions: rolledBack,
+                    user_actions: rollbackActions,
                     action_counts: {
                         ...post.action_counts,
-                        post_love: Math.max((post.action_counts?.post_love ?? 0) - delta, 0),
+                        post_love: Math.max(
+                            (post.action_counts?.post_love ?? 0) - delta,
+                            0
+                        ),
                     },
                 };
             });
+
             console.error("[cook] love failed:", err);
         }
     };
+
+
+    useEffect(() => {
+        if (moodTimer.current) clearTimeout(moodTimer.current);
+        setLocalMood("idle");
+        setLocalLoved(initialLoved);
+        setLocalLoveCount(
+            u_card?.action_counts?.post_love ??
+            action_counts?.post_love ??
+            0
+        );
+    }, [post_id]);
+
+
+    useEffect(() => {
+        return () => {
+            if (moodTimer.current) clearTimeout(moodTimer.current);
+        };
+    }, []);
+
         
     return (
 
@@ -174,6 +306,7 @@ const Tag: React.FC<Props> = ({
                     style={{
                         flex:1,
                         width:"100%",
+                        opacity: isReelOrigin ? 0 : 1,
                     }}
                 >
                     <Media
@@ -198,8 +331,11 @@ const Tag: React.FC<Props> = ({
                             );
 
                         }}
-                        iconSize={30}
+                        iconSize={20}
                         muteControl="bottomRow"
+                        startMuted={globalMuted}
+                        onMuteChange={setGlobalMuted}
+                        autoPlay={isActive ? undefined : false}
                     />
                 </View>
 
@@ -228,30 +364,60 @@ const Tag: React.FC<Props> = ({
                     <FeedLoveIcon
                         color={colors.text}
                         fillColor={tag_color ?? "red"}
-                        liked={isLoved}
+                        liked={localLoved}
                         animationKey={animateLove}
                         size={25}
                     />
                 </Button>
-
-                <Text className={textStyles.caption} style={{ color: colors.text }}>
-                    {formatCount(action_counts?.post_love ?? 0)}
-                </Text>
             </View>
 
             {/* content box */}
             <View
                 style={{
                     width: "100%",
+                    gap: 3,
                     flexDirection: "column",
                     alignItems: "flex-start",
-                    padding: 5,
                 }}
             >
+                <Button
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "flex-start",
+                        gap: 10,
+                        paddingHorizontal: 8,
+                        paddingTop: 6,
+                        paddingBottom: 0,
+                        width: "100%",
+                    }}
+                    onPress={openStats}
+                >
+                    <FunctionRow
+                        icon={<LikeIcon size={16} />}
+                        count={counts?.post_love ?? 0}
+                        color={colors.text}
+                    />
+                    <FunctionRow
+                        icon={<StarIcon size={14} color="#ffca45" fillColor="#ffca45" />}
+                        count={counts?.post_star ?? 0}
+                        color={colors.text}
+                    />
+                    <FunctionRow
+                        icon={<CookPotIcon size={14} />}
+                        count={counts?.post_cook ?? 0}
+                        color={colors.text}
+                    />
+                    <FunctionRow
+                        icon={<ViewsIcon size={14} color={colors.text} />}
+                        count={counts?.post_view ?? 0}
+                        color={colors.text}
+                    />
+                </Button>
 
                 <Pressable
                     style={{
-                        height: 50,
+                        minHeight: 50,
                         width: "100%",
                         alignItems: "center",
                         flexDirection: "column",
@@ -263,10 +429,65 @@ const Tag: React.FC<Props> = ({
 
                     <View
                         style={{
+                            gap: 7,
+                            width: "100%",
+                            flexDirection: "row",
+                            alignItems: "flex-end",
+                        }}
+                    >
+                        {/* Active dietary icons */}
+                        {activeDiets.length > 0 && (
+                            <View
+                                style={{
+                                    height: 25,
+                                    width: 25,
+                                    borderRadius: 999,
+                                    overflow: "hidden",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {activeDiets.length > 1 ? (
+                                    <MoreIcon color={colors.text} size={15} />
+                                ) : (
+                                    activeDiets.map((key) => {
+                                        const Icon = dietaryIcons[key]!;
+                                        return (
+                                            <Icon key={key} size={19} color={colors.text} />
+                                        );
+                                    })
+                                )}
+                            </View>
+                        )}
+
+                        {/* ingredient count */}
+                        <View
+                            style={{
+                                gap: 2,
+                                flexDirection: "row",
+                                alignItems: "flex-end"
+                            }}
+                        >
+                            <FridgeIcon color={"#31cd62"} />
+
+                            <Text className={textStyles.body} style={{ color: colors.text }}>
+                                {num_ingredients} 
+                            </Text>
+
+                            <Text className={textStyles.small}>
+                                ing{num_ingredients !== 1 ? "s" : ""}
+                            </Text>
+
+                        </View>
+                    </View>
+
+                    <View
+                        style={{
                             flex: 1,
                             gap: 7,
                             width: "100%",
                             flexDirection: "row",
+                            paddingLeft: 5
                         }}
                     >
 
@@ -303,63 +524,11 @@ const Tag: React.FC<Props> = ({
                         
                         {/* name */}
                         <View className="flex-1 justify-center">
-                            {info.dish_name ? (
-                                <Text className={textStyles.body} numberOfLines={1} ellipsizeMode="tail">
-                                    {info.dish_name}
-                                </Text>
-                            ) : (
-                                <Text className={` font-thin ${textStyles.body}`} numberOfLines={1} ellipsizeMode="tail">
-                                    Name
-                                </Text>
-                            )}
-
-                        </View>
-
-                    </View>
-
-                    <View
-                        style={{
-                            gap: 7,
-                            width: "100%",
-                            flexDirection: "row",
-                            alignItems: "flex-end",
-                        }}
-                    >
-                        {/* Active dietary icons */}
-                        {activeDiets.length > 0 && (
-                            <View
-                                style={{
-                                    height: 25,
-                                    width: 25,
-                                    borderRadius: 999,
-                                    overflow: "hidden",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: colors.button
-                                }}
-                            >
-                                {activeDiets.length > 1 ? (
-                                    <MoreIcon color={colors.text} size={15} />
-                                ) : (
-                                    activeDiets.map((key) => {
-                                        const Icon = dietaryIcons[key]!;
-                                        return (
-                                            <Icon key={key} size={15} color={colors.text} />
-                                        );
-                                    })
-                                )}
-                            </View>
-                        )}
-
-                        {/* ingredient count */}
-                        <View className="flex-row gap-1 items-end">
-                            <Text className={textStyles.small} style={{ color: colors.text }}>
-                                {num_ingredients} 
-                            </Text>
-                            <Text className={textStyles.small}>
-                                ing{num_ingredients !== 1 ? "s" : ""}
+                            <Text className={textStyles.body} numberOfLines={1} ellipsizeMode="tail" onPress={onPressInfo}>
+                                {info?.dish_name}
                             </Text>
                         </View>
+
                     </View>
 
                 </Pressable>
@@ -411,8 +580,14 @@ const Tag: React.FC<Props> = ({
 
                             <DynamicAvatarRenderer
                                 avatar={avatar}
+                                level={level}
+                                xp={xp}
+                                badge={badge}
+                                mood={localMood}
+                                showBadge
+                                showProgress
                                 background
-                                size={25}
+                                size={20}
                             />
 
                             <View
@@ -425,48 +600,35 @@ const Tag: React.FC<Props> = ({
 
                                 <Text
                                     className={textStyles.body}
+                                    onPress={onPressProfile}
                                     numberOfLines={1}
                                     ellipsizeMode="tail"
-                                    onPress={onPressProfile}
                                     style={{
                                         color: colors.secondaryText,
+                                        fontSize: 14,
+                                        fontWeight: "500",
                                     }}
                                 >
-                                    {profile_name}
+                                    @{profile_name}
                                 </Text>
 
-                                <View
+                                <Text
+                                    className={textStyles.body}
+                                    onPress={onPressProfile}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
                                     style={{
-                                        gap: 3,
-                                        flexDirection: "row",
+                                        color: colors.text,
+                                        fontSize: 14,
                                     }}
                                 >
-
-                                    <Text
-                                        className={textStyles.small}
-                                        numberOfLines={1}
-                                        ellipsizeMode="tail"
-                                        onPress={onPressProfile}
-                                        style={{
-                                            color: colors.text,
-                                        }}
-                                    >
-                                        {capitalize(limitLength(firstName, 10))}
-                                    </Text>
-            
-                                    <Text
-                                        className={textStyles.small}
-                                        numberOfLines={1}
-                                        ellipsizeMode="tail"
-                                        onPress={onPressProfile}
-                                        style={{
-                                            color: colors.text,
-                                        }}
-                                    >
-                                        {capitalize(limitLength(lastName ?? "", 15))}
-                                    </Text>
-
-                                </View>
+                                    {capitalize(limitLength(firstName, 10))}
+                                    {lastName
+                                        ? ` ${capitalize(
+                                            limitLength(lastName, 10)
+                                        )}`
+                                        : ""}
+                                </Text>
 
                             </View>
 
@@ -482,67 +644,146 @@ const Tag: React.FC<Props> = ({
     );
 };
 
-export const EmptyTag: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
+
+export const EmptyTag: React.FC<{
+    delay?: number;
+    height?: number;
+    width?: number | `${number}%`;
+}> = ({
+    delay = 0,
+    height = 325,
+    width = 195,
+}) => {
     const { colors } = useTheme();
-    const opacity = useRef(new Animated.Value(1)).current;
+    const opacity = useRef(new Animated.Value(0.45)).current;
 
     useEffect(() => {
-        const anim = Animated.loop(
+        const animation = Animated.loop(
             Animated.sequence([
-                Animated.timing(opacity, { toValue: 0.3, duration: 700, delay, useNativeDriver: true }),
-                Animated.timing(opacity, { toValue: 1,   duration: 700,         useNativeDriver: true }),
+                Animated.timing(opacity, {
+                    toValue: 0.9,
+                    duration: 700,
+                    delay,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacity, {
+                    toValue: 0.45,
+                    duration: 700,
+                    useNativeDriver: true,
+                }),
             ])
         );
-        anim.start();
-        return () => anim.stop();
-    }, []);
 
-    const bone = (w: number | `${number}%` | "auto", h: number, radius = 8, extra?: object) => (
+        animation.start();
+
+        return () => animation.stop();
+    }, [opacity, delay]);
+
+    const bone = (
+        w: number | `${number}%`,
+        h: number,
+        radius = 8
+    ) => (
         <Animated.View
             style={{
-                width: w, height: h,
+                width: w,
+                height: h,
                 borderRadius: radius,
-                backgroundColor: colors.card,
+                backgroundColor: colors.secondaryCard,
                 opacity,
-                ...extra,
             }}
         />
     );
 
-    return (
-        <View style={{ width: 195, height: 325 }}>
+    const mediaHeight = Math.round(height * 0.57);
+    const contentHeight = height - mediaHeight - 5;
 
-            <View style={{ height: 40, flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 20, paddingBottom: 4 }}>
+    return (
+        <View
+            style={{
+                width,
+                height,
+                overflow: "hidden",
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: colors.secondaryCard,
+                backgroundColor: colors.background,
+            }}
+        >
+            {/* Avatar and profile name */}
+            <View
+                style={{
+                    height: 40,
+                    width: "100%",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                    paddingHorizontal: 10,
+                }}
+            >
                 {bone(30, 30, 999)}
-                {bone("60%", 12, 6)}
+                <View style={{ flex: 1, gap: 5 }}>
+                    {bone("75%", 10, 5)}
+                    {bone("45%", 8, 4)}
+                </View>
             </View>
 
-            <View style={{ height: 285, paddingHorizontal: 5, gap: 5 }}>
+            {/* Recipe image */}
+            <View style={{ paddingHorizontal: 5 }}>
+                {bone("100%", mediaHeight, 14)}
+            </View>
 
-                {bone("100%", 185, 16)}
-
-                <Animated.View
+            {/* Recipe information */}
+            <View
+                style={{
+                    flex: 1,
+                    minHeight: contentHeight,
+                    paddingHorizontal: 10,
+                    paddingVertical: 9,
+                    gap: 9,
+                    justifyContent: "space-between",
+                }}
+            >
+                {/* Difficulty and recipe name */}
+                <View
                     style={{
-                        height: 75, borderRadius: 16,
-                        backgroundColor: colors.card,
-                        opacity,
-                        paddingHorizontal: 14, paddingVertical: 10,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 8,
+                    }}
+                >
+                    {bone(14, 14, 999)}
+                    <View style={{ flex: 1, gap: 5 }}>
+                        {bone("90%", 11, 5)}
+                    </View>
+                </View>
+
+                {/* Dietary information and ingredient count */}
+                <View
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
                         justifyContent: "space-between",
                     }}
                 >
+                    {bone(25, 25, 999)}
+                    {bone(48, 12, 5)}
+                </View>
 
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        {bone(14, 14, 999)}
-                        {bone("60%", 12, 6)}
+                {/* Creator information */}
+                <View
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 7,
+                    }}
+                >
+                    {bone(24, 24, 999)}
+                    <View style={{ flex: 1, gap: 5 }}>
+                        {bone("80%", 10, 5)}
+                        {bone("55%", 8, 4)}
                     </View>
-
-                    <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 6 }}>
-                        {bone(36, 18, 6)}
-                        {bone(50, 32, 999)}
-                    </View>
-
-                </Animated.View>
-
+                </View>
             </View>
         </View>
     );

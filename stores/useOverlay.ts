@@ -1,9 +1,10 @@
 import React from "react";
 import { create } from "zustand";
+import { useReel } from "./useReel";
 
 export type OverlayItem = {
     label: string;
-    value: string | number |boolean | object | null;
+    value: string | number | boolean | object | null;
 };
 
 export type OverlayContent = {
@@ -12,62 +13,89 @@ export type OverlayContent = {
     items?: OverlayItem[];
     custom?: React.ReactNode;
     showX?: boolean;
+    onDismiss?: () => void;
 };
 
-type OverlayStatus = "closed" | "opening" | "open" | "closing";
+export type OverlayScope = "app" | "reel";
 
-type OverlayState = {
-    isOpen: boolean;
+export type OverlayStackItem = {
+    id: string;
     content: OverlayContent | null;
     children: React.ReactNode | null;
-    status: OverlayStatus;
+    scope: OverlayScope;
+    closing?: boolean;
+};
+
+type OverlayState = {
+    stack: OverlayStackItem[];
+    isOpen: boolean;
+
     openOverlay: (
         content?: OverlayContent,
         children?: React.ReactNode
     ) => void;
-    closeOverlay: () => void;
-    notifyOpenComplete: () => void;
-    notifyCloseComplete: () => void;
+
+    requestClose: (id?: string) => void;
+
+    closeOverlay: (id?: string) => void;
+
+    removeOverlay: (id: string) => void;
 };
 
+const createOverlayId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 export const useOverlay = create<OverlayState>((set, get) => ({
+    stack: [],
     isOpen: false,
-    content: null,
-    children: null,
-    status: "closed",
 
     openOverlay: (content, children) => {
-        const { status } = get();
+        const scope: OverlayScope = useReel.getState().isVisible
+            ? "reel"
+            : "app";
 
-        if (status === "opening" || status === "closing") return;
-
-        if (status === "open") {
-            set({ content, children: children ?? null });
-            return;
-        }
-
-        set({
-            status: "opening",
-            isOpen: true,
-            content,
+        const overlay: OverlayStackItem = {
+            id: createOverlayId(),
+            content: content ?? null,
             children: children ?? null,
-        });
+            scope,
+        };
+
+        set((state) => ({
+            stack: [...state.stack, overlay],
+            isOpen: true
+        }));
     },
 
-    closeOverlay: () => {
-        const { status } = get();
+    requestClose: (id) =>
+        set((state) => {
+            const targetId =
+                id ?? [...state.stack].reverse().find((o) => !o.closing)?.id;
+            if (!targetId) return state;
 
-        if (status === "closed" || status === "closing") return;
-        if (status === "opening") return;
-
-        set({ status: "closing", isOpen: false });
-    },
-
-    notifyOpenComplete: () => set({ status: "open" }),
-    notifyCloseComplete: () =>
-        set({
-            status: "closed",
-            content: null,
-            children: null,
+            return {
+                stack: state.stack.map((o) =>
+                o.id === targetId ? { ...o, closing: true } : o
+                ),
+            };
         }),
+
+    closeOverlay: (id) => get().requestClose(id),
+
+    removeOverlay: (id) => {
+        const overlay = get().stack.find((o) => o.id === id);
+
+        if (!overlay) return;
+
+        set((state) => {
+            const stack = state.stack.filter((o) => o.id !== id);
+
+            return {
+                stack,
+                isOpen: stack.length > 0,
+            };
+        });
+
+        overlay.content?.onDismiss?.();
+    },
 }));

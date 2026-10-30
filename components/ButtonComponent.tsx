@@ -23,61 +23,105 @@ import { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-nat
 import { _DEFAULT_ICON_WIDTH, _DEFAULT_ICON_HEIGHT, buttonCornerRadius } from "@/types/layout.types";
 import { Input } from "./InputComponent";
 import { useSettingsStore } from "@/stores/useSettings";
-import { CheckIcon } from "@/icons/Icon";
+import { AddIcon, CheckIcon, MinusIcon } from "@/icons/Icon";
 import { Unit } from "@/types";
 import { formatCount } from "@/utils/time";
 import GomealGlassView from "./GlassComponent";
+import { GlassEffectStyleConfig, GlassStyle } from "expo-glass-effect";
 
 // gesture
-const SPRING = { damping: 22, stiffness: 450, mass: 0.35 };
+export const SPRING = { damping: 22, stiffness: 450, mass: 0.35 };
 // gesture
 const PRESS_IN_MS = 35;
 const PRESS_OUT_MS = 45;
 
 export const Gesture: React.FC<GestureProps> = ({
-  children,
-  style,
-  scaleAmount = 0.997,
-  haptic = true,
+    children,
+    style,
+    scaleAmount = 0.997,
+    haptic = true,
+    onPress,
+    onLongPress,
 }) => {
-  const scale = useSharedValue(1);
-  const hapticsEnabled = useSettingsStore(
-    (state) => state.settings.app.hapticsEnabled
-  );
+    const scale = useSharedValue(1);
 
-  const tap = RNGesture.Tap()
-    .maxDuration(120)
-    .maxDistance(8)
-    .onBegin(() => {
-      "worklet";
+    const hapticsEnabled = useSettingsStore(
+        (state) => state.settings.app.hapticsEnabled
+    );
 
-      scale.value = withTiming(scaleAmount, {
-        duration: PRESS_IN_MS,
-      });
+    const tap = RNGesture.Tap()
+        .maxDuration(120)
+        .maxDistance(8)
+        .onBegin(() => {
+            "worklet";
 
-      if (haptic && hapticsEnabled) {
-        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
-      }
-    })
-    .onFinalize(() => {
-      "worklet";
+            scale.value = withTiming(scaleAmount, {
+                duration: PRESS_IN_MS,
+            });
 
-      scale.value = withTiming(1, {
-        duration: PRESS_OUT_MS,
-      });
-    });
+            if (haptic && hapticsEnabled) {
+                runOnJS(Haptics.impactAsync)(
+                    Haptics.ImpactFeedbackStyle.Light
+                );
+            }
+        })
+        .onEnd(() => {
+            "worklet";
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+            if (onPress) {
+                runOnJS(onPress)();
+            }
+        })
+        .onFinalize(() => {
+            "worklet";
 
-  return (
-    <GestureDetector gesture={tap}>
-      <Reanimated.View style={[style, animatedStyle]}>
-        {children}
-      </Reanimated.View>
-    </GestureDetector>
-  );
+            scale.value = withTiming(1, {
+                duration: PRESS_OUT_MS,
+            });
+        });
+
+    const longPress = RNGesture.LongPress()
+        .minDuration(500)
+        .maxDistance(8)
+        .onStart(() => {
+            "worklet";
+
+            if (haptic && hapticsEnabled) {
+                runOnJS(Haptics.impactAsync)(
+                    Haptics.ImpactFeedbackStyle.Medium
+                );
+            }
+
+            if (onLongPress) {
+                runOnJS(onLongPress)();
+            }
+        });
+
+    const gesture = RNGesture.Exclusive(
+        longPress,
+        tap
+    );
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            {
+                scale: scale.value,
+            },
+        ],
+    }));
+
+    return (
+        <GestureDetector gesture={gesture}>
+            <Reanimated.View
+                style={[
+                    style,
+                    animatedStyle,
+                ]}
+            >
+                {children}
+            </Reanimated.View>
+        </GestureDetector>
+    );
 };
 
 
@@ -320,8 +364,9 @@ export const DifficultyOptionButton: React.FC<DifficultyOptionButtonProps> = ({
 export const IngredientQuantityButton: React.FC<{
     value: number;
     onChange: (value: number) => void;
-}> = ({ value, onChange }) => {
-    const { colors, textStyles } = useTheme();
+    dark?: boolean
+}> = ({ value, dark, onChange }) => {
+    const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
 
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(String(value));
@@ -353,6 +398,7 @@ export const IngredientQuantityButton: React.FC<{
                     value={draft}
                     onChangeText={setDraft}
                     onBlur={commitEdit}
+                    dark={dark}
                     onSubmitEditing={commitEdit}
                     keyboardType="decimal-pad"
                     autoFocus
@@ -361,13 +407,18 @@ export const IngredientQuantityButton: React.FC<{
             ) : (
                 <>
                     <Button
+                        style={{
+                          padding: 0,
+                          backgroundColor: colors.secondaryCard
+                        }}                    
                         onPress={() => {
                             const step = getStep();
                             onChange(normalizeNumber(Math.max(0, value - step)));
                         }}
+                        background
                     >
-                        <Text className={textStyles.h1} style={{ color: colors.button }}>
-                            −
+                        <Text className={textStyles.section} style={{ color: colors.button }}>
+                          <MinusIcon color={colors.button} size={20} />
                         </Text>
                     </Button>
 
@@ -383,13 +434,18 @@ export const IngredientQuantityButton: React.FC<{
                     </Button>
 
                     <Button
+                        style={{
+                          padding: 0,
+                          backgroundColor: colors.secondaryCard
+                        }}
                         onPress={() => {
                             const step = getStep();
                             onChange(normalizeNumber(value + step));
                         }}
+                        background
                     >
-                        <Text className={textStyles.h1} style={{ color: colors.button }}>
-                            +
+                        <Text className={textStyles.section} style={{ color: colors.button }}>
+                            <AddIcon color={colors.button} size={20} />
                         </Text>
                     </Button>
                 </>
@@ -403,9 +459,10 @@ export const IngredientQuantityButton: React.FC<{
 export const IngredientUnitDropDownButton: React.FC<{
     selectedUnit: string;
     onSelectedUnit: (unit: string) => void;
-}> = ({ selectedUnit, onSelectedUnit }) => {
+    dark?: boolean
+}> = ({ selectedUnit, dark, onSelectedUnit }) => {
 
-    const { colors, textStyles } = useTheme();
+    const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
 
     const UNITS: Unit[] = ["", "g", "kg", "oz", "lb", "ml", "l"];
 
@@ -430,16 +487,17 @@ export const IngredientUnitDropDownButton: React.FC<{
             delayLongPress={250}
             hitSlop={16}
             style={{
-                padding: 8,
-                flex: 1,
-                alignItems: "center",
+                width: 40,
+                height: 40,
+                backgroundColor: colors.secondaryCard
             }}
+            background
         >
             <Text
-                className={textStyles.h3}
+                className={textStyles.body}
                 style={{ color: colors.button }}
             >
-                {UNITS[currentIndex].trim() || "—"}
+                {UNITS[currentIndex].trim() || (<MinusIcon color={colors.button} size={20} />)}
             </Text>
         </Button>
     );
@@ -487,16 +545,18 @@ export const CheckButton: React.FC<{
   onChange?: (checked: boolean) => void;
   disabled?: boolean;
   size?: number;
+  dark?: boolean
   style?: StyleProp<ViewStyle>;
 }> = ({
   value,
   defaultValue = false,
   onChange,
+  dark,
   disabled = false,
   size = 28,
   style,
 }) => {
-  const { colors } = useTheme();
+  const { colors } = useTheme(dark ? "dark" : undefined);
   const [internal, setInternal] = useState(defaultValue);
 
   const isControlled = value !== undefined;
@@ -541,152 +601,280 @@ export const CheckButton: React.FC<{
 
 const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable);
 
+
 export const ExpandingButton: React.FC<{
-  expanded: boolean;
-  onPress?: () => void;
-  children: React.ReactNode;
-  expandedChildren?: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-  expandedStyle?: StyleProp<ViewStyle>;
-  clearBackground?: boolean;
-  expandedWidth?: number;
-  expandedHeight?: number;
-  borderRadius?: number;
-  collapsedSize?: number;
-  anchor?: "center" | "top" | "bottom" | "left" | "right" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+    expanded: boolean;
+    onPress?: () => void;
+    children: React.ReactNode;
+    expandedChildren?: React.ReactNode;
+    style?: StyleProp<ViewStyle>;
+    expandedStyle?: StyleProp<ViewStyle>;
+    clearBackground?: boolean;
+    expandedWidth?: number;
+    expandedHeight?: number;
+    borderRadius?: number;
+    collapsedSize?: number;
+    scaleAmount?: number;
+    haptic?: boolean;
+    glassEffectStyle?: GlassStyle | GlassEffectStyleConfig;
+    anchor?:
+        | "center"
+        | "top"
+        | "bottom"
+        | "left"
+        | "right"
+        | "top-left"
+        | "top-right"
+        | "bottom-left"
+        | "bottom-right";
 }> = ({
-  expanded,
-  onPress,
-  children,
-  expandedChildren,
-  style,
-  expandedStyle,
-  clearBackground = false,
-  expandedWidth = 175,
-  expandedHeight = 105,
-  borderRadius = 20,
-  collapsedSize = 40,
-  anchor = "center",
+    expanded,
+    onPress,
+    children,
+    expandedChildren,
+    style,
+    expandedStyle,
+    glassEffectStyle = "clear",
+    clearBackground = false,
+    expandedWidth = 175,
+    expandedHeight = 105,
+    borderRadius = 20,
+    collapsedSize = 40,
+    scaleAmount = 0.97,
+    haptic = true,
+    anchor = "center",
 }) => {
-  const { colors } = useTheme();
+    const { colors } = useTheme();
+    const hapticsEnabled = useSettingsStore(
+        (state) => state.settings.app.hapticsEnabled
+    );
 
-  const width = useSharedValue(collapsedSize);
-  const height = useSharedValue(collapsedSize);
-  const radius = useSharedValue(collapsedSize / 2);
+    const width = useSharedValue(collapsedSize);
+    const height = useSharedValue(collapsedSize);
+    const radius = useSharedValue(collapsedSize / 2);
+    const scale = useSharedValue(1);
 
-  useEffect(() => {
-    width.value = withSpring(expanded ? expandedWidth : collapsedSize, SPRING);
-    height.value = withSpring(expanded ? expandedHeight : collapsedSize, SPRING);
-    radius.value = withSpring(expanded ? borderRadius : collapsedSize / 2, SPRING);
-  }, [expanded, expandedWidth, expandedHeight, borderRadius, collapsedSize]);
+    useEffect(() => {
+        width.value = withSpring(
+            expanded ? expandedWidth : collapsedSize,
+            SPRING
+        );
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: width.value,
-    height: height.value,
-    borderRadius: radius.value,
-  }));
+        height.value = withSpring(
+            expanded ? expandedHeight : collapsedSize,
+            SPRING
+        );
 
-  const content = expanded ? expandedChildren ?? children : children;
+        radius.value = withSpring(
+            expanded ? borderRadius : collapsedSize / 2,
+            SPRING
+        );
+    }, [
+        expanded,
+        expandedWidth,
+        expandedHeight,
+        borderRadius,
+        collapsedSize,
+    ]);
 
-  const innerContent = (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      {content}
-    </View>
-  );
+    const animatedSize = useAnimatedStyle(() => ({
+        width: width.value,
+        height: height.value,
+        borderRadius: radius.value,
+        transform: [{ scale: scale.value }],
+    }));
 
-  // Which edges pin in place; the opposite side(s) are where it grows toward.
-  const anchorStyle: StyleProp<ViewStyle> =
-    anchor === "center"
-      ? {}
-      : {
-          position: "absolute",
-          ...(anchor.includes("top") ? { top: 0 } : {}),
-          ...(anchor.includes("bottom") ? { bottom: 0 } : {}),
-          ...(anchor.includes("left") ? { left: 0 } : {}),
-          ...(anchor.includes("right") ? { right: 0 } : {}),
-          // pure "top" / "bottom" / "left" / "right": pin that edge + center the cross-axis
-          ...(anchor === "top" || anchor === "bottom" ? { left: 0, right: 0, alignSelf: "center" } : {}),
-          ...(anchor === "left" || anchor === "right" ? { top: 0, bottom: 0 } : {}),
-        };
+    /*
+     * Tap gesture, attached directly to the surface that also carries
+     * position/size — not to a separate wrapping view. Keeping it on
+     * the same node means there's no extra unstyled View in between
+     * that could accidentally become the positioning context instead
+     * of `slot`.
+     */
+    const tap = RNGesture.Tap()
+        .maxDuration(120)
+        .maxDistance(8)
+        .onBegin(() => {
+            "worklet";
+            scale.value = withTiming(scaleAmount, { duration: PRESS_IN_MS });
+            if (haptic && hapticsEnabled) {
+                runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+            }
+        })
+        .onFinalize(() => {
+            "worklet";
+            scale.value = withTiming(1, { duration: PRESS_OUT_MS });
+        });
 
-  const body = (
-    <Gesture scaleAmount={0.97}>
-      {clearBackground ? (
-        <Reanimated.View
-          style={[
-            animatedStyle,
-            anchorStyle,
-            {
-              overflow: "hidden",
-              borderCurve: "continuous",
-              zIndex: expanded ? 999 : 1,
-              elevation: expanded ? 999 : 1,
-            },
-            !expanded && style,
-            expanded && expandedStyle,
-          ]}
+    const content = expanded
+        ? expandedChildren ?? children
+        : children;
+
+    const innerContent = (
+        <View
+            style={{
+                flex: 1,
+                width: "100%",
+                height: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+            }}
         >
-          <GomealGlassView
-            style={[StyleSheet.absoluteFillObject, { overflow: "hidden", borderRadius }]}
-            glassEffectStyle="clear"
-            interactive
-          >
-            <AnimatedPressable
-              onPress={onPress}
-              hitSlop={8}
-              disabled={expanded}
-              style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
-            >
-              {innerContent}
-            </AnimatedPressable>
-          </GomealGlassView>
-        </Reanimated.View>
-      ) : (
-        <AnimatedPressable
-          onPress={onPress}
-          hitSlop={8}
-          disabled={expanded}
-          style={[
-            animatedStyle,
-            anchorStyle,
-            {
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "transparent",
-              overflow: "hidden",
-              zIndex: expanded ? 999 : 1,
-              elevation: expanded ? 999 : 1,
-            },
-            !expanded && style,
-            expanded && expandedStyle,
-          ]}
-        >
-          {expanded && (
-            <View
-              pointerEvents="none"
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                backgroundColor: colors.background,
-                opacity: 0.8,
-                ...style,
-              }}
-            />
-          )}
-          {innerContent}
-        </AnimatedPressable>
-      )}
-    </Gesture>
-  );
+            {content}
+        </View>
+    );
 
-  // Anchored modes need a same-sized relative placeholder so the button
-  // doesn't collapse the space it used to occupy in the flex layout.
-  if (anchor === "center") {
-    return body;
-  }
+    /*
+     * The wrapper ALWAYS occupies exactly the collapsed button size
+     * in the parent's flex layout. This is the ONLY positioned
+     * ancestor the anchor math below should ever resolve against.
+     */
+    const slot: ViewStyle = {
+        width: collapsedSize,
+        height: collapsedSize,
+        position: "relative",
+    };
 
-  return (
-    <View style={{ width: collapsedSize, height: collapsedSize, position: "relative" }}>
-      {body}
-    </View>
-  );
+    const getAnchorPosition = (): ViewStyle => {
+        const centerX = (collapsedSize - expandedWidth) / 2;
+        const centerY = (collapsedSize - expandedHeight) / 2;
+
+        switch (anchor) {
+            case "top":
+                return { top: 0, left: centerX };
+            case "bottom":
+                return { bottom: 0, left: centerX };
+            case "left":
+                return { left: 0, top: centerY };
+            case "right":
+                return { right: 0, top: centerY };
+            case "top-left":
+                return { top: 0, left: 0 };
+            case "top-right":
+                return { top: 0, right: 0 };
+            case "bottom-left":
+                return { bottom: 0, left: 0 };
+            case "bottom-right":
+                return { bottom: 0, right: 0 };
+            case "center":
+            default:
+                return { top: 0, left: 0 };
+        }
+    };
+
+    const position = getAnchorPosition();
+
+    const surfaceInner = (
+        <>
+            {clearBackground ? (
+                <GomealGlassView
+                    style={[
+                        StyleSheet.absoluteFillObject,
+                        { overflow: "hidden", borderRadius },
+                    ]}
+                    glassEffectStyle={glassEffectStyle}
+                    interactive
+                >
+                    <AnimatedPressable
+                        onPress={onPress}
+                        hitSlop={8}
+                        disabled={expanded}
+                        style={{
+                            flex: 1,
+                            width: "100%",
+                            height: "100%",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        {innerContent}
+                    </AnimatedPressable>
+                </GomealGlassView>
+            ) : (
+                <>
+                    {expanded && (
+                        <View
+                            pointerEvents="none"
+                            style={[
+                                StyleSheet.absoluteFillObject,
+                                {
+                                    backgroundColor: colors.background,
+                                    opacity: 0.8,
+                                },
+                            ]}
+                        />
+                    )}
+
+                    <AnimatedPressable
+                        onPress={onPress}
+                        hitSlop={8}
+                        disabled={expanded}
+                        style={{
+                            flex: 1,
+                            width: "100%",
+                            height: "100%",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        {innerContent}
+                    </AnimatedPressable>
+                </>
+            )}
+        </>
+    );
+
+    /*
+     * Center mode: no absolute positioning needed, this node is just
+     * a normal flex child, sized and gestured directly.
+     */
+    if (anchor === "center") {
+        return (
+            <GestureDetector gesture={tap}>
+                <Reanimated.View
+                    style={[
+                        animatedSize,
+                        {
+                            overflow: "hidden",
+                            borderCurve: "continuous",
+                            zIndex: expanded ? 9999 : 1,
+                            elevation: expanded ? 9999 : 1,
+                        },
+                        expanded ? expandedStyle : style,
+                    ]}
+                >
+                    {surfaceInner}
+                </Reanimated.View>
+            </GestureDetector>
+        );
+    }
+
+    /*
+     * Non-center modes: slot is the fixed-size flex child and the
+     * ONLY positioned ancestor. The animated, gestured surface is
+     * absolutely positioned directly inside it — no intermediate
+     * wrapper.
+     */
+    return (
+        <View style={slot}>
+            <GestureDetector gesture={tap}>
+                <Reanimated.View
+                    style={[
+                        {
+                            position: "absolute",
+                            ...position,
+                            overflow: "hidden",
+                            borderCurve: "continuous",
+                            zIndex: expanded ? 9999 : 1,
+                            elevation: expanded ? 9999 : 1,
+                        },
+                        animatedSize,
+                        expanded ? expandedStyle : style,
+                    ]}
+                >
+                    {surfaceInner}
+                </Reanimated.View>
+            </GestureDetector>
+        </View>
+    );
 };

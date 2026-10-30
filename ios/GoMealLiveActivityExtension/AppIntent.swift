@@ -122,3 +122,64 @@ struct PrevStepIntent: LiveActivityIntent {
         return .result()
     }
 }
+
+
+@available(iOS 16.2, *)
+struct SelectStepIntent: LiveActivityIntent {
+
+    static var title: LocalizedStringResource = "Select Cooking Step"
+
+    @Parameter(title: "Activity ID")
+    var activityId: String
+
+    @Parameter(title: "Target Step")
+    var targetStep: Int
+
+    @Parameter(title: "Steps JSON")
+    var stepsJson: String
+
+    init() {}
+
+    init(activityId: String, targetStep: Int, stepsJson: String) {
+        self.$activityId.wrappedValue = activityId
+        self.$targetStep.wrappedValue = targetStep
+        self.$stepsJson.wrappedValue = stepsJson
+    }
+
+    func perform() async throws -> some IntentResult {
+        for activity in Activity<GoMealLiveActivityAttributes>.activities {
+            guard activity.attributes.post_id == activityId else {
+                continue
+            }
+
+            let total = activity.attributes.step_total
+
+            // Only allow valid cooking steps.
+            guard (1...total).contains(targetStep) else {
+                break
+            }
+
+            let steps = (try? JSONDecoder().decode(
+                [String].self,
+                from: Data(stepsJson.utf8)
+            )) ?? []
+
+            let description = steps.indices.contains(targetStep - 1)
+                ? steps[targetStep - 1]
+                : ""
+
+            let updatedState = GoMealLiveActivityAttributes.ContentState(
+                step_current: targetStep,
+                step_desc: description
+            )
+
+            await activity.update(
+                ActivityContent(state: updatedState, staleDate: nil)
+            )
+
+            break
+        }
+
+        return .result()
+    }
+}

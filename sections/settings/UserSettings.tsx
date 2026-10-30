@@ -1,10 +1,6 @@
-import { useEffect, useState } from "react";
-import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
-
 import { useUser } from "@/stores/useUser";
 import { resetSocket } from "@/api/socket";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { Button } from "@/components/ButtonComponent";
 import { useTheme } from "@/provider/ThemeProvider";
 import { LogOutIcon, DeleteIcon } from "@/icons/Icon";
@@ -19,9 +15,9 @@ import { useSearch } from "@/stores/useSearch";
 import { usePost } from "@/stores/usePost";
 
 import { delete_account_api } from "@/api/profile.api";
-import { SpinningLogoImage } from "@/utils/Logo";
 import { useOverlay } from "@/stores/useOverlay";
-import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
+import DeleteConfirm from "@/components/DeleteComponent";
+
 
 export const clearAppState = async () => {
 
@@ -32,7 +28,7 @@ export const clearAppState = async () => {
 
     useFeed.setState({
         posts: [],
-        reels: [],
+        visiblePostIds: [],
         feedCache: {},
         reelCache: {},
         feedRequests: {},
@@ -41,6 +37,8 @@ export const clearAppState = async () => {
         reelCursor: 0,
         hasMoreFeed: true,
         hasMoreReels: true,
+        loadingMoreFeed: false,
+        loadingMoreReels: false,
         selectedPost: null,
         activeReelPost: null,
         activeProfile: null,
@@ -48,10 +46,12 @@ export const clearAppState = async () => {
     });
 
     useReel.setState({
-        reels: [],
+        order: [],
         history: [],
+        origin: null,
         loading: true,
         isVisible: false,
+        isAnimating: false,
     });
 
     useCart.setState({
@@ -95,102 +95,7 @@ export const clearAppState = async () => {
 
 };
 
-const DeleteConfirmContent: React.FC<{
-    onConfirm: () => Promise<void>;
-    onCancel: () => void;
-}> = ({ onConfirm, onCancel }) => {
-
-    const { colors, textStyles } = useTheme();
-    const [deleting, setDeleting] = useState(false);
-
-    const handleConfirm = async () => {
-        try {
-            setDeleting(true);
-            await onConfirm();
-        } finally {
-            setDeleting(false);
-        }
-    };
-
-    return (
-        <View style={{ flex: 1, width: "100%", gap: 20, justifyContent: "center", alignItems: "center" }}>
-
-
-            <Text
-                className={textStyles.h1}
-            >
-                Confirm Account deletion
-            </Text>
-            
-            <Text
-                className={textStyles.body}
-                style={{
-                    textAlign: "center",
-                    lineHeight: 22,
-                }}
-            >
-                Your account will be deactivated immediately. Account data may be retained
-                for up to 30 days before permanent deletion in accordance with our{" "}
-                <Text
-                    onPress={() => WebBrowser.openBrowserAsync("https://www.gomeal.org/privacy")}
-                    style={{
-                        color: colors.button,
-                        fontSize: 13,
-                        textDecorationLine: "underline",
-                        fontWeight: "600",
-                    }}
-                >
-                    Privacy Policy
-                </Text>
-            </Text>
-
-            <Button
-                onPress={handleConfirm}
-                disabled={deleting}
-                style={{
-                    width: 200,
-                    height: 60,
-                    backgroundColor: deleting ? "transparent" : colors.danger,
-                    alignSelf: "center",
-                }}
-                background={true}
-            >
-                {deleting ? (
-                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                        <SpinningLogoImage size={20} />
-                    </View>
-                ) : (
-                    <Text
-                        className={textStyles.h3}
-                        style={{
-                            color: "white",
-                        }}
-                    >
-                        Confirm
-                    </Text>
-                )}
-            </Button>
-
-            <Button
-                onPress={onCancel}
-                disabled={deleting}
-                style={{
-                    width: 200,
-                    height: 55,
-                    alignSelf: "center",
-                }}
-                background={true}
-            >
-                <Text className={textStyles.h3}>
-                    Cancel
-                </Text>
-            </Button>
-
-        </View>
-    );
-};
-
-const UserSettings: React.FC= () => {
+const UserSettings: React.FC = () => {
 
     const { colors, textStyles } = useTheme();
     const openOverlay = useOverlay((state) => state.openOverlay);
@@ -201,9 +106,7 @@ const UserSettings: React.FC= () => {
     };
 
     const handleDelete = async () => {
-
         try {
-
             const res = await delete_account_api();
 
             if (!res.ok) {
@@ -212,19 +115,15 @@ const UserSettings: React.FC= () => {
 
             closeOverlay();
             await clearAppState();
-
         } catch (err) {
-
             console.error("Delete account failed:", err);
-
         }
-
     };
 
     const handleDeletePress = () => {
         openOverlay({
             custom: (
-                <DeleteConfirmContent
+                <DeleteConfirm
                     onConfirm={handleDelete}
                     onCancel={closeOverlay}
                 />
@@ -233,56 +132,84 @@ const UserSettings: React.FC= () => {
     };
 
     return (
-
-        <View
-            style={{
-                height: 175,
-                marginHorizontal: 10,
-                borderRadius: 25,
-                backgroundColor: colors.button,
-            }}
-            className="flex-1 gap-5 items-center justify-center px-5"
-        >
+        <View style={{ width: "100%", gap: 10 }}>
 
             <Button
                 onPress={handleLogout}
-                style={{
-                    width: 300,
-                    height: 60,
-                    flexDirection: "row",
-                    gap: 10,
-                    backgroundColor: colors.card,
+                style={{ 
+                    width: "100%",
+                    height: 95,
+                    borderRadius: 20,
+                    paddingHorizontal: 16,
+                    justifyContent: "center",
+                    alignItems: "flex-start",
                 }}
-                background={true}
             >
-                <Text className={textStyles.h3}>
-                    Logout
-                </Text>
-
-                <LogOutIcon color={colors.buttonSecondary} />
+                <View 
+                    style={{
+                        width: "100%",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                    }}
+                >
+                    <View style={{ flex: 1 }}>
+                        <Text
+                            className={textStyles.section}
+                            style={{ color: colors.text }}
+                        >
+                            Logout
+                        </Text>
+                        <Text
+                            className={textStyles.small}
+                            numberOfLines={1}
+                            style={{ color: colors.secondaryText }}
+                        >
+                            Sign out of this device
+                        </Text>
+                    </View>
+                    <LogOutIcon color={colors.button} />
+                </View>
             </Button>
 
             <Button
                 onPress={handleDeletePress}
-                style={{
-                    width: 300,
-                    height: 60,
-                    flexDirection: "row",
-                    gap: 10,
-                    backgroundColor: colors.card,
+                style={{ 
+                    width: "100%",
+                    height: 95,
+                    borderRadius: 20,
+                    paddingHorizontal: 16,
+                    justifyContent: "center",
+                    alignItems: "flex-start",
                 }}
-                background={true}
             >
-                <Text
-                    className={textStyles.h3}
+                <View 
                     style={{
-                        color: colors.danger,
+                        width: "100%",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
                     }}
                 >
-                    Delete Account
-                </Text>
-
-                <DeleteIcon color={colors.danger} />
+                    <View style={{ flex: 1 }}>
+                        <Text
+                            className={textStyles.section}
+                            style={{ color: colors.text }}
+                        >
+                            Delete Account
+                        </Text>
+                        <Text
+                            className={textStyles.small}
+                            numberOfLines={1}
+                            style={{ color: colors.secondaryText }}
+                        >
+                            Deactivate and permanently delete your account
+                        </Text>
+                    </View>
+                    <DeleteIcon color={colors.danger} />
+                </View>
             </Button>
 
         </View>

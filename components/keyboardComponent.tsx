@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Keyboard, Platform } from "react-native";
 
 export function useKeyboardHeight(
@@ -35,4 +35,12 @@ export function useKeyboardHeight(
     }, []);
 
   return { keyboardHeight, isKeyboardVisible };
+};
+
+export function useKeyboardDismiss() {
+    const dismissKeyboard = useCallback(() => {
+        Keyboard.dismiss();
+    }, []);
+
+    return dismissKeyboard;
 }

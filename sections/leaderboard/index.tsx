@@ -2,11 +2,9 @@ import { Button } from "@/components/ButtonComponent";
 import { get_leaderboard, LeaderboardEntry, useLeaderboardListener } from "@/api/leaderboard.socket";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
-import { Animated, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Animated, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import LeaderboardPodium from "../../utils/3Dblock";
-import { SpinningLogoImage } from "@/utils/Logo";
 import { AvatarRender, LevelRender, BreadRender, BadgeRender } from "@/dashboard/Avatar";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useUser } from "@/stores/useUser";
 import { BadgeLevel, BOTTOM_INSETS, BOTTOM_SNAP_POINTS } from "@/types";
 import { useFeed } from "@/stores/useFeed";
@@ -91,17 +89,25 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
         }
     }, [isFocused]);
 
+    const isOpeningProfileRef = useRef(false);
     const openProfile = async (sub?: string) => {
-        await setActiveProfile(undefined, sub);
+        if (isOpeningProfileRef.current) return;
+        isOpeningProfileRef.current = true;
 
-        openSlidingOverlay(
-            <FeedProfile
-                onClose={() => {
-                    closeSlidingOverlay();
-                    clearActiveProfile();
-                }}
-            />
-        );
+        try {
+            await setActiveProfile(undefined, sub);
+
+            openSlidingOverlay(
+                <FeedProfile
+                    onClose={() => {
+                        closeSlidingOverlay();
+                        clearActiveProfile();
+                    }}
+                />
+            );
+        } finally {
+            isOpeningProfileRef.current = false;
+        }
     };
 
     const PAGE_SIZE = 20;
@@ -156,7 +162,9 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
     };
 
     const ListHeader = useMemo(() => (
-        <>
+        
+        <TouchableOpacity activeOpacity={1}>
+
             <View style={{ height: 125, marginHorizontal: 10, paddingHorizontal: 25, gap: 8 }} className="justify-center">
 
                 <View style={{ flexDirection: "row", position: "relative", height: 40 }}>
@@ -205,13 +213,14 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
 
             </View>
 
-            <View pointerEvents="box-none" style={{ height: 300, gap: 1, flexDirection: "row", paddingHorizontal: 10 }} className="w-full justify-center">
+            <TouchableOpacity activeOpacity={1} style={{ height: 300, gap: 1, flexDirection: "row", paddingHorizontal: 10 }} className="w-full justify-center">
                 <PodiumSpot entry={top3[1]} rank={2} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[1]?.sub)} />
                 <PodiumSpot entry={top3[0]} rank={1} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[0]?.sub)} />
                 <PodiumSpot entry={top3[2]} rank={3} colors={colors} textStyles={textStyles} onPress={() => openProfile(top3[2]?.sub)} />
-            </View>
-        </>
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+            </TouchableOpacity>
+
+        </TouchableOpacity>
+    
     ), [user, progress, top3, colors, textStyles]);
 
     if (loading) {
@@ -243,7 +252,8 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
                 contentContainerStyle={{ paddingBottom: BOTTOM_INSETS  }}
                 keyExtractor={(item) => item.sub}
                 renderItem={({ item }) => (
-                    <View
+                    <TouchableOpacity 
+                        activeOpacity={1} 
                         style={{
                             height: 100,
                             flexDirection: "row",
@@ -267,7 +277,7 @@ const Leaderboard: React.FC<{ isFocused?: boolean }> = ({ isFocused }) => {
                             <Text numberOfLines={1} ellipsizeMode="tail" className={textStyles.bodyMedium}>{item.profile_name}</Text>
                             <BreadRender bread={item.bread} size={50} />
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 )}
             />
 

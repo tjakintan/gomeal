@@ -6,13 +6,11 @@ import {
   StepData,
   DietaryData,
   NutritionData,
-  MediaType,
   defaultDietaryData,
   Unit,
 } from "@/types/food.types";
 import { uploadMediaToS3, submitPost } from "@/api/post.api";
-import { useProfile } from "./useProfile";
-
+import { ImageMediaType } from "@/types/media.types";
 const normalizeIngredientName = (name: string) => {
   return name
     .trim()
@@ -31,9 +29,12 @@ type PostState = {
   
   loading: boolean;
 
-  setMedia: (media: string | null, mediaType?: MediaType| null) => void;
+  setMedia: (media: string | null, mediaType?: ImageMediaType | null, durationSeconds?: number | null) => void;
   setInfo: (info: DishInfoData) => void;
+
+  addIngredient: (ingredient?: Partial<Ingredient>) => void;
   setIngredients: (ingredients: Ingredient[]) => void;
+
   setSteps: (steps: StepData[]) => void;
   setDietary: (dietary: DietaryData) => void;
   setNutrition: (nutrition: NutritionData) => void;
@@ -54,6 +55,7 @@ export const usePost = create<PostState>((set, get) => ({
     dish_name: "",
     dish_description: "",
     dish_difficulty: "",
+    dish_media_duration: null,
   },
   ingredients: [],
   steps: [],
@@ -74,16 +76,41 @@ export const usePost = create<PostState>((set, get) => ({
   },
 
   loading: false,
-  setMedia: (media, mediaType = null) => set({
+  
+  setMedia: (media, mediaType = null, durationSeconds = null) => set({
     info: {
       ...get().info,
       dish_media_url: media ?? "",
-      dish_media_type: mediaType ?? null,  
+      dish_media_type: mediaType ?? null,
+      dish_media_duration: mediaType === "video" ? durationSeconds : null,
     }
   }),
 
   setInfo: (info) => set({ info }),
+
   setIngredients: (ingredients) => set({ ingredients }),
+
+  addIngredient: (ingredient) => set((state) => {
+    if (ingredient?.id && state.ingredients.some((ing) => ing.id === ingredient.id)) {
+      return {};
+    }
+
+    const name = ingredient?.name ?? "";
+    const newIngredient: Ingredient = {
+      name,
+      normalized_name: ingredient?.normalized_name ?? normalizeIngredientName(name),
+      quantity: "",
+      unit: "" as Unit,
+      source: "",
+      category: "",
+      id: null,
+      media_url: null,
+      ...ingredient,
+    };
+
+    return { ingredients: [newIngredient, ...state.ingredients] };
+  }),
+
   setSteps: (steps) => set({ steps }),
   setDietary: (dietary) => set({ dietary }),
   setNutrition: (nutrition) => set({ nutrition }),
@@ -98,6 +125,10 @@ export const usePost = create<PostState>((set, get) => ({
       difficulty: state.info.dish_difficulty,
       image_url: state.info.dish_media_url,
       media_type: state.info.dish_media_type,
+      media_duration:
+        state.info.dish_media_type === "video" && state.info.dish_media_duration
+          ? Math.max(1, Math.round(state.info.dish_media_duration))
+          : null,
       ingredients: state.ingredients.map((ingredient) => ({
         ...ingredient,
         normalized_name:
@@ -145,21 +176,44 @@ export const usePost = create<PostState>((set, get) => ({
     try {
       const state = get();
 
-      // -- upload main dish media if it's a local URI (not already an S3 URL)
+      // -- upload main dish media if it's a local URI
+      //    (not already an S3 URL)
       let dish_media_url = state.info.dish_media_url;
-      if (dish_media_url && !dish_media_url.startsWith("https://")) {
-        const mediaType = state.info.dish_media_type!;
-        dish_media_url = await uploadMediaToS3(dish_media_url, mediaType, mediaType === "video" ? "posts/videos" : "posts/images");
+
+      if (
+          dish_media_url &&
+          !dish_media_url.startsWith("https://")
+      ) {
+          const mediaType = state.info.dish_media_type!;
+
+          dish_media_url = await uploadMediaToS3(
+              dish_media_url,
+              mediaType,
+              mediaType === "video"
+                  ? "post_video"
+                  : "post_image"
+          );
       }
 
-      // upload step media
+      // -- upload step media
       const uploadedSteps = await Promise.all(
-        state.steps.map(async (step) => {
-          const image_url = step.image_url && !step.image_url.startsWith("https://")
-            ? await uploadMediaToS3(step.image_url, "image", "posts/steps")
-            : step.image_url ?? "";
-          return { ...step, image_url };
-        })
+          state.steps.map(async (step) => {
+
+              const image_url =
+                  step.image_url &&
+                  !step.image_url.startsWith("https://")
+                      ? await uploadMediaToS3(
+                          step.image_url,
+                          "image",
+                          "post_step"
+                      )
+                      : step.image_url ?? "";
+
+              return {
+                  ...step,
+                  image_url,
+              };
+          })
       );
 
       // --updated states with s3 URLs before building payload
@@ -192,6 +246,7 @@ export const usePost = create<PostState>((set, get) => ({
         dish_media_file: null,
         dish_media_url: "",
         dish_media_type: null,
+        dish_media_duration: null,
         dish_name: "",
         dish_description: "",
         dish_difficulty: "",
@@ -218,30 +273,12 @@ export const usePost = create<PostState>((set, get) => ({
 
 }));
 
+
 export const usePostIngredient = () => {
 
   const ingredients = usePost((state) => state.ingredients);
+  const addIngredient = usePost((state) => state.addIngredient); // now just the store action
   const setIngredients = usePost((state) => state.setIngredients);
-
-  const addIngredient = (ingredient?: Partial<Ingredient>) => {
-    
-    if (ingredient?.id && ingredients.some((ing) => ing.id === ingredient.id)) return;
-    const name = ingredient?.name ?? "";
-    const newIngredient = {
-      name,
-      normalized_name: ingredient?.normalized_name ?? normalizeIngredientName(name),
-      quantity: "",
-      unit: "" as Unit,
-      source: "",
-      category: "",
-      id: null,
-      media_url: null,
-      ...ingredient,
-    };
-    
-    setIngredients([newIngredient, ...ingredients]);
-
-  };
 
   const updateIngredient = (
     index: number,
@@ -250,27 +287,20 @@ export const usePostIngredient = () => {
   ) => {
     const updated = ingredients.map((ing, i) => {
       if (i !== index) return ing;
-
       const next = { ...ing, [field]: value };
-
       if (field === "name") {
         next.normalized_name = normalizeIngredientName(String(value ?? ""));
       }
-
       return next;
     });
-
     setIngredients(updated);
   };
 
   const removeIngredient = (index: number) => {
-    const updated = ingredients.filter((_, i) => i !== index);
-    setIngredients(updated);
+    setIngredients(ingredients.filter((_, i) => i !== index));
   };
 
-  const clearIngredients = () => {
-    setIngredients([]);
-  };
+  const clearIngredients = () => setIngredients([]);
 
   return {
     ingredients,
@@ -280,6 +310,7 @@ export const usePostIngredient = () => {
     clearIngredients,
   };
 };
+
 
 export const usePostSteps = () => {
   const steps = usePost((state) => state.steps);
@@ -352,14 +383,21 @@ export const usePostSteps = () => {
 };
 
 export const usePostDietary = () => {
-
   const dietary = usePost((state) => state.dietary);
   const setDietary = usePost((state) => state.setDietary);
 
-  const toggleDiet = (key: keyof DietaryData) => {
-    if (typeof dietary[key] !== "boolean") return;
+  const currentDietary = dietary ?? defaultDietaryData;
 
-    const newState = { ...dietary, [key]: !dietary[key] } as DietaryData;
+  const toggleDiet = (key: keyof DietaryData) => {
+    const value = currentDietary[key];
+
+    // "other" is a string, so don't toggle it
+    if (typeof value !== "boolean") return;
+
+    const newState: DietaryData = {
+      ...currentDietary,
+      [key]: !value,
+    };
 
     if (key === "vegan" && newState.vegan) {
       newState.vegetarian = true;
@@ -367,15 +405,21 @@ export const usePostDietary = () => {
     }
 
     if (newState.vegetarian && newState.pescatarian) {
-      if (key === "vegetarian") newState.pescatarian = false;
-      else if (key === "pescatarian") newState.vegetarian = false;
+      if (key === "vegetarian") {
+        newState.pescatarian = false;
+      } else if (key === "pescatarian") {
+        newState.vegetarian = false;
+      }
     }
 
     setDietary(newState);
   };
 
   const setOther = (value: string) => {
-    setDietary({ ...dietary, other: value });
+    setDietary({
+      ...currentDietary,
+      other: value,
+    });
   };
 
   const clearDietary = () => {
@@ -383,7 +427,7 @@ export const usePostDietary = () => {
   };
 
   return {
-    dietary,
+    dietary: currentDietary,
     toggleDiet,
     setOther,
     clearDietary,

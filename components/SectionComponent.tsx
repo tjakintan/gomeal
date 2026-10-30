@@ -37,33 +37,44 @@ export const SectionHeader = ({
   children,
 }: SectionHeaderProps) => {
 
-  const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
+  const { colors, textStyles } = useTheme(
+    dark ? "dark" : undefined
+  );
 
   return (
     <View
       style={[
         {
-          width: "100%",
+          flexShrink: 1,
+          minWidth: 0,
           paddingHorizontal: 8,
           paddingVertical: 4,
-          ...style,
-        }
+        },
+        style,
       ]}
     >
       <View
         style={{
           width: "100%",
+          flexShrink: 1,
           flexDirection: "row",
           alignItems: "center",
           gap: 12,
+          minWidth: 0,
         }}
       >
-        {leftIcon && <Button onPress={onIconPress}>{leftIcon}</Button>}
+        {leftIcon && (
+          <Button onPress={onIconPress}>
+            {leftIcon}
+          </Button>
+        )}
 
         {(title || children) && (
           <View
             style={[
               {
+                minWidth: 0,
+                maxWidth: "100%",
                 flexShrink: 1,
                 alignItems: "flex-start",
               },
@@ -79,8 +90,16 @@ export const SectionHeader = ({
           >
             {title && (
               <Text
-                style={[{ color: colors.text }, titleStyle]}
-                className={`${textStyles.h1} ${titleClassName ?? ""}`}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[
+                  {
+                    color: colors.text,
+                    flexShrink: 1,
+                  },
+                  titleStyle,
+                ]}
+                className={titleClassName ?? textStyles.section}
               >
                 {title}
               </Text>
@@ -90,21 +109,28 @@ export const SectionHeader = ({
           </View>
         )}
 
-        <View style={{ flex: 1 }} />
+        <View style={{ flex: 1, minWidth: 0 }} />
 
-        {rightIcon && <Button onPress={onIconPress}>{rightIcon}</Button>}
+        {rightIcon && (
+          <Button onPress={onIconPress}>
+            {rightIcon}
+          </Button>
+        )}
       </View>
 
       {subtitle && (
         <Text
+          numberOfLines={2}
+          ellipsizeMode="tail"
           style={[
             {
               marginTop: title || leftIcon ? 6 : 0,
               color: colors.secondaryText,
+              flexShrink: 1,
             },
             subtitleStyle,
           ]}
-          //className={`${textStyles.small} ${subtitleClassName ?? ""}`}
+          className={subtitleClassName}
         >
           {subtitle}
         </Text>
@@ -115,7 +141,6 @@ export const SectionHeader = ({
           style={{
             width: "100%",
             height: 1,
-            marginTop: 8,
             backgroundColor: colors.secondaryCard,
           }}
         />
@@ -123,4 +148,3 @@ export const SectionHeader = ({
     </View>
   );
 };
-

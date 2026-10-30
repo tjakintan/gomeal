@@ -9,7 +9,6 @@ export async function get_search_api(query: string): Promise<{users?: MinimumPro
         method: "GET",
     });
 
-    console.log(response)
     return response;
 };
 

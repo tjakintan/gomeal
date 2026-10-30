@@ -1,4 +1,5 @@
 import ExpoModulesCore
+import UIKit
 
 public class NativeTabBarModule: Module {
     public func definition() -> ModuleDefinition {
@@ -8,29 +9,27 @@ public class NativeTabBarModule: Module {
             Events("onTabPress")
 
             Prop("selectedIndex") { (view: NativeTabBarView, index: Int) in
-                guard let items = view.tabBar.items,
-                      index >= 0,
-                      index < items.count else {
-                    return
-                }
+                view.updateSelection(index)
+            }
 
-                view.tabBar.selectedItem = items[index]
+            Prop("activeColor") { (view: NativeTabBarView, color: String?) in
+                view.setActiveColor(color)
+            }
+
+            Prop("badgeColor") { (view: NativeTabBarView, color: String?) in
+                view.setBadgeColor(color)
+            }
+
+            Prop("badgeTextColor") { (view: NativeTabBarView, color: String?) in
+                view.setBadgeTextColor(color)
+            }
+
+            Prop("badgeBorderColor") { (view: NativeTabBarView, color: String?) in
+                view.setBadgeBorderColor(color)
             }
 
             Prop("items") { (view: NativeTabBarView, items: [[String: String]]) in
-                let tabItems = items.enumerated().map { index, item in
-                    UITabBarItem(
-                        title: item["title"] ?? "",
-                        image: nil,
-                        tag: index
-                    )
-                }
-
-                view.tabBar.setItems(tabItems, animated: false)
-
-                if !tabItems.isEmpty {
-                    view.tabBar.selectedItem = tabItems[0]
-                }
+                view.setItems(items)
             }
         }
     }

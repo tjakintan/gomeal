@@ -29,6 +29,7 @@ const defaultSettings: Settings = {
     likes: true,
     messages: true,
     cook: true,
+    stars: true,
     cookingReminderTime: "08:00",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   },

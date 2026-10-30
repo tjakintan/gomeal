@@ -1,7 +1,3 @@
-//
-//  GoMealLiveActivityAttributes.swift
-//  GoMeal
-//
 import ActivityKit
 import Foundation
 
@@ -30,11 +26,22 @@ struct GoMealLiveActivityAttributes: ActivityAttributes {
     var dish_name: String
     var step_total: Int
     var steps_json: String
+    var profile_name: String
+    var profile_img_url: String?
 
-    public init(dish_name: String, step_total: Int, post_id: String, steps_json: String = "[]") {
+    public init(
+        dish_name: String,
+        step_total: Int,
+        post_id: String,
+        steps_json: String = "[]",
+        profile_name: String = "",
+        profile_img_url: String? = nil
+    ) {
         self.dish_name = dish_name
         self.step_total = step_total
         self.post_id = post_id
         self.steps_json = steps_json
+        self.profile_name = profile_name
+        self.profile_img_url = profile_img_url
     }
 }

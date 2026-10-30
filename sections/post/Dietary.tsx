@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "@/provider/ThemeProvider";
 import { usePostDietary } from "@/stores/usePost";
 import { ToggleButton } from "@/components/ButtonComponent";
@@ -8,19 +8,22 @@ import { PostSectionInfoProps } from "@/types";
 import { dietaryDescriptions, dietaryIcons } from "@/types";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SectionHeader } from "@/components/SectionComponent";
+import { POST_MENU_HEIGHT } from ".";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const diets = Object.keys(dietaryDescriptions) as (keyof typeof dietaryDescriptions)[];
+const Dietary: React.FC<PostSectionInfoProps> = () => {
 
-const Dietary: React.FC<PostSectionInfoProps> = ({
-    isFocused,
-    onCompleteChange,
-}) => {
+    const diets = useMemo(
+        () => Object.keys(dietaryDescriptions ?? {}) as (keyof typeof dietaryDescriptions)[],
+        []
+    );
 
+    const insets =useSafeAreaInsets()
     const { colors, textStyles } = useTheme();
     const { dietary, toggleDiet, setOther } = usePostDietary();
     
     return (
-        <View className="flex-1 flex-col p-2 gap-1">
+        <View className="flex-1 flex-col px-2 gap-1">
 
             <SectionHeader
                 title="Dietary"
@@ -30,6 +33,10 @@ const Dietary: React.FC<PostSectionInfoProps> = ({
             
             <ScrollView
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                    paddingBottom: POST_MENU_HEIGHT + insets.bottom
+                }}
+
             >
                 {diets.map((key, index) => {
                     const isOther = key === "other";

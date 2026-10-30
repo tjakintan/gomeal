@@ -104,12 +104,18 @@ export async function setFeedActionCount(post_id: number, action: FeedActionType
             post_cook: 0,
             post_star: 0,
             post_share: 0,
+            post_view: 0,
         };
     }
 
     return res.counts;
 
 };
+
+export async function markPostSeen(post_id: number): Promise<FeedActionCountsTypes | null> {
+    const res = await socketEmit<{ counts?: FeedActionCountsTypes }>("mark-post-seen", { post_id });
+    return res?.counts ?? null;
+}
 
 export async function fetchFeedProfileCard(input: FetchFeedProfileCardParams): Promise<FeedProfileCard> {
   

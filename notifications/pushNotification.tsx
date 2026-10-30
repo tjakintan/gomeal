@@ -1,14 +1,18 @@
-import { Platform } from "react-native";
+import { AppState, AppStateStatus, Image, Platform } from "react-native";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-import { socketEmit } from "@/api/socket";
+import { getSocket, socketEmit } from "@/api/socket";
 import { useMessage } from "@/stores/useMessage";
 
 import { useCook } from "@/stores/useCook";
 import { useSlidingOverlay } from "@/stores/useSlideOverlay";
 import { CookMainScreen } from "@/sections/cook";
 import MessageScreen from "@/sections/messages/messages";
+import { openCookOverlay } from "@/sections/cook/openCook";
+import { useEffect } from "react";
+import { useBannerStore } from "@/stores/useBanner";
+import { MessageIcon } from "@/icons/Icon";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -18,6 +22,103 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+
+export async function syncBadgeCount(count: number) {
+  try {
+    await Notifications.setBadgeCountAsync(Math.max(0, count));
+  } catch (e) {
+    console.warn("setBadgeCountAsync failed", e);
+  }
+};
+
+//report app state
+export const useAppStateReporter = () => {
+    useEffect(() => {
+        let mounted = true;
+        const report = (state: AppStateStatus) =>
+            socketEmit("app-state", { state }).catch(() => {});
+
+        report(AppState.currentState);
+        const sub = AppState.addEventListener("change", report);
+
+        let off: (() => void) | undefined;
+        getSocket().then((sock) => {
+            if (!mounted) return;
+            const onConnect = () => report(AppState.currentState);
+            sock.on("connect", onConnect);
+            off = () => sock.off("connect", onConnect);
+        });
+
+        return () => {
+            mounted = false;
+            sub.remove();
+            off?.();
+        };
+    }, []);
+};
+
+const bannerBody = (type: string, content: string, count: number): string => {
+    switch (type) {
+        case "text":
+            return content;
+        case "image":
+            return count > 1 ? `Sent you ${count} images` : "Sent you an image";
+        case "video":
+            return count > 1 ? `Sent you ${count} videos` : "Sent you a video";
+        case "gif":
+            return "Sent you a GIF";
+        case "voice":
+            return "Sent you a voice message";
+        case "file":
+            return count > 1 ? `Sent you ${count} files` : "Sent you a file";
+        case "link":
+          return "Sent you a link"
+        default:
+            return "Sent you a message";
+    }
+};
+
+type MessageBannerPayload = {
+    conversation_id: number;
+    title: string;
+    message_type: string;
+    content: string;
+    count: number;
+    profile_image_url: string | null;
+};
+
+export const useMessageBannerListener = () => {
+    useEffect(() => {
+        let mounted = true;
+        let off: (() => void) | undefined;
+
+        getSocket().then((sock) => {
+            if (!mounted) return;
+
+            const handler = (p: MessageBannerPayload) => {
+                if (useMessage.getState().viewingConversationId === p.conversation_id) return;
+
+                useBannerStore.getState().showCustom({
+                    icon: p.profile_image_url
+                        ? <Image source={{ uri: p.profile_image_url }} style={{ width: 36, height: 36, borderRadius: 18 }} />
+                        : <MessageIcon size={24} color="#888" />,
+                    title: p.title,
+                    text: bannerBody(p.message_type, p.content, p.count),
+                    onPress: () => handleMessageNotification(p.conversation_id),
+                });
+            };
+
+            sock.on("message-sent-in-app", handler);
+            off = () => sock.off("message-banner", handler);
+        });
+
+        return () => {
+            mounted = false;
+            off?.();
+        };
+    }, []);
+};
 
 export async function requestPushNotificationPermission() {
     const existing = await Notifications.getPermissionsAsync();
@@ -116,20 +217,15 @@ async function handleMessageNotification(conversation_id: number) {
   );
 }
 
-async function handleTrendingPost(post_id: number) {
-  useCook.getState().openCook(post_id)
-  useSlidingOverlay.getState().openSlidingOverlay(
-    <CookMainScreen 
-      post_id={Number(post_id)} 
-      onClose={() => useSlidingOverlay.getState().closeSlidingOverlay()}
-    />
-  );
-}
+
+async function handleNotiPost(post_id: number) { openCookOverlay(post_id); }
+
+
 // Called at module load time — before any component mounts
 export function initNotificationListener() {
   // Live listener — fires when the user taps a notification
   // (app foregrounded, backgrounded, or just launched from a tap)
-  Notifications.addNotificationResponseReceivedListener((response) => {
+  const sub = Notifications.addNotificationResponseReceivedListener((response) => {
     const data = resolveNotificationData(response.notification.request);
     const { type, conversation_id, post_id } = data;
 
@@ -140,7 +236,11 @@ export function initNotificationListener() {
     }
 
     if (type === "trending_post" && post_id) {
-      handleTrendingPost(Number(post_id));
+      handleNotiPost(Number(post_id));
+    }
+
+    if (type === "recommended_post" && post_id) {
+      handleNotiPost(Number(post_id));
     }
 
     dismissNotification(response.notification.request.identifier);
@@ -162,12 +262,18 @@ export function initNotificationListener() {
     }
 
     if (type === "trending_post" && post_id) {
-      handleTrendingPost(Number(post_id));
+      handleNotiPost(Number(post_id));
+    }
+
+    if (type === "recommended_post" && post_id) {
+      handleNotiPost(Number(post_id));
     }
 
     dismissNotification(response.notification.request.identifier);
 
   });
+
+  return () => sub.remove()
 }
 
 export async function dismissNotification(identifier?: string) {
@@ -179,7 +285,7 @@ export async function dismissNotification(identifier?: string) {
 }
 
 // Dismiss every currently-presented notification of a given `type`
-// (e.g. "message", "trending_post"), leaving other categories untouched.
+// (e.g. "message", "trending_post", "recommend_post"), leaving other categories untouched.
 export async function dismissNotificationsByType(type: string) {
   const presented = await Notifications.getPresentedNotificationsAsync();
 

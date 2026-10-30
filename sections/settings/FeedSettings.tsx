@@ -1,57 +1,99 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import React from "react";
 import { useSettingsStore } from "@/stores/useSettings";
 import { useTheme } from "@/provider/ThemeProvider";
-import { ACCENT_COLORS } from "@/types";
 import { ToggleButton } from "@/components/ButtonComponent";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { SectionHeader } from "@/components/SectionComponent";
 
 const FeedSettings: React.FC = () => {
-  const { colors, textStyles } = useTheme();
-  const updateFeed = useSettingsStore((state) => state.updateFeed);
-  const autoPlayVideos = useSettingsStore((state) => state.settings.feed.autoPlayVideos);
-  const allowFeedColors = useSettingsStore((state) => state.settings.feed.allowFeedColors);
+    const { textStyles } = useTheme();
 
-  return (
-    <View style={{ flex: 1, width: "100%" }} className="rounded-[30px] gap-1 p-1 overflow-hidden">
-      {/* edit auto play */}
-      <View className="flex-1 p-5 gap-2 overflow-hidden">
-        <SectionHeader
-          title="Auto-play"
-          showDivider
-          titleClassName={textStyles.section}
-        />
-        <View className="flex-row items-center mt-3">
-          <ToggleButton
-            value={autoPlayVideos}
-            onChange={(v) => updateFeed({ autoPlayVideos: v })}
-          />
-        </View>
-        <Text className={textStyles.small}>
-          Enable automatic playback of videos when they come into view.
-        </Text>
-      </View>
+    const updateFeed = useSettingsStore((state) => state.updateFeed);
+    const autoPlayVideos = useSettingsStore(
+        (state) => state.settings.feed.autoPlayVideos
+    );
+    const allowFeedColors = useSettingsStore(
+        (state) => state.settings.feed.allowFeedColors
+    );
 
-      {/* edit feed colors */}
-      <View className="flex-1 p-5 gap-2 overflow-hidden">
-        <SectionHeader
-          title="Feed Colors"
-          showDivider
-          titleClassName={textStyles.section}
-        />
-        <View className="flex-row items-center mt-3">
-          <ToggleButton
-            value={allowFeedColors}
-            onChange={(v) => updateFeed({ allowFeedColors: v })}
-          />
+    return (
+        <View
+            style={{
+                flex: 1,
+                width: "100%",
+                gap: 20,
+            }}
+        >
+            {/* Auto-play */}
+            <View style={{ gap: 12, overflow: "hidden" }}>
+                <SectionHeader
+                    title="Auto-play"
+                    subtitle="Enable automatic playback of videos when they come into view."
+                    showDivider
+                    titleClassName={textStyles.section}
+                />
+
+                <View style={{ paddingHorizontal: 10 }}>
+                    <View
+                        style={{
+                            minHeight: 55,
+                            paddingVertical: 8,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                        }}
+                    >
+                        <Text className={textStyles.body}>
+                            Auto-play videos
+                        </Text>
+
+                        <ToggleButton
+                            value={autoPlayVideos}
+                            onChange={(value) =>
+                                updateFeed({ autoPlayVideos: value })
+                            }
+                        />
+                    </View>
+                </View>
+            </View>
+
+            {/* Feed colors */}
+            <View style={{ gap: 12, overflow: "hidden" }}>
+                <SectionHeader
+                    title="Feed Colors"
+                    subtitle="Allow accent colors to appear throughout your feed."
+                    showDivider
+                    titleClassName={textStyles.section}
+                />
+
+                <View style={{ paddingHorizontal: 10 }}>
+                    <View
+                        style={{
+                            minHeight: 55,
+                            paddingVertical: 8,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                        }}
+                    >
+                        <Text className={textStyles.body}>
+                            Allow feed colors
+                        </Text>
+
+                        <ToggleButton
+                            value={allowFeedColors}
+                            onChange={(value) =>
+                                updateFeed({ allowFeedColors: value })
+                            }
+                        />
+                    </View>
+                </View>
+            </View>
         </View>
-        <Text className={textStyles.small}>
-          Allow accent colors to be shown throughout your feed.
-        </Text>
-      </View>
-    </View>
-  );
-}
+    );
+};
 
 export default FeedSettings;
+

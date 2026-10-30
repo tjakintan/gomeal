@@ -1,30 +1,27 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, Text, View } from "react-native";
-import GomealGlassView from "@/components/GlassComponent";
-import { AddIcon } from "@/icons/Icon";
+import { Animated, Easing, Keyboard, Pressable, Text, View } from "react-native";
+import { AddIcon, SearchIcon, NotificationIcon } from "@/icons/Icon";
 import { useTheme } from "@/provider/ThemeProvider";
 import { useUser } from "@/stores/useUser";
-import Bread from "./bread";
 import { BadgeRender, BreadRender, DynamicAvatarRenderer } from "./Avatar";
 import { useNotification } from "@/notifications/useNotification";
-import { useShowReward } from "./store/useReward";
 import { Button, Gesture } from "@/components/ButtonComponent";
-import { useSettingsStore } from "@/stores/useSettings";
 import Svg, { Circle } from "react-native-svg";
-import { useAvatarMood } from "./store/useAvatar";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useAvatarMood } from "../stores/useAvatar";
 import { capitalize } from "@/utils/text";
-import { useOverlay } from "@/stores/useOverlay";
 import { PostScreen } from "@/sections";
 import { useSlidingOverlay } from "@/stores/useSlideOverlay";
-import { useSlideUpOverlay } from "@/stores/useSlideUpOverlay";
 import NotificationScreen from "@/notifications/Notification";
+import  SearchMainScreen from "@/sections/feed/search";
+import { usePermissions } from "@/provider/PermissionProvider";
+
 
 type DashBoardProps = {
     dark?: any;
 };
 
-const ProgressCircle: React.FC<{
+
+export const ProgressCircle: React.FC<{
     size: number;
     strokeWidth: number;
     progress: number;
@@ -82,157 +79,69 @@ const ProgressCircle: React.FC<{
     );
 };
 
-const DashRewardAnim: React.FC<{ dark: boolean }> = ({ dark }) => {
 
-    const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
-
-    const [currentItem, setCurrentItem] = useState<{
-        label: string;
-        color: string;
-    } | null>(null);
-
-    const dequeueReward = useShowReward((s) => s.dequeueReward);
-    const queue = useShowReward((s) => s.queue);
-
-    const showRewardAnimY = useRef(new Animated.Value(-40)).current;
-    const isAnimating = useRef(false);
-    const dequeueRef = useRef(dequeueReward);
-
-    useEffect(() => {
-        dequeueRef.current = dequeueReward;
-    }, [dequeueReward]);
-
-    useEffect(() => {
-        const reward = queue[0];
-
-        if (queue.length === 0 || isAnimating.current || !reward) return;
-
-        const items = [
-        reward.xpDelta !== 0 && {
-            label: `${reward.xpDelta > 0 ? "+" : ""}${reward.xpDelta} XP`,
-            color: "red",
-        },
-        reward.breadDelta !== 0 && {
-            label: `+${reward.breadDelta}`,
-            color: "blue",
-        },
-        ].filter((item): item is { label: string; color: string } => Boolean(item));
-
-        if (items.length === 0) {
-        dequeueRef.current();
-        return;
-        }
-
-        isAnimating.current = true;
-
-        const animateItem = (index: number) => {
-        if (index >= items.length) {
-            isAnimating.current = false;
-            setCurrentItem(null);
-            dequeueRef.current();
-            return;
-        }
-
-        setCurrentItem(items[index]);
-        showRewardAnimY.setValue(24);
-
-        Animated.sequence([
-            Animated.timing(showRewardAnimY, {
-            toValue: 0,
-            duration: 260,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-            }),
-            Animated.delay(1400),
-            Animated.timing(showRewardAnimY, {
-            toValue: -24,
-            duration: 240,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-            }),
-        ]).start(() => animateItem(index + 1));
-        };
-
-        animateItem(0);
-    }, [queue, showRewardAnimY]);
-
-    if (!currentItem) return null;
-
-    return (
-        <Animated.View
-            style={{
-                transform: [{ translateY: showRewardAnimY }],
-            }}
-        >
-            <Text className={textStyles.h2} style={{ color: currentItem.color }}>
-                {currentItem.label}
-            </Text>
-        </Animated.View>
-    );
-
-};
-
-const DashNotificationCircle: React.FC<{
-  dark: boolean;
-}> = ({ dark }) => {
-
-    const { user } = useUser();
-    const setMood = useAvatarMood((s) => s.setMood);
-    
-    const XP_PER_LEVEL = Number(process.env.EXPO_PUBLIC_XP_PER_LEVEL);
-    const xpIntoCurrentLevel = user ? user.xp % XP_PER_LEVEL : 0;
-    const xpProgress = xpIntoCurrentLevel / XP_PER_LEVEL;
-
-    const { colors } = useTheme(dark ? "dark" : undefined);
+export const DashNotificationCircle: React.FC<{ dark: boolean }> = ({ dark }) => {
+    const { colors } = useTheme();
     const { unreadCount, markAllRead } = useNotification();
 
-    const prevCountRef = useRef(unreadCount);
-    const spinValue = useRef(new Animated.Value(0)).current;
-    const loopRef = useRef<Animated.CompositeAnimation | null>(null);
-    const [showDelivered, setShowDelivered] = useState(unreadCount > 0);
+    const badgeScale = useRef(new Animated.Value(0)).current;
+    const badgeOpacity = useRef(new Animated.Value(0)).current;
 
-    const openSlideUpOverlay = useSlideUpOverlay((s) => s.openSlideUpOverlay);
-    const closeSlideUpOverlay = useSlideUpOverlay((s) => s.closeSlideUpOverlay);
-
-    const spin = spinValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: ["0deg", "360deg"],
-    });
+    const openSlidingOverlay = useSlidingOverlay(
+        (s) => s.openSlidingOverlay
+    );
+    const closeSlidingOverlay = useSlidingOverlay(
+        (s) => s.closeSlidingOverlay
+    );
 
     useEffect(() => {
-        const hasUnread = unreadCount > 0;
-        const justIncreased = unreadCount > prevCountRef.current;
-        prevCountRef.current = unreadCount;
+        if (unreadCount > 0) {
+            badgeScale.setValue(0.4);
+            badgeOpacity.setValue(0);
 
-        setShowDelivered(hasUnread);
-
-        if (justIncreased) {
-            spinValue.setValue(0);
-            Animated.timing(spinValue, {
-                toValue: 1,
-                duration: 520,
-                easing: Easing.out(Easing.ease),
-                useNativeDriver: true,
-            }).start(() => {
-                spinValue.setValue(0); // reset so next arrival has somewhere to animate from
-            });
+            Animated.parallel([
+                Animated.spring(badgeScale, {
+                    toValue: 1,
+                    friction: 5,
+                    tension: 180,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(badgeOpacity, {
+                    toValue: 1,
+                    duration: 180,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        } else {
+            Animated.parallel([
+                Animated.timing(badgeScale, {
+                    toValue: 0,
+                    duration: 150,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(badgeOpacity, {
+                    toValue: 0,
+                    duration: 120,
+                    useNativeDriver: true,
+                }),
+            ]).start();
         }
-    }, [unreadCount, spinValue]);
-
-    // stop the loop on unmount, otherwise it keeps ticking against a dead component
-    useEffect(() => () => loopRef.current?.stop(), []);
+    }, [unreadCount, badgeScale, badgeOpacity]);
 
     const handlePress = useCallback(() => {
+        Keyboard.dismiss();
+        
         markAllRead();
-        openSlideUpOverlay(
+
+        openSlidingOverlay(
             <NotificationScreen
                 dark={dark}
                 onOpen={(open) => {
-                    if (!open) closeSlideUpOverlay();
+                    if (!open) closeSlidingOverlay();
                 }}
             />
         );
-    }, [markAllRead, openSlideUpOverlay, closeSlideUpOverlay, dark]);
+    }, [markAllRead, openSlidingOverlay, closeSlidingOverlay, dark]);
 
     return (
         <View
@@ -242,61 +151,11 @@ const DashNotificationCircle: React.FC<{
                 gap: 5,
             }}
         >
-            <View
-                style={{
-                    width: 75,
-                    height: 40,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden"
-                }}
+            <Button
+                style={{ padding: 0 }}
+                onPress={handlePress}
             >
-                <DashRewardAnim dark={dark} />
-            </View>
-            
-            <ProgressCircle
-                size={52}
-                strokeWidth={4}
-                progress={xpProgress}
-                color={colors.accent === "transparent" ? colors.button : colors.accent}
-                trackColor={colors.secondaryCard}
-            >
-                <Button
-                    style={{
-                        width: 40,
-                        height: 40,
-                        padding: 0,
-                        borderRadius: 999,
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        backgroundColor: colors.accent === "transparent" ? colors.button : colors.accent,
-                        overflow: "visible",
-                    }}
-                    onPress={() => setMood("confused", 3000)}
-                >
-                    <View
-                        style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 999,
-                            alignItems: "center",
-                            justifyContent: "flex-end",
-                            overflow: "hidden"
-                        }}
-                    >
-                    <DynamicAvatarRenderer size={35} />
-                    </View>
-                    <View style={{ position: "absolute", top: -4, right: -4 }}>
-                        <BadgeRender size={16} />
-                    </View>
-                </Button>
-            </ProgressCircle>
-
-            <DashPostButton dark={dark} />
-
-            <Button style={{ padding: 0, }} onPress={handlePress}>
-
-                <Animated.View
+                <View
                     style={{
                         width: 45,
                         height: 45,
@@ -306,33 +165,89 @@ const DashNotificationCircle: React.FC<{
                         justifyContent: "center",
                         backgroundColor: colors.background,
                         borderColor: colors.secondaryCard,
-                        transform: [{ rotateY: spin }],
+                        position: "relative",
                     }}
                 >
-                    
-                    <MaterialIcons
-                        name={showDelivered ? "notifications-active" : "notifications-none"}
-                        size={showDelivered ? 21 : 22}
+                    <NotificationIcon
+                        size={24}
                         color={colors.text}
                     />
 
-                </Animated.View>
-
+                    {unreadCount > 0 && (
+                        <Animated.View
+                            style={{
+                                position: "absolute",
+                                top: 3,
+                                right: 3,
+                                minWidth: 19,
+                                height: 19,
+                                paddingHorizontal: 4,
+                                borderRadius: 999,
+                                backgroundColor: colors.danger,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                opacity: badgeOpacity,
+                                transform: [
+                                    { scale: badgeScale },
+                                ],
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: "white",
+                                    fontSize: 10,
+                                    fontWeight: "800",
+                                    lineHeight: 12,
+                                    textAlign: "center",
+                                }}
+                                numberOfLines={1}
+                            >
+                                {unreadCount > 99 ? "99+" : unreadCount}
+                            </Text>
+                        </Animated.View>
+                    )}
+                </View>
             </Button>
-
         </View>
     );
 };
 
+
 const DashPostButton: React.FC<{ dark: boolean }> = ({ dark }) => {
-    const { colors } = useTheme(dark ? "dark" : undefined);
-    const openOverlay = useSlidingOverlay((s) => s.openSlidingOverlay);
+    const { colors } = useTheme();
+    const { requestPermissions } = usePermissions();
+
+    const openSlidingOverlay = useSlidingOverlay((s) => s.openSlidingOverlay);
+    const closeSlidingOverlay = useSlidingOverlay((s) => s.closeSlidingOverlay);
+
+    const openPostScreen = useCallback(() => {
+        openSlidingOverlay(
+            <PostScreen onClose={closeSlidingOverlay} />
+        );
+    }, [openSlidingOverlay, closeSlidingOverlay]);
 
     const handlePress = useCallback(() => {
-        openOverlay(
-            <PostScreen />
-        );
-    }, [openOverlay]);
+        Keyboard.dismiss();
+        requestPermissions({
+            permissions: ["camera", "microphone"],
+            title: "Allow GoMeal to access your camera",
+            description:
+                "Camera access lets you take meal photos and record cooking videos. Microphone access lets your videos include audio. You can change these permissions later in Settings.",
+            deniedDescription:
+                "Camera and/or microphone access has been disabled. Please enable Camera and Microphone access for GoMeal in Settings.",
+            onGranted: () => {
+                requestPermissions({
+                    permissions: ["mediaLibrary"],
+                    title: "Allow GoMeal to access your photos",
+                    description:
+                        "Photo Library access lets you choose meal photos and cooking videos to share. You can change this access later in Settings.",
+                    deniedDescription:
+                        "Photo Library access has been disabled. Enable Photos access for GoMeal in Settings to choose meal photos and cooking videos.",
+                    onGranted: openPostScreen,
+                });
+            },
+        });
+    }, [requestPermissions, openPostScreen]);
 
     return (
         <Button style={{ padding: 0 }} onPress={handlePress}>
@@ -352,13 +267,59 @@ const DashPostButton: React.FC<{ dark: boolean }> = ({ dark }) => {
     );
 };
 
-const DashBoard: React.FC<DashBoardProps> = ({ dark, }) => {
 
+const DashSearchButton: React.FC<{ dark: boolean }> = ({ dark }) => {
+
+    const { colors } = useTheme();
+
+    const openSlidingOverlay = useSlidingOverlay(
+        (s) => s.openSlidingOverlay
+    );
+
+    const closeSlidingOverlay = useSlidingOverlay(
+        (s) => s.closeSlidingOverlay
+    );
+
+    const handlePress = useCallback(() => {
+        Keyboard.dismiss();
+        openSlidingOverlay(
+            <SearchMainScreen
+                dark={dark}
+                onClose={closeSlidingOverlay}
+            />
+        );
+    }, [dark, openSlidingOverlay, closeSlidingOverlay]);
+
+    return (
+        <Button style={{ padding: 0 }} onPress={handlePress}>
+            <View
+                style={{
+                    width: 45,
+                    height: 45,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 2,
+                    borderColor: colors.secondaryCard,
+                }}
+            >
+                <SearchIcon color={colors.text} size={24} />
+            </View>
+        </Button>
+    );
+};
+
+
+const DashBoard: React.FC<DashBoardProps> = ({ dark }) => {
+
+    const { colors, textStyles } = useTheme();
+
+    const user = useUser((s) => s.user);
     const setMood = useAvatarMood((s) => s.setMood);
-    const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
-
-    const { user } = useUser();
-    const openOverlay = useOverlay((s) => s.openOverlay);
+    
+    const XP_PER_LEVEL = Number(process.env.EXPO_PUBLIC_XP_PER_LEVEL);
+    const xpIntoCurrentLevel = user ? user.xp % XP_PER_LEVEL : 0;
+    const xpProgress = xpIntoCurrentLevel / XP_PER_LEVEL;
 
     if (!user) return null;
 
@@ -373,7 +334,10 @@ const DashBoard: React.FC<DashBoardProps> = ({ dark, }) => {
         >
             <Gesture scaleAmount={1}>
                 <Pressable
-                    onPress={() => setMood("confused", 3000)}
+                    onPress={() => {
+                        Keyboard.dismiss();
+                        setMood("confused", 3000);
+                    }}
                     style={{ width: "100%" }}
                 >
                     <View
@@ -383,22 +347,23 @@ const DashBoard: React.FC<DashBoardProps> = ({ dark, }) => {
                             alignItems: "center",
                             justifyContent: "space-between",
                             overflow: "hidden",
+                            gap: 5,
                         }}
                     >
-                        <View style={{ flex: 1, gap: 5, minWidth: 0, justifyContent: "center" }}>
+                        <View style={{ flex: 1, minWidth: 0, justifyContent: "center" }}>
 
                             <View>
                                 <Text
-                                    className={textStyles.caption}
-                                    style={{ color: colors.text, opacity: 0.65 }}
+                                    className={textStyles.section}
+                                    style={{ color: colors.text }}
                                     numberOfLines={1}
                                 >
-                                    Hello,
+                                    Hello
                                 </Text>
 
                                 <Text
                                     className={textStyles.h3}
-                                    style={{ color: colors.text }}
+                                    style={{ color: colors.button }}
                                     numberOfLines={1}
                                 >
                                     {capitalize(user.firstName ?? " ")}
@@ -439,15 +404,60 @@ const DashBoard: React.FC<DashBoardProps> = ({ dark, }) => {
                             
                         </View>
 
+                        <ProgressCircle
+                            size={52}
+                            strokeWidth={4}
+                            progress={xpProgress}
+                            color={colors.accent === "transparent" ? colors.button : colors.accent}
+                            trackColor={colors.secondaryCard}
+                        >
+                            <Button
+                                style={{
+                                    width: 40,
+                                    height: 40,
+                                    padding: 0,
+                                    borderRadius: 999,
+                                    alignItems: "center",
+                                    justifyContent: "flex-end",
+                                    backgroundColor: colors.accent === "transparent" ? colors.button : colors.accent,
+                                    overflow: "visible",
+                                }}
+                                onPress={() => setMood("confused", 3000)}
+                            >
+                                <View
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 999,
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        overflow: "hidden"
+                                    }}
+                                >
+                                    <DynamicAvatarRenderer size={25} />
+                                </View>
+                                <View style={{ position: "absolute", top: -4, right: -4 }}>
+                                    <BadgeRender size={16} />
+                                </View>
+                            </Button>
+                        </ProgressCircle>
+
+                        <DashPostButton dark={dark} />
+
+                        <DashSearchButton dark={dark} />
+                        
                         <DashNotificationCircle dark={dark} />
 
                     </View>
+
                 </Pressable>
+
             </Gesture>
 
         </View>
     );
     
 };
+
 
 export default DashBoard;

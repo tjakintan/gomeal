@@ -11,7 +11,6 @@ import { limitLength } from "@/utils/text";
 
 const DishInfo: React.FC<PostSectionInfoProps> = ({
   isFocused,
-  onCompleteChange,
 }: PostSectionInfoProps) => {
   const info = usePost((state) => state.info);
   const setInfo = usePost((state) => state.setInfo);
@@ -24,21 +23,8 @@ const DishInfo: React.FC<PostSectionInfoProps> = ({
     });
   };
 
-  useEffect(() => {
-    const isComplete =
-      !!info.dish_name?.trim() &&
-      !!info.dish_description?.trim() &&
-      !!info.dish_difficulty?.trim();
-    onCompleteChange?.(isComplete);
-  }, [
-    info.dish_name,
-    info.dish_description,
-    info.dish_difficulty,
-    onCompleteChange,
-  ]);
-
   return (
-    <View className="flex-1 flex-col p-2 gap-3 justify-start">
+    <View className="flex-1 flex-col px-2 gap-3 justify-start">
       <SectionHeader
         title="Info"
         subtitle="Add a cool name, comment and difficulty."
@@ -65,7 +51,7 @@ const DishInfo: React.FC<PostSectionInfoProps> = ({
 
         <View className="w-full">
           <Text className={`font-inter-bold tracking-wider ${textStyles.bodyMedium}`}>
-            Comments
+            Description
           </Text>
           <Input
             value={info.dish_description}

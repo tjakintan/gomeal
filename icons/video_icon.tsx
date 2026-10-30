@@ -1,81 +1,92 @@
-import Svg, { Path, G, Line, Circle, Rect, Ellipse, Defs, LinearGradient, RadialGradient, Stop, Polyline} from "react-native-svg";
-import { Image } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { _DEFAULT_ICON_WIDTH, _DEFAULT_ICON_HEIGHT } from "@/types/layout.types";
 
-const iconHeight = _DEFAULT_ICON_HEIGHT
-const iconWidth = _DEFAULT_ICON_WIDTH
+const iconHeight = _DEFAULT_ICON_HEIGHT;
+const iconWidth = _DEFAULT_ICON_WIDTH;
 
-export const VideoPlayIcon = ({ color, size = iconWidth }: { color?: string; size?: number }) => {
+export const VideoPlayIcon = ({
+    color = "#000000",
+    size = iconWidth,
+}: {
+    color?: string;
+    size?: number;
+}) => {
     return (
-        <Svg width={size} height={size} viewBox="0 0 128 128">
-            <Path fill="#F77E00" d="M116.46 3.96h-104c-4.42 0-8 3.58-8 8v104c0 4.42 3.58 8 8 8h104c4.42 0 8-3.58 8-8v-104c0-4.42-3.58-8-8-8z" />
-            <Path fill="#FF9800" d="M110.16 3.96h-98.2a7.555 7.555 0 0 0-7.5 7.5v97.9c-.01 4.14 3.34 7.49 7.48 7.5h98.12c4.14.01 7.49-3.34 7.5-7.48V11.46c.09-4.05-3.13-7.41-7.18-7.5h-.22z" />
-            <Path fill="#FFBD52" d="M40.16 12.86c0-2.3-1.6-3-10.8-2.7c-7.7.3-11.5 1.2-13.8 4s-2.9 8.5-3 15.3c0 4.8 0 9.3 2.5 9.3c3.4 0 3.4-7.9 6.2-12.3c5.4-8.7 18.9-10.6 18.9-13.6z" opacity=".75" />
-            <Path fill="#FAFAFA" d="M43.7 62.21v-25.7a2.258 2.258 0 0 1 3.4-2l43.5 25.7c1.13.72 1.47 2.22.75 3.35c-.19.3-.45.55-.75.75l-43.5 25.6c-1.08.63-2.46.27-3.09-.81c-.21-.36-.32-.77-.31-1.19v-25.7z" />
+        <Svg
+            width={size}
+            height={size}
+            viewBox="0 0 256 256"
+            fill="none"
+        >
+            <Path
+                fill={color}
+                d="M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.65a16,16,0,0,1-16.2.3A15.86,15.86,0,0,1,64,216.13V39.87a15.86,15.86,0,0,1,8.12-13.82,16,16,0,0,1,16.2.3L232.4,114.49A15.74,15.74,0,0,1,240,128Z"
+            />
         </Svg>
     );
 };
 
-export const VideoPauseIcon = ({ color, size = iconWidth }: { color?: string; size?: number }) => {
+export const VideoPauseIcon = ({
+    color = "#000000",
+    size = iconWidth,
+}: {
+    color?: string;
+    size?: number;
+}) => {
     return (
-        <Svg width={size} height={size} viewBox="0 0 128 128">
-            <Path fill="#F77E00" d="M116.46 3.96h-104c-4.42 0-8 3.58-8 8v104c0 4.42 3.58 8 8 8h104c4.42 0 8-3.58 8-8v-104c0-4.42-3.58-8-8-8z" />
-            <Path fill="#FF9800" d="M110.16 3.96h-98.2a7.555 7.555 0 0 0-7.5 7.5v97.9c-.01 4.14 3.34 7.49 7.48 7.5h98.12c4.14.01 7.49-3.34 7.5-7.48V11.46c.09-4.05-3.13-7.41-7.18-7.5h-.22z" />
-            <Path fill="#FFBD52" d="M40.16 12.86c0-2.3-1.6-3-10.8-2.7c-7.7.3-11.5 1.2-13.8 4s-2.9 8.5-3 15.3c0 4.8 0 9.3 2.5 9.3c3.4 0 3.4-7.9 6.2-12.3c5.4-8.7 18.9-10.6 18.9-13.6z" opacity=".75" />
-            <Path fill="#FAFAFA" d="M54.46 91.96h-12c-1.1 0-2-.9-2-2v-52c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v52a2 2 0 0 1-2 2zm32 0h-12c-1.1 0-2-.9-2-2v-52c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v52a2 2 0 0 1-2 2z" />
+        <Svg
+            width={size}
+            height={size}
+            viewBox="0 0 256 256"
+            fill="none"
+        >
+            <Path
+                fill={color}
+                d="M216,48V208a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V48a16,16,0,0,1,16-16h40A16,16,0,0,1,216,48ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Z"
+            />
         </Svg>
     );
 };
 
-export const VideoUnMuteIcon = ({ color, size = iconWidth }: { color?: string; size?: number }) => {
+export const VideoUnMuteIcon = ({
+    color = "#000000",
+    size = iconWidth,
+}: {
+    color?: string;
+    size?: number;
+}) => {
     return (
-        <Svg width={size} height={size} viewBox="0 0 128 128">
-            {/* Background */}
-            <Path fill="#F77E00" d="M116.46 3.96h-104c-4.42 0-8 3.58-8 8v104c0 4.42 3.58 8 8 8h104c4.42 0 8-3.58 8-8v-104c0-4.42-3.58-8-8-8z" />
-            <Path fill="#FF9800" d="M110.16 3.96h-98.2a7.555 7.555 0 0 0-7.5 7.5v97.9c-.01 4.14 3.34 7.49 7.48 7.5h98.12c4.14.01 7.49-3.34 7.5-7.48V11.46c.09-4.05-3.13-7.41-7.18-7.5h-.22z" />
-            <Path fill="#FFBD52" d="M40.16 12.86c0-2.3-1.6-3-10.8-2.7c-7.7.3-11.5 1.2-13.8 4s-2.9 8.5-3 15.3c0 4.8 0 9.3 2.5 9.3c3.4 0 3.4-7.9 6.2-12.3c5.4-8.7 18.9-10.6 18.9-13.6z" opacity=".75" />
-
-            {/* Speaker */}
+        <Svg
+            width={size}
+            height={size}
+            viewBox="0 0 256 256"
+            fill="none"
+        >
             <Path
-                fill="#FAFAFA"
-                d="M45 54 L55 54 L68 44 L68 84 L55 74 L45 74 Z"
+                fill={color}
+                d="M168,32V224a8,8,0,0,1-12.91,6.31L85.25,176H40a16,16,0,0,1-16-16V96A16,16,0,0,1,40,80H85.25l69.84-54.31A8,8,0,0,1,168,32Zm32,64a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V104A8,8,0,0,0,200,96Zm32-16a8,8,0,0,0-8,8v80a8,8,0,0,0,16,0V88A8,8,0,0,0,232,80Z"
             />
-
-            {/* Mute X */}
-            <Line x1="74" y1="54" x2="90" y2="74" stroke="#FAFAFA" strokeWidth="6" strokeLinecap="round" />
-            <Line x1="90" y1="54" x2="74" y2="74" stroke="#FAFAFA" strokeWidth="6" strokeLinecap="round" />
         </Svg>
     );
 };
 
-export const VideoMuteIcon = ({ color, size = iconWidth }: { color?: string; size?: number }) => {
+export const VideoMuteIcon = ({
+    color = "#000000",
+    size = iconWidth,
+}: {
+    color?: string;
+    size?: number;
+}) => {
     return (
-        <Svg width={size} height={size} viewBox="0 0 128 128">
-            {/* Background */}
-            <Path fill="#F77E00" d="M116.46 3.96h-104c-4.42 0-8 3.58-8 8v104c0 4.42 3.58 8 8 8h104c4.42 0 8-3.58 8-8v-104c0-4.42-3.58-8-8-8z" />
-            <Path fill="#FF9800" d="M110.16 3.96h-98.2a7.555 7.555 0 0 0-7.5 7.5v97.9c-.01 4.14 3.34 7.49 7.48 7.5h98.12c4.14.01 7.49-3.34 7.5-7.48V11.46c.09-4.05-3.13-7.41-7.18-7.5h-.22z" />
-            <Path fill="#FFBD52" d="M40.16 12.86c0-2.3-1.6-3-10.8-2.7c-7.7.3-11.5 1.2-13.8 4s-2.9 8.5-3 15.3c0 4.8 0 9.3 2.5 9.3c3.4 0 3.4-7.9 6.2-12.3c5.4-8.7 18.9-10.6 18.9-13.6z" opacity=".75" />
-
-            {/* Speaker */}
+        <Svg
+            width={size}
+            height={size}
+            viewBox="0 0 256 256"
+            fill="none"
+        >
             <Path
-                fill="#FAFAFA"
-                d="M45 54 L55 54 L68 44 L68 84 L55 74 L45 74 Z"
-            />
-
-            {/* Sound waves */}
-            <Path
-                d="M74 58 Q82 64 74 70"
-                stroke="#FAFAFA"
-                strokeWidth="4"
-                fill="none"
-                strokeLinecap="round"
-            />
-            <Path
-                d="M80 52 Q92 64 80 76"
-                stroke="#FAFAFA"
-                strokeWidth="4"
-                fill="none"
-                strokeLinecap="round"
+                fill={color}
+                d="M221.92,210.62a8,8,0,1,1-11.84,10.76L168,175.09v48.6a8.29,8.29,0,0,1-3.91,7.18,8,8,0,0,1-9-.56L85.25,176H40a16,16,0,0,1-16-16V96A16,16,0,0,1,40,80H81.55L50.08,45.38A8,8,0,0,1,61.92,34.62ZM200.53,160a8.17,8.17,0,0,0,7.47-8.25V104.27A8.17,8.17,0,0,0,200.53,96a8,8,0,0,0-8.53,8v48A8,8,0,0,0,200.53,160ZM161,119.87a4,4,0,0,0,7-2.7V32.24a8.25,8.25,0,0,0-2.88-6.39,8,8,0,0,0-10-.16L111.83,59.33a4,4,0,0,0-.5,5.85ZM231.47,80A8.17,8.17,0,0,0,224,88.27v79.46a8.17,8.17,0,0,0,7.47,8.25,8,8,0,0,0,8.53-8V88A8,8,0,0,0,231.47,80Z"
             />
         </Svg>
     );

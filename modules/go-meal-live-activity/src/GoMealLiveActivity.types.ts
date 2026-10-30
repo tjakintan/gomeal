@@ -20,6 +20,8 @@ export type GoMealLiveActivityModuleType = {
         stepCurrent: number,
         stepDesc: string,
         stepsJson: string,
+        profileName: string,
+        profileImgUrl: string | null,
         timerEndsAt?: number,
         timerLabel?: string,
     ): Promise<void>;

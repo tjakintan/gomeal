@@ -16,22 +16,31 @@ import { SpinningLogoImage } from "@/utils/Logo";
 import { ACCENT_COLORS, BOTTOM_INSETS } from "@/types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GradientHeader } from "@/components/GradientComponent";
+import { usePostHog } from "posthog-react-native";
+import { useBanner } from "@/stores/useBanner";
+import { useSlidingOverlay } from "@/stores/useSlideOverlay";
+
+const MENU_HEIGHT = 65;
+
 
 export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme();
 
-    const [showBlockSection, setShowBlockSection] = useState(false);
-    const [showUpdateSection, setShowUpdateSection] = useState(false);
+    const { openSlidingOverlay, closeSlidingOverlay } = useSlidingOverlay();
 
-    if (showBlockSection) {
-        return <BlockSection onClose={() => setShowBlockSection(false)} />;
-    }
+    const handleOpenBlock = () => {
+        openSlidingOverlay(
+            <BlockSection onClose={closeSlidingOverlay} />,
+        );
+    };
 
-    if (showUpdateSection) {
-        return <UpdateSection onClose={() => setShowUpdateSection(false)} />;
-    }
+    const handleOpenUpdate = () => {
+        openSlidingOverlay(
+            <UpdateSection onClose={closeSlidingOverlay} />,
+        );
+    };
 
     return (
         <View
@@ -70,57 +79,85 @@ export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
                 }}
             >
                 <Button
-                    onPress={() => {setShowUpdateSection(true)}}
+                    onPress={handleOpenUpdate}
                     style={{
                         width: "100%",
                         height: 95,
                         borderRadius: 20,
-                        borderWidth: 2,
                         paddingHorizontal: 16,
-                        backgroundColor: colors.card,
-                        borderColor: colors.secondaryCard,
                         justifyContent: "center",
                         alignItems: "flex-start",
                     }}
                 >
-                    <Text className={textStyles.h3} style={{ color: colors.text }}>
-                        Update
-                    </Text>
-
-                    <Text
-                        className={textStyles.small}
-                        numberOfLines={1}
-                        style={{ color: colors.secondaryText }}
+                    <View
+                        style={{
+                            width: "100%",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                        }}
                     >
-                        Change your name, profile name and preferences
-                    </Text>
+                        <View style={{ flex: 1 }}>
+                            <Text
+                                className={textStyles.section}
+                                style={{ color: colors.text }}
+                            >
+                                Update
+                            </Text>
+
+                            <Text
+                                className={textStyles.small}
+                                numberOfLines={1}
+                                style={{ color: colors.secondaryText }}
+                            >
+                                Change your name, profile name and preferences
+                            </Text>
+                        </View>
+
+                        <EditIcon color={colors.text} />
+                    </View>
                 </Button>
 
                 <Button
-                    onPress={() => setShowBlockSection(true)}
+                    onPress={handleOpenBlock}
                     style={{
                         width: "100%",
                         height: 95,
                         borderRadius: 20,
-                        borderWidth: 2,
                         paddingHorizontal: 16,
-                        backgroundColor: colors.card,
-                        borderColor: colors.secondaryCard,
                         justifyContent: "center",
                         alignItems: "flex-start",
                     }}
                 >
-                    <Text className={textStyles.h3} style={{ color: colors.text }}>
-                        Blocked
-                    </Text>
-
-                    <Text
-                        className={textStyles.small}
-                        numberOfLines={1}
-                        style={{ color: colors.secondaryText }}
+                    <View
+                        style={{
+                            width: "100%",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                        }}
                     >
-                        Hidden users, muted content, and restrictions
-                    </Text>
+                        <View style={{ flex: 1 }}>
+                            <Text
+                                className={textStyles.section}
+                                style={{ color: colors.text }}
+                            >
+                                Blocked
+                            </Text>
+
+                            <Text
+                                className={textStyles.small}
+                                numberOfLines={1}
+                                style={{ color: colors.secondaryText }}
+                            >
+                                Hidden users, muted content, and restrictions
+                            </Text>
+                        </View>
+
+                        <PersonXIcon color={colors.text} />
+                    </View>
                 </Button>
             </View>
 
@@ -129,9 +166,11 @@ export const InfoMainScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
 
 };
 
-const MENU_HEIGHT = 65;
+
 const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
+    const banner = useBanner();
+    const posthog = usePostHog();
     const insets = useSafeAreaInsets();
     const { colors, textStyles } = useTheme();
 
@@ -142,7 +181,9 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         removeBlockedUser,
     } = useBlockUser();
 
-    const { loadFeed, loadReel, selectedScope } = useFeed()
+    const loadFeed = useFeed((state) => state.loadFeed);
+    const loadReel = useFeed((state) => state.loadReel);
+    const selectedScope = useFeed((state) => state.selectedScope);
 
     useEffect(() => {
         getBlockedUsers();
@@ -156,13 +197,13 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             }}
         >
             <GradientHeader
-                height={MENU_HEIGHT}
+                height={MENU_HEIGHT + 50}
                 baseColor={colors.background}
                 style={{
                     paddingTop: insets.top
                 }}
                 contentStyle={{
-                    height: MENU_HEIGHT,
+                    height: MENU_HEIGHT + 50,
                     paddingHorizontal: 20,
                     alignItems: "center",
                     flexDirection: "row",
@@ -174,14 +215,16 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
                 <SectionHeader
                     title="Blocked users"
+                    subtitle="Removing a blocked user will allow them to interact with you once more."
                     showBackground
+                    showDivider
                     titleClassName={textStyles.h3}
                     leftIcon={<PersonXIcon size={30} color={colors.button} />}
                 />
 
             </GradientHeader>
 
-            <View style={{ flex: 1, padding: 10, paddingTop: MENU_HEIGHT + insets.top }}>
+            <View style={{ flex: 1, padding: 10, paddingTop: MENU_HEIGHT + 50 + insets.top }}>
                 {loadingBlockedUsers ? (
                     <EmptyBlockSection />
                 ) : !blockedUsers.length ? (
@@ -220,7 +263,7 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
                                 <View style={{ flex: 1 }}>
                                     <Text
-                                        className={textStyles.bodyMedium}
+                                        className={textStyles.sectionText}
                                         numberOfLines={1}
                                         style={{ color: colors.text }}
                                     >
@@ -239,6 +282,8 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 <Button
                                     onPress={async () => {
                                         await removeBlockedUser(user.sub);
+                                        posthog.capture("[Trust] => user_unblocked", { target_sub: user.sub });
+                                        banner.success(`@${user.profile_name} has been unblocked.`)
                                         await Promise.all([
                                             loadFeed(undefined, selectedScope, false, true),
                                             loadReel(undefined, selectedScope, false, true),
@@ -250,9 +295,7 @@ const BlockSection: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                     }}
                                     background
                                 >
-                                    <Text
-                                        className={textStyles.caption}
-                                    >
+                                    <Text className={textStyles.body} style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
                                         Unblock
                                     </Text>
                                 </Button>

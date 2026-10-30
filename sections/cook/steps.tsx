@@ -7,11 +7,19 @@ import { Media } from "@/media/media";
 import { AppState, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { formatTimerDisplay, getTotalSeconds } from "@/utils/time";
 import { scheduleStepTimerNotification } from "@/notifications/pushNotification";
+import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useOverlay } from "@/stores/useOverlay";
+import MediaPreview from "@/media/MediaPreview";
+import Disclaimer from "@/components/DisclaimerComponent";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getReelReservedBottom } from "@/media/reelMedia";
+import { REEL_CONTROLS_HEIGHT } from "@/types/feed.types";
 
 type StepsScreenProps = {
   dark?: boolean;
   steps: StepData[];
   dishName: string; 
+  asSheet?: boolean;
 };
 
 const StepTimer: React.FC<{ 
@@ -139,12 +147,34 @@ const StepTimer: React.FC<{
     );
 };
 
-export const StepsScreen: React.FC<StepsScreenProps> = ({ dark, steps, dishName }) => {
+export const StepsScreen: React.FC<StepsScreenProps> = ({ asSheet, dark, steps, dishName }) => {
+
+  const insets = useSafeAreaInsets();
+
+  const reservedBottom = getReelReservedBottom(insets.bottom);
+
+  const List = asSheet ? BottomSheetScrollView : ScrollView;
 
   const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
+
   const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});
 
   const completedCount = steps.filter((step) => completedSteps[step.step_number]).length;
+
+  const openStepMedia = (imageUrl: string) => {
+    useOverlay.getState().openOverlay(
+      undefined,
+      <MediaPreview
+          dark={dark}
+          media={[
+              {
+                  uri: imageUrl,
+                  mediaType: "image",
+              },
+          ]}
+      />
+    );
+  };
 
   const toggleComplete = (stepNumber: number) => {
     setCompletedSteps((current) => ({
@@ -154,19 +184,25 @@ export const StepsScreen: React.FC<StepsScreenProps> = ({ dark, steps, dishName 
   };
 
   return (
-    <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: colors.background }}>
+    <View
+        style={{
+            flex: 1,
+            backgroundColor: colors.background,
+            gap: 5
+        }}
+    >
       <SectionHeader
         title="Steps"
-        subtitle={`${completedCount}/${steps.length} complete`}
+        subtitle={asSheet ? undefined :`${completedCount}/${steps.length} complete`}
         showBackground
         titleClassName={textStyles.bodyMedium}
         dark={dark}
         leftIcon={<StepsIcon color={colors.button} />}
       />
 
-      <ScrollView
+      <List
         style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 10, gap: 8 }}
+        contentContainerStyle={{ gap: 8, paddingBottom: reservedBottom - REEL_CONTROLS_HEIGHT }}
         showsVerticalScrollIndicator={false}
       >
         {steps.length === 0 ? (
@@ -187,8 +223,11 @@ export const StepsScreen: React.FC<StepsScreenProps> = ({ dark, steps, dishName 
                   flexDirection: "column",
                   gap: 10,
                   padding: 14,
+                  marginHorizontal: 10,
                   borderRadius: 14,
                   backgroundColor: isDone ? colors.secondaryCard : colors.background,
+                  borderWidth: asSheet ? 1 : 0,
+                  borderColor: colors.secondaryCard
                 }}
               >
 
@@ -201,6 +240,9 @@ export const StepsScreen: React.FC<StepsScreenProps> = ({ dark, steps, dishName 
                       height: 100,
                       borderRadius: 10,
                       opacity: isDone ? 0.4 : 1,
+                    }}
+                    onPress={() => {
+                      openStepMedia(step.image_url!);
                     }}
                     imageContentFit="cover"
                   />
@@ -252,12 +294,21 @@ export const StepsScreen: React.FC<StepsScreenProps> = ({ dark, steps, dishName 
                     {step.description}
                   </Text>
                 </View>
-
               </TouchableOpacity>
             );
           })
         )}
-      </ScrollView>
+        {asSheet && (
+            <Disclaimer
+                dark={dark}
+                title="FOOD SAFETY"
+                message="Always check ingredients for allergens and dietary restrictions, tap the more icon at the top right to learn more.
+                Use proper food handling and cooking techniques, and exercise caution
+                when using knives, utensils, ovens, or stoves."
+            />
+        )}
+      </List>
+
     </View>
   );
 };

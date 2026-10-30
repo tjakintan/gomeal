@@ -1,4 +1,5 @@
-import { View, Text } from "react-native";
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import { useSettingsStore } from "@/stores/useSettings";
 import { useTheme } from "@/provider/ThemeProvider";
 import { Button, ToggleButton } from "@/components/ButtonComponent";
@@ -6,7 +7,7 @@ import { SectionHeader } from "@/components/SectionComponent";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { update_notification_settings } from "@/notifications/notification.socket";
 import { Settings } from "@/types";
-import { useEffect } from "react";
+import { ScrollView } from "react-native-gesture-handler";
 
 const reminderOptions: { label: string; value: string }[] = [
     { label: "Breakfast", value: "08:00" },
@@ -24,17 +25,24 @@ const NotificationSettings: React.FC = () => {
     const likes = useSettingsStore(
         (state) => state.settings.notifications.likes
     );
+
     const messages = useSettingsStore(
         (state) => state.settings.notifications.messages
     );
+
     const cook = useSettingsStore(
         (state) => state.settings.notifications.cook
     );
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const stars = useSettingsStore(
+        (state) => state.settings.notifications.stars ?? true
+    );
+
     const cookingReminderTime = useSettingsStore(
         (state) => state.settings.notifications.cookingReminderTime
     );
 
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const reminderEnabled = cookingReminderTime !== null;
 
     const handleUpdateNotifications = async (
@@ -45,93 +53,169 @@ const NotificationSettings: React.FC = () => {
     };
 
     return (
-        <View
-            style={{ flex: 1, width: "100%" }}
-            className="rounded-[30px] gap-1 p-1 overflow-hidden"
+        <TouchableOpacity
+            activeOpacity={1}
+            style={{
+                width: "100%",
+                gap: 5,
+            }}
         >
-            <View className="flex-1 p-5 gap-2 overflow-hidden">
+            {/* Likes */}
+            <View style={{ gap: 5, overflow: "hidden" }}>
                 <SectionHeader
                     title="Likes"
+                    subtitle="Get notified when someone likes your recipes."
                     showDivider
                     titleClassName={textStyles.section}
                 />
 
-                <View className="flex-row items-center mt-3">
+                <View
+                    style={{
+                        minHeight: 55,
+                        paddingHorizontal: 10,
+                        paddingVertical: 8,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <Text className={textStyles.body}>
+                        Recipe likes
+                    </Text>
+
                     <ToggleButton
                         value={likes}
-                        onChange={(v) =>
-                            handleUpdateNotifications({
-                                likes: v,
-                            })
+                        onChange={(value) =>
+                            handleUpdateNotifications({ likes: value })
                         }
                     />
                 </View>
-
-                <Text className={textStyles.small}>
-                    Get notified when someone likes your recipes.
-                </Text>
             </View>
 
-            <View className="flex-1 p-5 gap-2 overflow-hidden">
+            {/* Messages */}
+            <View style={{ gap: 5, overflow: "hidden" }}>
                 <SectionHeader
                     title="Messages"
+                    subtitle="Get notified when someone messages you."
                     showDivider
                     titleClassName={textStyles.section}
                 />
 
-                <View className="flex-row items-center mt-3">
+                <View
+                    style={{
+                        minHeight: 55,
+                        paddingHorizontal: 10,
+                        paddingVertical: 8,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <Text className={textStyles.body}>
+                        Direct messages
+                    </Text>
+
                     <ToggleButton
                         value={messages}
-                        onChange={(v) =>
-                            handleUpdateNotifications({
-                                messages: v,
-                            })
+                        onChange={(value) =>
+                            handleUpdateNotifications({ messages: value })
                         }
                     />
                 </View>
-
-                <Text className={textStyles.small}>
-                    Get notified when someone messages you.
-                </Text>
             </View>
 
-            <View className="flex-1 p-5 gap-2 overflow-hidden">
+            {/* Cooks */}
+            <View style={{ gap: 5, overflow: "hidden" }}>
                 <SectionHeader
                     title="Cooks"
+                    subtitle="Get notified when someone cooks your recipes."
                     showDivider
                     titleClassName={textStyles.section}
                 />
 
-                <View className="flex-row items-center mt-3">
+                <View
+                    style={{
+                        minHeight: 55,
+                        paddingHorizontal: 10,
+                        paddingVertical: 8,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <Text className={textStyles.body}>
+                        Recipe cooks
+                    </Text>
+
                     <ToggleButton
                         value={cook}
-                        onChange={(v) =>
-                            handleUpdateNotifications({
-                                cook: v,
-                            })
+                        onChange={(value) =>
+                            handleUpdateNotifications({ cook: value })
                         }
                     />
                 </View>
-
-                <Text className={textStyles.small}>
-                    Get notified when someone cooks your recipes.
-                </Text>
             </View>
 
-            <View className="flex-1 p-5 gap-2 overflow-hidden">
-
+            {/* Stars */}
+            <View style={{ gap: 5, overflow: "hidden" }}>
                 <SectionHeader
-                    title="Reminder"
+                    title="Stars"
+                    subtitle="Get notified when someone stars your recipes."
                     showDivider
                     titleClassName={textStyles.section}
                 />
 
-                <View className="flex-row items-center mt-3">
+                <View
+                    style={{
+                        minHeight: 55,
+                        paddingHorizontal: 10,
+                        paddingVertical: 8,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <Text className={textStyles.body}>
+                        Recipe stars
+                    </Text>
+
+                    <ToggleButton
+                        value={stars}
+                        onChange={(value) =>
+                            handleUpdateNotifications({ stars: value })
+                        }
+                    />
+                </View>
+            </View>
+
+            {/* Cooking Reminder */}
+            <View style={{ gap: 5, overflow: "hidden" }}>
+                <SectionHeader
+                    title="Reminder"
+                    subtitle="Choose when you want a daily reminder to start cooking."
+                    showDivider
+                    titleClassName={textStyles.section}
+                />
+
+                <View
+                    style={{
+                        minHeight: 55,
+                        paddingHorizontal: 10,
+                        paddingVertical: 8,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <Text className={textStyles.body}>
+                        Daily cooking reminder
+                    </Text>
+
                     <ToggleButton
                         value={reminderEnabled}
-                        onChange={(v) =>
+                        onChange={(value) =>
                             handleUpdateNotifications(
-                                v
+                                value
                                     ? {
                                         cookingReminderTime: "08:00",
                                         timezone,
@@ -145,69 +229,88 @@ const NotificationSettings: React.FC = () => {
                 </View>
 
                 {reminderEnabled && (
-                    <View 
+                    <View
                         style={{
-                            paddingVertical: 5,
-                            borderRadius: 12,
+                            width: 341,
+                            alignSelf: "center",
+                            padding: 5,
+                            borderRadius: 24,
                             backgroundColor: colors.card,
-                            alignItems: "center",
-                            justifyContent: "center",
                             flexDirection: "row",
-                        }}                                   
+                            alignItems: "center",
+                            gap: 5
+                        }}
                     >
-                        {reminderOptions.map((option) => {
-                            const isActive = cookingReminderTime === option.value;
+                        {reminderOptions.map((option, index) => {
+                            const isActive =
+                                cookingReminderTime === option.value;
 
                             return (
-                                <Button
-                                    key={option.label}
-                                    onPress={() =>
-                                        handleUpdateNotifications({
-                                            cookingReminderTime: option.value,
-                                            timezone,
-                                        })
-                                    }
-                                    style={{
-                                        backgroundColor: isActive
-                                            ? colors.button
-                                            : "transparent",
-                                        borderColor: isActive
-                                            ? colors.button
-                                            : "transparent",
-                                        borderWidth: 1,
-                                        borderRadius: 12,
-                                        minHeight: 40,
-                                        paddingHorizontal: 14,
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}
-                                    className="flex-row gap-2"
-                                >
-                                    <MaterialIcons
-                                        name="notifications-active"
-                                        size={18}
-                                        color={isActive ? "white" : colors.text}
-                                    />
+                                <React.Fragment key={option.label}>
+                                    {index > 0 && (
+                                        <View
+                                            style={{
+                                                width: 1,
+                                                height: 30,
+                                                backgroundColor: colors.text + "30",
+                                            }}
+                                        />
+                                    )}
 
-                                    <Text
-                                        className={textStyles.small}
+                                    <Button
+                                        onPress={() =>
+                                            handleUpdateNotifications({
+                                                cookingReminderTime: option.value,
+                                                timezone,
+                                            })
+                                        }
                                         style={{
-                                            color: isActive ? "white" : colors.text,
+                                            width: 103,
+                                            minHeight: 42,
+                                            flexGrow: 1,
+                                            flexShrink: 0,
+                                            paddingHorizontal: 4,
+                                            backgroundColor: isActive
+                                                ? colors.button
+                                                : "transparent",
+                                            borderColor: "transparent",
+                                            borderWidth: 1,
+                                            borderRadius: 18,
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 4,
                                         }}
                                     >
-                                        {option.label}
-                                    </Text>
-                                </Button>
+                                        <MaterialIcons
+                                            name="notifications-active"
+                                            size={18}
+                                            color={isActive ? "white" : colors.text}
+                                        />
+
+                                        <Text
+                                            numberOfLines={1}
+                                            adjustsFontSizeToFit
+                                            minimumFontScale={0.75}
+                                            style={{
+                                                color: isActive
+                                                    ? "white"
+                                                    : colors.text,
+                                                fontSize: 12,
+                                                flexShrink: 1,
+                                            }}
+                                        >
+                                            {option.label}
+                                        </Text>
+                                    </Button>
+                                </React.Fragment>
                             );
                         })}
                     </View>
                 )}
-
-                <Text className={textStyles.small}>
-                    Choose when you want a daily reminder to start cooking.
-                </Text>
             </View>
-        </View>
+
+        </TouchableOpacity>
     );
 };
 

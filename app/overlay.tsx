@@ -6,9 +6,10 @@ import { useTheme } from "@/provider/ThemeProvider";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OverlayContent } from "@/stores/useOverlay";
 import { GradientHeader } from "@/components/GradientComponent";
+import { getScreenCornerRadius } from "expo-screen-corners";
 
 type Props = {
-    content: OverlayContent;
+    content?: OverlayContent;
     children?: React.ReactNode;
     onClose: () => void;
     dark?: boolean;
@@ -23,18 +24,63 @@ const Overlay: React.FC<Props> = ({
 
     const { colors, textStyles } = useTheme(dark ? "dark" : undefined);
     const insets = useSafeAreaInsets();
+    const radius = getScreenCornerRadius();
 
-    if (children) {
-        return (
-            <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: colors.background }}>
-                {children}
-            </View>
-        );
-    }
+if (children) {
+    return (
+        <View
+            style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: colors.background,
+                borderRadius: radius,
+                overflow: "hidden",
+            }}
+        >
+            <View
+                pointerEvents="none"
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 12,
+                    zIndex: 10,
+                    shadowColor: "#000",
+                    shadowOpacity: 0.12,
+                    shadowRadius: 6,
+                    shadowOffset: { width: 0, height: -2 },
+                }}
+            />
+            {children}
+        </View>
+    );
+}
 
     return (
-        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: colors.background }}>
-
+        <View 
+            style={{ 
+                ...StyleSheet.absoluteFillObject, 
+                backgroundColor: colors.background,
+                borderRadius: radius,
+                overflow: "hidden",
+            }}
+        >
+            <View
+                pointerEvents="none"
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 12,
+                    zIndex: 10,
+                    shadowColor: colors.text,
+                    shadowOpacity: 0.12,
+                    shadowRadius: radius,
+                    shadowOffset: { width: 0, height: -1 },
+                    elevation: 2,
+                }}
+            />
             <View
                 style={{
                     flex: 1,
@@ -57,7 +103,7 @@ const Overlay: React.FC<Props> = ({
                     }}
                 >
 
-                    {content.showX !== false && (
+                    {content?.showX !== false && (
                         <Button
                             onPress={onClose}
                             clearBackground
@@ -80,16 +126,16 @@ const Overlay: React.FC<Props> = ({
                                 marginRight: 12,
                             }}
                         >
-                            {content.title}
+                            {content?.title}
                         </Text>
                     </View>
                     
                 </GradientHeader>
 
                 <View
-                    style={{ flex:1, padding: 16, paddingTop: 80, gap: 12 }}
+                    style={{ flex:1, padding: 16, paddingTop: 70, gap: 12 }}
                 >
-                    {content.body && (
+                    {content?.body && (
                         <GradientHeader
                             baseColor={colors.background}
                             style={{
@@ -102,13 +148,13 @@ const Overlay: React.FC<Props> = ({
                         </GradientHeader>
                     )}
 
-                    {content.custom && (
-                        <View style={{ flex: 1, marginTop: 10 }}>
+                    {content?.custom && (
+                        <View style={{ flex: 1 }}>
                             {content.custom}
                         </View>
                     )}
 
-                    {content.items?.map((item, i) => (
+                    {content?.items?.map((item, i) => (
                         <View
                             key={i}
                             style={{

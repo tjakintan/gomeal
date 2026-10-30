@@ -1,46 +1,61 @@
 import React from "react";
 import { requireNativeViewManager } from "expo-modules-core";
-import type { NativeSyntheticEvent, ViewProps } from "react-native";
+import type {
+    NativeSyntheticEvent,
+    ViewProps,
+} from "react-native";
 
-type TabItem = {
-  title: string;
+export type TabItem = {
+    title: string;
+    activeIcon: string;
+    inactiveIcon: string;
+    badgeCount?: string;
 };
 
-type TabPressEvent = {
-  index: number;
+export type TabPressEvent = {
+    index: number;
 };
 
 type NativeTabBarNativeProps = ViewProps & {
-  items: TabItem[];
-  selectedIndex: number;
-  onTabPress?: (
-    event: NativeSyntheticEvent<TabPressEvent>
-  ) => void;
+    items: TabItem[];
+    selectedIndex: number;
+    activeColor?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+    badgeBorderColor?: string;
+    onTabPress?: (event: NativeSyntheticEvent<TabPressEvent>) => void;
 };
 
-type NativeTabBarProps = ViewProps & {
-  items: TabItem[];
-  selectedIndex: number;
-  onTabPress?: (index: number) => void;
+export type NativeTabBarProps = ViewProps & {
+    items: TabItem[];
+    selectedIndex: number;
+    activeColor?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+    badgeBorderColor?: string;
+    onTabPress?: (index: number) => void;
 };
 
 const NativeView =
-  requireNativeViewManager<NativeTabBarNativeProps>("NativeTabBar");
+    requireNativeViewManager<NativeTabBarNativeProps>(
+        "NativeTabBar"
+    );
 
 export default function NativeTabBar({
-  items,
-  selectedIndex,
-  onTabPress,
-  ...props
+    items, selectedIndex, activeColor,
+    badgeColor, badgeTextColor, badgeBorderColor,
+    onTabPress, ...props
 }: NativeTabBarProps) {
-  return (
-    <NativeView
-      {...props}
-      items={items}
-      selectedIndex={selectedIndex}
-      onTabPress={(event) => {
-        onTabPress?.(event.nativeEvent.index);
-      }}
-    />
-  );
+    return (
+        <NativeView
+            {...props}
+            items={items}
+            selectedIndex={selectedIndex}
+            activeColor={activeColor}
+            badgeColor={badgeColor}
+            badgeTextColor={badgeTextColor}
+            badgeBorderColor={badgeBorderColor}
+            onTabPress={(e) => onTabPress?.(e.nativeEvent.index)}
+        />
+    );
 }

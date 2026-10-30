@@ -14,13 +14,14 @@ import {
     CholesterolIcon,
     SodiumIcon,
 } from "@/icons/Icon";
+import { ImageMediaType } from "./media.types";
 
 // General Information
-export type MediaType = "image" | "video";
 export type DishInfoData = {
     dish_media_file: File | null;
     dish_media_url: string;
-    dish_media_type: MediaType | null;
+    dish_media_type: ImageMediaType | null;
+    dish_media_duration?: number | null;
     dish_name: string;
     dish_description: string;
     dish_difficulty: "Easy" | "Medium" | "Hard" | "";
@@ -35,7 +36,7 @@ export type Ingredient = {
     normalized_name?: string | null;
     id: number | null;
     category?: string | null;
-    source: string
+    source?: string
     name: string;
     quantity: string;
     unit: Unit;
@@ -149,11 +150,12 @@ export type PostPayload = {
     description: string;
     difficulty: string;
     media_url: string;
-    media_type: MediaType | null;
+    media_type: ImageMediaType | null;
     upload_url?: string;
     user_sub?: string;
     ingredients: Ingredient[];
     steps: StepData[];
     nutrition: NutritionData[];
     dietary: DietaryData[];
+    media_duration?: number | null;
 };

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { API_BASE } from "@/config";
 import { socketEmit, getSocket } from "@/api/socket";
-import { NotificationCard } from "@/notifications/notification.types";
+import { DeleteNotificationParams, NotificationCard } from "@/notifications/notification.types";
 import { useNotification } from "@/notifications/useNotification";
 import { registerPushNotifications } from "@/notifications/pushNotification";
 import { Settings } from "@/types";
@@ -35,6 +35,22 @@ export async function get_notification() {
 
     }
 
+};
+
+export const delete_notification = async (
+    params: DeleteNotificationParams,
+): Promise<boolean> => {
+    try {
+        const res = await socketEmit<{ success?: boolean; error?: string }>(
+            "delete-notification",
+            params,
+        );
+
+        return res?.success === true;
+    } catch (err) {
+        console.error("Delete notification error:", err);
+        return false;
+    }
 };
 
 export const mark_notifications_read = async () => {

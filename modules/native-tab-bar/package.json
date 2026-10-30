@@ -1,5 +1,5 @@
 {
-    "name": "native-tab-bar",
-    "version": "1.0.0",
-    "main": "src/NativeTabBar.tsx"
+  "name": "native-tab-bar",
+  "version": "1.0.0",
+  "main": "index.ts"
 }

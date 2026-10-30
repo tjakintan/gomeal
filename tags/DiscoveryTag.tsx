@@ -1,59 +1,65 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
     View,
     Text,
     StyleSheet,
     ViewStyle,
     StyleProp,
+    Animated,
+    Pressable,
 } from "react-native";
 import { useTheme } from "@/provider/ThemeProvider";
 import { SearchFeedCard } from "@/types/feed.types";
-import { Media } from "@/media/media";
+import {  Media } from "@/media/media";
 import { LinearGradient } from "expo-linear-gradient";
-import { Gesture } from "@/components/ButtonComponent";
+import { Button, Gesture } from "@/components/ButtonComponent";
 import { formatCount } from "@/utils/time";
-import { EggsIcon, LikeIcon, StarIcon } from "@/icons/Icon";
+import { CookPotIcon, LikeIcon, StarIcon, ViewsIcon } from "@/icons/Icon";
 import { DynamicAvatarRenderer } from "@/dashboard/Avatar";
 import { capitalize, limitLength } from "@/utils/text";
+import { useReel } from "@/stores/useReel";
+import { ImageMediaType } from "@/types/media.types";
+import { difficultyColors } from "@/types";
+import { withOpacity } from "@/components/GradientComponent";
+import { PostStats } from "@/components/PostStatsComponent";
+import { useOverlay } from "@/stores/useOverlay";
+import { usePostLive } from "@/stores/usePostLive";
 
 type DiscoveryTagProps = {
     card: SearchFeedCard;
+    isActive?: boolean;  
     style?: StyleProp<ViewStyle>;
     containerStyle?: StyleProp<ViewStyle>;
     dark?: boolean;
-    onPress?: (layout: {
+    onPressMedia?: (layout: {
         x: number;
         y: number;
         width: number;
         height: number;
     }) => void;
     onPressProfile?: () => void;
+    onPressInfo?: () => void;
 };
 
 const FunctionRow: React.FC<{
     icon: React.ReactNode;
     count: number;
-}> = ({ icon, count }) => (
+    color: string;
+}> = ({ icon, count, color }) => (
     <View
         style={{
             flexDirection: "row",
             alignItems: "center",
-            gap: 2,
+            gap: 3,
         }}
     >
         {icon}
-
         <Text
             style={{
-                color: "white",
-                fontSize: 10,
-                fontWeight: "500",
-                textShadowColor: "rgba(0,0,0,0.6)",
-                textShadowOffset: {
-                    width: 0,
-                    height: 1,
-                },
-                textShadowRadius: 3,
+                color,
+                fontSize: 12,
+                fontWeight: "600",
+                fontVariant: ["tabular-nums"],
             }}
         >
             {formatCount(count)}
@@ -63,334 +69,505 @@ const FunctionRow: React.FC<{
 
 export const DiscoveryTag: React.FC<DiscoveryTagProps> = ({
     card,
+    isActive,
     style,
     containerStyle,
     dark,
-    onPress,
+    onPressMedia,
     onPressProfile,
+    onPressInfo,
 }) => {
+    const {
+        info,
+        action_counts,
+        avatar,
+        profile_name,
+        firstName,
+        lastName,
+        badge,
+        xp,
+        level,
+    } = card;
 
-    const { info, action_counts, avatar, tag_color, profile_name, firstName, lastName } = card;
     const { colors, textStyles } = useTheme(
         dark ? "dark" : undefined
     );
 
-    console.log(info, profile_name)
-
     const mediaRef = React.useRef<View>(null);
 
+    const isReelOrigin = useReel(
+        (s) => s.isVisible && s.originPostId === card.post_id
+    );
+
+    const openOverlay = useOverlay((s) => s.openOverlay);
+
+    const openStats = () =>
+        openOverlay({ custom: <PostStats dark={dark} card={card} /> });
+
+    const seedLive = usePostLive((s) => s.seedLive);
+    const liveCounts = usePostLive((s) => s.byId[String(card.post_id)]?.action_counts);
+    const counts = { ...action_counts, ...liveCounts };
+
+    useEffect(() => {
+        seedLive(card.post_id, { action_counts });
+    }, [card.post_id]);
+
+    const difficultyColor = info.dish_difficulty
+        ? difficultyColors[info.dish_difficulty]
+        : colors.secondaryText;
+
     return (
+        <Gesture>
             <View
                 style={[
                     {
-                        width: 155,
-                        height: 250,
-                        flexDirection: "column",
-                        borderWidth: 2,
-                        borderColor: colors.card,
-                        borderRadius: 30,
-                        overflow: "hidden"
+                        width: "100%",
+                        height: 170,
+                        borderRadius: 8,
+                        backgroundColor: colors.background,
+
+                        // Shadow
+                        shadowColor: colors.text,
+                        shadowOffset: { width: 0, height: 3 },
+                        shadowOpacity: dark ? 0.3 : 0.12,
+                        shadowRadius: 6,
+                        elevation: 4,
                     },
                     style,
+                    containerStyle,
                 ]}
             >
-                {/* Media */}
                 <View
-                    ref={mediaRef}
                     style={{
-                        height: 175,
                         width: "100%",
+                        height: "100%",
+                        flexDirection: "row",
+                        alignItems: "stretch",
+                        borderRadius: 8,
                         overflow: "hidden",
+                        backgroundColor: colors.background,
+                        borderWidth: 1,
+                        borderColor: colors.secondaryCard,
                     }}
                 >
-                    <Media
-                        uri={info.dish_media_url}
-                        mediaType={info.dish_media_type}
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                        }}
-                        iconSize={25}
-                        muteControl="row"
-                        onPress={() => {
-                            mediaRef.current?.measureInWindow(
-                                (x, y, width, height) => {
-                                    onPress?.({
-                                        x,
-                                        y,
-                                        width,
-                                        height,
-                                    });
-                                }
-                            );
-                        }}
-                    />
-
-                    {/* Bottom gradient */}
-                    <LinearGradient
-                        pointerEvents="none"
-                        colors={[
-                            "rgba(0,0,0,0.9)",
-                            "rgba(0,0,0,0.45)",
-                            "rgba(0,0,0,0)",
-                        ]}
-                        locations={[0, 0.6, 1]}
-                        start={{ x: 0.5, y: 1 }}
-                        end={{ x: 0.5, y: 0 }}
-                        style={{
-                            position: "absolute",
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            height: 45,
-                        }}
-                    />
-
-                    {/* Stats */}
-                    <View
-                        pointerEvents="none"
-                        style={{
-                            position: "absolute",
-                            left: 8,
-                            right: 8,
-                            bottom: 7,
-                            gap: 5,
-                            flexDirection: "column",
-                            alignItems: "flex-start",
-                            justifyContent: "space-between",
-                        }}
-                    >
-                        <FunctionRow
-                            icon={<LikeIcon size={17} />}
-                            count={
-                                action_counts?.post_love ?? 0
-                            }
-                        />
-
-                        <FunctionRow
-                            icon={
-                                <StarIcon
-                                    size={17}
-                                    color="yellow"
-                                    fillColor="yellow"
-                                />
-                            }
-                            count={
-                                action_counts?.post_star ?? 0
-                            }
-                        />
-
-                        <FunctionRow
-                            icon={<EggsIcon size={17} />}
-                            count={
-                                action_counts?.post_cook ?? 0
-                            }
-                        />
-
-                    </View>
-
-                </View>
-
-
-                {/* Creator row */}
-                <View
-                    style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        justifyContent: "flex-start",
-                        alignItems: "flex-start",
-                        paddingHorizontal: 5,
-                        paddingTop: 2,
-                        paddingBottom: 5,
-                        //backgroundColor: tag_color ? tag_color : colors.button
-                    }}
-                >
-                    <Text
-                        className={textStyles.body}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        style={{
-                            flex: 1,
-                            minWidth: 0,
-                            marginRight: 6,
-                        }}
-                    >
-                        {limitLength(info.dish_name, 20)}
-                    </Text>
-
-                    <View
-                        style={{
-                            gap: 2,
-                            flexDirection: "row",
-                        }}
-                    >
-
-                        <DynamicAvatarRenderer
-                            avatar={avatar}
-                            background
-                            size={25}
-                        />
-
+                        {/* Left: dish image */}
                         <View
+                            ref={mediaRef}
                             style={{
-                                flex: 1, 
-                                flexDirection: "column",
-                                justifyContent:"flex-end",
+                                width: "38%",
+                                height: "100%",
+                                overflow: "hidden",
+                                opacity: isReelOrigin ? 0 : 1,
                             }}
                         >
-
-                            <Text
-                                className={textStyles.body}
-                                numberOfLines={1}
-                                ellipsizeMode="tail"
-                                onPress={onPressProfile}
+                            <Media
+                                uri={info.dish_media_url}
+                                mediaType={info.dish_media_type as ImageMediaType}
                                 style={{
-                                    color: colors.secondaryText,
+                                    width: "100%",
+                                    height: "100%",
                                 }}
-                            >
-                                {profile_name}
-                            </Text>
-
-                            <View
-                                style={{
-                                    gap: 3,
-                                    flexDirection: "row",
+                                iconSize={20}
+                                muteControl="bottomRow"
+                                onPress={() => {
+                                    mediaRef.current?.measureInWindow(
+                                        (x, y, width, height) => {
+                                            onPressMedia?.({
+                                                x,
+                                                y,
+                                                width,
+                                                height,
+                                            });
+                                        }
+                                    );
                                 }}
-                            >
-
-                                <Text
-                                    className={textStyles.small}
-                                    numberOfLines={1}
-                                    ellipsizeMode="tail"
-                                    onPress={onPressProfile}
-                                    style={{
-                                        color: colors.text,
-                                    }}
-                                >
-                                    {capitalize(limitLength(firstName, 10))}
-                                </Text>
-        
-                                <Text
-                                    className={textStyles.small}
-                                    numberOfLines={1}
-                                    ellipsizeMode="tail"
-                                    onPress={onPressProfile}
-                                    style={{
-                                        color: colors.text,
-                                    }}
-                                >
-                                    {capitalize(limitLength(lastName ?? "", 15))}
-                                </Text>
-
-                            </View>
-
+                                bottomControlOffset={15}
+                                autoPlay={isActive === undefined ? undefined : isActive ? undefined : false}
+                            />
                         </View>
 
-                    </View>
+                        {/* Right: recipe details and creator */}
+                        <View
+                            style={{
+                                flex: 1,
+                                minWidth: 0,
+                                paddingHorizontal: 12,
+                                paddingVertical: 7,
+                                justifyContent: "center",
+                                gap: 4,
+                            }}
+                        >
+                            <Pressable 
+                                onPress={onPressInfo}
+                                style={{
+                                    gap: 5
+                                }}
+                            >
+                                {/* Difficulty */}
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        gap: 5,
+                                    }}
+                                >
+                                    <View
+                                        style={{
+                                            width: 12,
+                                            height: 12,
+                                            borderRadius: 999,
+                                            backgroundColor: difficultyColor,
+                                        }}
+                                    />
+
+                                    <Text
+                                        className={textStyles.body}
+                                        style={{
+                                            color: difficultyColor,
+                                            fontSize: 12,
+                                            flexShrink: 1,
+                                        }}
+                                        numberOfLines={1}
+                                    >
+                                        {info.dish_difficulty || "Difficulty not set"}
+                                    </Text>
+                                </View>
+
+                                {/* Recipe name */}
+                                <Text
+                                    className={textStyles.section}
+                                    style={{
+                                        color: colors.text,
+                                        fontSize: 16,
+                                        fontWeight: "700",
+                                        lineHeight: 19,
+                                    }}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                >
+                                    {info.dish_name}
+                                </Text>
+
+                                {/* Description */}
+                                <Text
+                                    className={textStyles.body}
+                                    style={{
+                                        color: colors.secondaryText,
+                                        fontSize: 14,
+                                        lineHeight: 15,
+                                    }}
+                                    numberOfLines={2}
+                                    ellipsizeMode="tail"
+                                >
+                                    {info.dish_description?.trim() ||
+                                        "Discover this delicious recipe."}
+                                </Text>
+
+                            </Pressable>
+
+                            {/* Action counts */}
+                            <Button
+                                onPress={openStats}
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "flex-start",
+                                    padding: 0,
+                                    gap: 10,
+                                    marginTop: 1,
+                                }}
+                            >
+                                <FunctionRow
+                                    icon={<LikeIcon size={16} />}
+                                    count={counts?.post_love ?? 0}
+                                    color={colors.text}
+                                />
+
+                                <FunctionRow
+                                    icon={
+                                        <StarIcon
+                                            size={16}
+                                            color="#ffca45"
+                                            fillColor="#ffca45"
+                                        />
+                                    }
+                                    count={counts?.post_star ?? 0}
+                                    color={colors.text}
+                                />
+
+                                <FunctionRow
+                                    icon={<CookPotIcon size={16} />}
+                                    count={counts?.post_cook ?? 0}
+                                    color={colors.text}
+                                />
+
+                                <FunctionRow
+                                    icon={<ViewsIcon size={16} color={colors.text}/>}
+                                    count={counts?.post_view ?? 0}
+                                    color={colors.text}
+                                />
+
+                            </Button>
+
+                            {/* Creator row: below action counts */}
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    minWidth: 0,
+                                    gap: 6,
+                                    marginTop: 2,
+                                }}
+                            >
+                                <View style={{ flexShrink: 0 }}>
+                                    <DynamicAvatarRenderer
+                                        avatar={avatar}
+                                        level={level}
+                                        xp={xp}
+                                        badge={badge}
+                                        dark={dark}
+                                        showBadge
+                                        showProgress
+                                        background
+                                        size={20}
+                                    />
+                                </View>
+
+                                <View
+                                    style={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Text
+                                        className={textStyles.body}
+                                        onPress={onPressProfile}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                        style={{
+                                            color: colors.secondaryText,
+                                            fontSize: 14,
+                                            fontWeight: "500",
+                                        }}
+                                    >
+                                        @{profile_name}
+                                    </Text>
+
+                                    <Text
+                                        className={textStyles.body}
+                                        onPress={onPressProfile}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                        style={{
+                                            color: colors.text,
+                                            fontSize: 14,
+                                        }}
+                                    >
+                                        {capitalize(limitLength(firstName, 10))}
+                                        {lastName
+                                            ? ` ${capitalize(
+                                                limitLength(lastName, 10)
+                                            )}`
+                                            : ""}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
 
                 </View>
 
             </View>
+
+        </Gesture>
     );
 };
+
 
 export const EmptyDiscoveryTag: React.FC<{
     style?: StyleProp<ViewStyle>;
     dark?: boolean;
 }> = ({ style, dark }) => {
-
     const { colors } = useTheme(dark ? "dark" : undefined);
+
+    const opacity = useRef(new Animated.Value(0.45)).current;
+
+    useEffect(() => {
+        const animation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacity, {
+                    toValue: 0.85,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacity, {
+                    toValue: 0.45,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+
+        animation.start();
+
+        return () => animation.stop();
+    }, [opacity]);
+
+    const bone = (
+        width: number | `${number}%`,
+        height: number,
+        radius = 5
+    ) => (
+        <Animated.View
+            style={{
+                width,
+                height,
+                borderRadius: radius,
+                backgroundColor: colors.secondaryCard,
+                opacity,
+            }}
+        />
+    );
 
     return (
         <View
             style={[
                 {
-                    width: 155,
-                    height: 250,
-                    flexDirection: "column",
-                    borderWidth: 2,
-                    borderColor: colors.card,
-                    borderRadius: 30,
-                    overflow: "hidden",
+                    width: "100%",
+                    height: 150,
+                    borderRadius: 8,
+                    backgroundColor: colors.background,
+                    shadowColor: colors.text,
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: dark ? 0.3 : 0.12,
+                    shadowRadius: 6,
+                    elevation: 4,
                 },
                 style,
             ]}
         >
-            {/* Media skeleton */}
-            <View
-                style={{
-                    height: 175,
-                    width: "100%",
-                    backgroundColor: colors.secondaryCard,
-                }}
-            />
-
-            {/* Creator row skeleton */}
             <View
                 style={{
                     flex: 1,
-                    flexDirection: "column",
-                    justifyContent: "flex-start",
-                    alignItems: "flex-start",
-                    paddingHorizontal: 5,
-                    paddingTop: 8,
-                    paddingBottom: 5,
-                    gap: 8,
+                    flexDirection: "row",
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    backgroundColor: colors.background,
+                    borderWidth: 1,
+                    borderColor: colors.secondaryCard,
                 }}
             >
+                {/* Dish image skeleton */}
                 <View
                     style={{
-                        width: "70%",
-                        height: 12,
-                        borderRadius: 10,
+                        width: "38%",
+                        height: "100%",
                         backgroundColor: colors.secondaryCard,
+                        overflow: "hidden",
+                    }}
+                >
+                    <Animated.View
+                        style={{
+                            flex: 1,
+                            backgroundColor: colors.card,
+                            opacity,
+                        }}
+                    />
+                </View>
+
+                {/* Image-to-content transition */}
+                <LinearGradient
+                    pointerEvents="none"
+                    colors={[
+                        "transparent",
+                        withOpacity(colors.background, 0.45),
+                        colors.background,
+                    ]}
+                    locations={[0, 0.5, 1]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{
+                        position: "absolute",
+                        left: "28%",
+                        top: 0,
+                        bottom: 0,
+                        width: "10%",
+                        zIndex: 1,
                     }}
                 />
 
+                {/* Recipe details skeleton */}
                 <View
                     style={{
-                        gap: 6,
-                        flexDirection: "row",
-                        alignItems: "center",
+                        flex: 1,
+                        minWidth: 0,
+                        paddingHorizontal: 12,
+                        paddingVertical: 9,
+                        justifyContent: "center",
+                        gap: 7,
                     }}
                 >
+                    {/* Difficulty */}
                     <View
                         style={{
-                            width: 25,
-                            height: 25,
-                            borderRadius: 999,
-                            backgroundColor: colors.secondaryCard,
-                        }}
-                    />
-
-                    <View
-                        style={{
-                            flex: 1,
+                            flexDirection: "row",
+                            alignItems: "center",
                             gap: 5,
                         }}
                     >
-                        <View
-                            style={{
-                                width: "60%",
-                                height: 10,
-                                borderRadius: 10,
-                                backgroundColor: colors.secondaryCard,
-                            }}
-                        />
+                        {bone(7, 7, 4)}
+                        {bone("35%", 9)}
+                    </View>
+
+                    {/* Recipe name */}
+                    {bone("82%", 14)}
+
+                    {/* Description */}
+                    <View style={{ gap: 4 }}>
+                        {bone("100%", 8)}
+                        {bone("72%", 8)}
+                    </View>
+
+                    {/* Action counts */}
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 12,
+                            marginTop: 1,
+                        }}
+                    >
+                        {bone(30, 9)}
+                        {bone(30, 9)}
+                        {bone(30, 9)}
+                    </View>
+
+                    {/* Creator */}
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 6,
+                            marginTop: 1,
+                        }}
+                    >
+                        {bone(22, 22, 11)}
 
                         <View
                             style={{
-                                width: "40%",
-                                height: 8,
-                                borderRadius: 10,
-                                backgroundColor: colors.secondaryCard,
+                                flex: 1,
+                                gap: 4,
                             }}
-                        />
+                        >
+                            {bone("48%", 8)}
+                            {bone("65%", 8)}
+                        </View>
                     </View>
                 </View>
             </View>
         </View>
     );
 };
+
 
 export default DiscoveryTag;

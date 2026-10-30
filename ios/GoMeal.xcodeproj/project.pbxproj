@@ -3,49 +3,49 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0EE35654CACC5F880560861A /* libPods-GoMeal.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E54477996F5D3C23695A1C5F /* libPods-GoMeal.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		49C021DE5638EC1B15EEF8D6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A969560005B3C7F7790D862A /* PrivacyInfo.xcprivacy */; };
-		645F92662FCD5C8B006D90FC /* NotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 645F925F2FCD5C8B006D90FC /* NotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		6498138A2FC13EA80027BB86 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 649813892FC13EA80027BB86 /* WidgetKit.framework */; };
-		6498138C2FC13EA80027BB86 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6498138B2FC13EA80027BB86 /* SwiftUI.framework */; };
-		6498139D2FC13EAA0027BB86 /* GoMealLiveActivityExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 649813882FC13EA80027BB86 /* GoMealLiveActivityExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		7F2067C266938437743F044E /* libPods-GoMeal.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B3226A88229B7AB0479C01D /* libPods-GoMeal.a */; };
+		4AD5516AF354B6F3BF18A52A /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA91FD76C523EF07D9A7FAE8 /* ExpoModulesProvider.swift */; };
+		6191E36F3B7EEB658AEBFD46 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6DE654E91FE442C63E3F585E /* PrivacyInfo.xcprivacy */; };
+		64227EC530808DA100975D1D /* NotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 64227EBE30808DA100975D1D /* NotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		64227ED130808DFB00975D1D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 64227ED030808DFB00975D1D /* WidgetKit.framework */; };
+		64227ED330808DFB00975D1D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 64227ED230808DFB00975D1D /* SwiftUI.framework */; };
+		64227EE430808DFE00975D1D /* GoMealLiveActivityExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 64227ECF30808DFB00975D1D /* GoMealLiveActivityExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		DCD1DE6D40EDD80145D3BD82 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F174253E697DC001AE800CB /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		645F92642FCD5C8B006D90FC /* PBXContainerItemProxy */ = {
+		64227EC330808DA100975D1D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 645F925E2FCD5C8B006D90FC;
+			remoteGlobalIDString = 64227EBD30808DA100975D1D;
 			remoteInfo = NotificationServiceExtension;
 		};
-		6498139B2FC13EAA0027BB86 /* PBXContainerItemProxy */ = {
+		64227EE230808DFE00975D1D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 649813872FC13EA80027BB86;
+			remoteGlobalIDString = 64227ECE30808DFB00975D1D;
 			remoteInfo = GoMealLiveActivityExtensionExtension;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		6498139E2FC13EAA0027BB86 /* Embed Foundation Extensions */ = {
+		64227EC630808DA100975D1D /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				6498139D2FC13EAA0027BB86 /* GoMealLiveActivityExtensionExtension.appex in Embed Foundation Extensions */,
-				645F92662FCD5C8B006D90FC /* NotificationServiceExtension.appex in Embed Foundation Extensions */,
+				64227EE430808DFE00975D1D /* GoMealLiveActivityExtensionExtension.appex in Embed Foundation Extensions */,
+				64227EC530808DA100975D1D /* NotificationServiceExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -53,65 +53,73 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		07E914B01A6359A4C40AF66E /* Pods-GoMeal.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GoMeal.debug.xcconfig"; path = "Target Support Files/Pods-GoMeal/Pods-GoMeal.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* GoMeal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoMeal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = GoMeal/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = GoMeal/Info.plist; sourceTree = "<group>"; };
-		270E422DB645EB10983E8DAB /* Pods-GoMeal.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GoMeal.release.xcconfig"; path = "Target Support Files/Pods-GoMeal/Pods-GoMeal.release.xcconfig"; sourceTree = "<group>"; };
-		2F174253E697DC001AE800CB /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-GoMeal/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		4B3226A88229B7AB0479C01D /* libPods-GoMeal.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GoMeal.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		645F925F2FCD5C8B006D90FC /* NotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		649813882FC13EA80027BB86 /* GoMealLiveActivityExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GoMealLiveActivityExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		649813892FC13EA80027BB86 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		6498138B2FC13EA80027BB86 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		7470987D94D39ED7173FC3E5 /* Pods-GoMeal.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GoMeal.debug.xcconfig"; path = "Target Support Files/Pods-GoMeal/Pods-GoMeal.debug.xcconfig"; sourceTree = "<group>"; };
-		A969560005B3C7F7790D862A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = GoMeal/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		5FE7A6AE75E9897FBD381586 /* Pods-GoMeal.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GoMeal.release.xcconfig"; path = "Target Support Files/Pods-GoMeal/Pods-GoMeal.release.xcconfig"; sourceTree = "<group>"; };
+		64227EBE30808DA100975D1D /* NotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		64227ECF30808DFB00975D1D /* GoMealLiveActivityExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GoMealLiveActivityExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		64227ED030808DFB00975D1D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		64227ED230808DFB00975D1D /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		643D62AC30808F3400860811 /* GoMealLiveActivityExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GoMealLiveActivityExtensionExtension.entitlements; sourceTree = "<group>"; };
+		6DE654E91FE442C63E3F585E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = GoMeal/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = GoMeal/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		CA91FD76C523EF07D9A7FAE8 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-GoMeal/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		E54477996F5D3C23695A1C5F /* libPods-GoMeal.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GoMeal.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = GoMeal/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* GoMeal-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "GoMeal-Bridging-Header.h"; path = "GoMeal/GoMeal-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		645F926A2FCD5C8B006D90FC /* Exceptions for "NotificationServiceExtension" folder in "NotificationServiceExtension" target */ = {
+		64227EC930808DA100975D1D /* Exceptions for "NotificationServiceExtension" folder in "NotificationServiceExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 645F925E2FCD5C8B006D90FC /* NotificationServiceExtension */;
+			target = 64227EBD30808DA100975D1D /* NotificationServiceExtension */;
 		};
-		649813B22FC256D40027BB86 /* Exceptions for "GoMealLiveActivityExtension" folder in "GoMealLiveActivityExtensionExtension" target */ = {
+		64227EE530808DFE00975D1D /* Exceptions for "GoMealLiveActivityExtension" folder in "GoMealLiveActivityExtensionExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 649813872FC13EA80027BB86 /* GoMealLiveActivityExtensionExtension */;
+			target = 64227ECE30808DFB00975D1D /* GoMealLiveActivityExtensionExtension */;
 		};
-		649813B42FC258D40027BB86 /* Exceptions for "GoMealLiveActivityExtension" folder in "GoMeal" target */ = {
+		64DE1DC83081DEC40020A200 /* Exceptions for "GoMealLiveActivityExtension" folder in "GoMeal" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppIntent.swift,
 				GoMealLiveActivityAttributes.swift,
-				"LuckiestGuy-Regular.ttf",
 			);
 			target = 13B07F861A680F5B00A75B9A /* GoMeal */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		645F92602FCD5C8B006D90FC /* NotificationServiceExtension */ = {
+		64227EBF30808DA100975D1D /* NotificationServiceExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				645F926A2FCD5C8B006D90FC /* Exceptions for "NotificationServiceExtension" folder in "NotificationServiceExtension" target */,
+				64227EC930808DA100975D1D /* Exceptions for "NotificationServiceExtension" folder in "NotificationServiceExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
 			);
 			path = NotificationServiceExtension;
 			sourceTree = "<group>";
 		};
-		6498138D2FC13EA80027BB86 /* GoMealLiveActivityExtension */ = {
+		64227ED430808DFB00975D1D /* GoMealLiveActivityExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				649813B42FC258D40027BB86 /* Exceptions for "GoMealLiveActivityExtension" folder in "GoMeal" target */,
-				649813B22FC256D40027BB86 /* Exceptions for "GoMealLiveActivityExtension" folder in "GoMealLiveActivityExtensionExtension" target */,
+				64DE1DC83081DEC40020A200 /* Exceptions for "GoMealLiveActivityExtension" folder in "GoMeal" target */,
+				64227EE530808DFE00975D1D /* Exceptions for "GoMealLiveActivityExtension" folder in "GoMealLiveActivityExtensionExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
 			);
 			path = GoMealLiveActivityExtension;
 			sourceTree = "<group>";
@@ -123,37 +131,29 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7F2067C266938437743F044E /* libPods-GoMeal.a in Frameworks */,
+				0EE35654CACC5F880560861A /* libPods-GoMeal.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		645F925C2FCD5C8B006D90FC /* Frameworks */ = {
+		64227EBB30808DA100975D1D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		649813852FC13EA80027BB86 /* Frameworks */ = {
+		64227ECC30808DFB00975D1D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6498138C2FC13EA80027BB86 /* SwiftUI.framework in Frameworks */,
-				6498138A2FC13EA80027BB86 /* WidgetKit.framework in Frameworks */,
+				64227ED330808DFB00975D1D /* SwiftUI.framework in Frameworks */,
+				64227ED130808DFB00975D1D /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		096BA43EB258E74182EA283F /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				DF84216CBB76EC81A247037F /* GoMeal */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
 		13B07FAE1A68108700A75B9A /* GoMeal */ = {
 			isa = PBXGroup;
 			children = (
@@ -163,29 +163,36 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				A969560005B3C7F7790D862A /* PrivacyInfo.xcprivacy */,
+				6DE654E91FE442C63E3F585E /* PrivacyInfo.xcprivacy */,
 			);
 			name = GoMeal;
+			sourceTree = "<group>";
+		};
+		1FD80D094DE1F7593A0B3CCD /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				583D2C05CB90E61271FE6C45 /* GoMeal */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				649813892FC13EA80027BB86 /* WidgetKit.framework */,
-				6498138B2FC13EA80027BB86 /* SwiftUI.framework */,
-				4B3226A88229B7AB0479C01D /* libPods-GoMeal.a */,
+				E54477996F5D3C23695A1C5F /* libPods-GoMeal.a */,
+				64227ED030808DFB00975D1D /* WidgetKit.framework */,
+				64227ED230808DFB00975D1D /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		58536CBDC9BD6ABBA0BFECAC /* Pods */ = {
+		583D2C05CB90E61271FE6C45 /* GoMeal */ = {
 			isa = PBXGroup;
 			children = (
-				7470987D94D39ED7173FC3E5 /* Pods-GoMeal.debug.xcconfig */,
-				270E422DB645EB10983E8DAB /* Pods-GoMeal.release.xcconfig */,
+				CA91FD76C523EF07D9A7FAE8 /* ExpoModulesProvider.swift */,
 			);
-			path = Pods;
+			name = GoMeal;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -198,14 +205,15 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				643D62AC30808F3400860811 /* GoMealLiveActivityExtensionExtension.entitlements */,
 				13B07FAE1A68108700A75B9A /* GoMeal */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
-				6498138D2FC13EA80027BB86 /* GoMealLiveActivityExtension */,
-				645F92602FCD5C8B006D90FC /* NotificationServiceExtension */,
+				64227EBF30808DA100975D1D /* NotificationServiceExtension */,
+				64227ED430808DFB00975D1D /* GoMealLiveActivityExtension */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				58536CBDC9BD6ABBA0BFECAC /* Pods */,
-				096BA43EB258E74182EA283F /* ExpoModulesProviders */,
+				85E07CA87F51F15E0C9E8AF3 /* Pods */,
+				1FD80D094DE1F7593A0B3CCD /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -216,10 +224,19 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* GoMeal.app */,
-				649813882FC13EA80027BB86 /* GoMealLiveActivityExtensionExtension.appex */,
-				645F925F2FCD5C8B006D90FC /* NotificationServiceExtension.appex */,
+				64227EBE30808DA100975D1D /* NotificationServiceExtension.appex */,
+				64227ECF30808DFB00975D1D /* GoMealLiveActivityExtensionExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		85E07CA87F51F15E0C9E8AF3 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				07E914B01A6359A4C40AF66E /* Pods-GoMeal.debug.xcconfig */,
+				5FE7A6AE75E9897FBD381586 /* Pods-GoMeal.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -231,14 +248,6 @@
 			path = GoMeal/Supporting;
 			sourceTree = "<group>";
 		};
-		DF84216CBB76EC81A247037F /* GoMeal */ = {
-			isa = PBXGroup;
-			children = (
-				2F174253E697DC001AE800CB /* ExpoModulesProvider.swift */,
-			);
-			name = GoMeal;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -246,65 +255,65 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "GoMeal" */;
 			buildPhases = (
-				94EC0FF0BB50C8F999833A1E /* [CP] Check Pods Manifest.lock */,
-				1B2893A2644088788C378DEF /* [Expo] Configure project */,
+				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
+				F2C6ACADFDA0B0D8228A7F07 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				6498139E2FC13EAA0027BB86 /* Embed Foundation Extensions */,
-				9FDF0B8046D6F678681C673A /* [CP] Embed Pods Frameworks */,
-				C78C4DCB23B0701A1CF55682 /* [CP] Copy Pods Resources */,
+				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
+				F396D24C4C9ABEA34DDC833F /* [CP] Embed Pods Frameworks */,
+				64227EC630808DA100975D1D /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				6498139C2FC13EAA0027BB86 /* PBXTargetDependency */,
-				645F92652FCD5C8B006D90FC /* PBXTargetDependency */,
+				64227EC430808DA100975D1D /* PBXTargetDependency */,
+				64227EE330808DFE00975D1D /* PBXTargetDependency */,
 			);
 			name = GoMeal;
 			productName = GoMeal;
 			productReference = 13B07F961A680F5B00A75B9A /* GoMeal.app */;
 			productType = "com.apple.product-type.application";
 		};
-		645F925E2FCD5C8B006D90FC /* NotificationServiceExtension */ = {
+		64227EBD30808DA100975D1D /* NotificationServiceExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 645F92672FCD5C8B006D90FC /* Build configuration list for PBXNativeTarget "NotificationServiceExtension" */;
+			buildConfigurationList = 64227ECA30808DA100975D1D /* Build configuration list for PBXNativeTarget "NotificationServiceExtension" */;
 			buildPhases = (
-				645F925B2FCD5C8B006D90FC /* Sources */,
-				645F925C2FCD5C8B006D90FC /* Frameworks */,
-				645F925D2FCD5C8B006D90FC /* Resources */,
+				64227EBA30808DA100975D1D /* Sources */,
+				64227EBB30808DA100975D1D /* Frameworks */,
+				64227EBC30808DA100975D1D /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				645F92602FCD5C8B006D90FC /* NotificationServiceExtension */,
+				64227EBF30808DA100975D1D /* NotificationServiceExtension */,
 			);
 			name = NotificationServiceExtension;
 			productName = NotificationServiceExtension;
-			productReference = 645F925F2FCD5C8B006D90FC /* NotificationServiceExtension.appex */;
+			productReference = 64227EBE30808DA100975D1D /* NotificationServiceExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		649813872FC13EA80027BB86 /* GoMealLiveActivityExtensionExtension */ = {
+		64227ECE30808DFB00975D1D /* GoMealLiveActivityExtensionExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 649813A22FC13EAA0027BB86 /* Build configuration list for PBXNativeTarget "GoMealLiveActivityExtensionExtension" */;
+			buildConfigurationList = 64227EE630808DFE00975D1D /* Build configuration list for PBXNativeTarget "GoMealLiveActivityExtensionExtension" */;
 			buildPhases = (
-				649813842FC13EA80027BB86 /* Sources */,
-				649813852FC13EA80027BB86 /* Frameworks */,
-				649813862FC13EA80027BB86 /* Resources */,
+				64227ECB30808DFB00975D1D /* Sources */,
+				64227ECC30808DFB00975D1D /* Frameworks */,
+				64227ECD30808DFB00975D1D /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				6498138D2FC13EA80027BB86 /* GoMealLiveActivityExtension */,
+				64227ED430808DFB00975D1D /* GoMealLiveActivityExtension */,
 			);
 			name = GoMealLiveActivityExtensionExtension;
 			productName = GoMealLiveActivityExtensionExtension;
-			productReference = 649813882FC13EA80027BB86 /* GoMealLiveActivityExtensionExtension.appex */;
+			productReference = 64227ECF30808DFB00975D1D /* GoMealLiveActivityExtensionExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -313,28 +322,22 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 2620;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = UGQD4SYSL4;
 						LastSwiftMigration = 1250;
-						ProvisioningStyle = Automatic;
 					};
-					645F925E2FCD5C8B006D90FC = {
+					64227EBD30808DA100975D1D = {
 						CreatedOnToolsVersion = 26.2;
-						DevelopmentTeam = UGQD4SYSL4;
-						ProvisioningStyle = Automatic;
 					};
-					649813872FC13EA80027BB86 = {
+					64227ECE30808DFB00975D1D = {
 						CreatedOnToolsVersion = 26.2;
-						DevelopmentTeam = UGQD4SYSL4;
-						ProvisioningStyle = Automatic;
 					};
 				};
 			};
 			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "GoMeal" */;
+			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -342,14 +345,13 @@
 				Base,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* GoMeal */,
-				649813872FC13EA80027BB86 /* GoMealLiveActivityExtensionExtension */,
-				645F925E2FCD5C8B006D90FC /* NotificationServiceExtension */,
+				64227EBD30808DA100975D1D /* NotificationServiceExtension */,
+				64227ECE30808DFB00975D1D /* GoMealLiveActivityExtensionExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -362,18 +364,18 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				49C021DE5638EC1B15EEF8D6 /* PrivacyInfo.xcprivacy in Resources */,
+				6191E36F3B7EEB658AEBFD46 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		645F925D2FCD5C8B006D90FC /* Resources */ = {
+		64227EBC30808DA100975D1D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		649813862FC13EA80027BB86 /* Resources */ = {
+		64227ECD30808DFB00975D1D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -400,7 +402,95 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
-		1B2893A2644088788C378DEF /* [Expo] Configure project */ = {
+		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-GoMeal-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/AppAuth/AppAuthCore_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoDevice/ExpoDevice_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoMediaLibrary/ExpoMediaLibrary_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoNotifications/ExpoNotifications_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GTMAppAuth/GTMAppAuth_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GTMSessionFetcher/GTMSessionFetcher_Core_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleSignIn/GoogleSignIn.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleUtilities/GoogleUtilities_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/NativeTabBar/NativeTabBar.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/PromisesObjC/FBLPromises_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/PromisesSwift/Promises_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNCAsyncStorage/RNCAsyncStorage_resources.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNImageCropPicker/RNImageCropPickerPrivacyInfo.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNImageCropPicker/QBImagePicker.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNSVG/RNSVGFilters.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/SDWebImage/SDWebImage.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/TOCropViewController/TOCropViewControllerBundle.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/lottie-ios/LottiePrivacyInfo.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/lottie-react-native/Lottie_React_Native_Privacy.bundle",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AppAuthCore_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoApplication_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoDevice_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoMediaLibrary_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoNotifications_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GTMAppAuth_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GTMSessionFetcher_Core_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleSignIn.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleUtilities_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/NativeTabBar.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/FBLPromises_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Promises_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNCAsyncStorage_resources.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNImageCropPickerPrivacyInfo.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/QBImagePicker.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNSVGFilters.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SDWebImage.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TOCropViewControllerBundle.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/LottiePrivacyInfo.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Lottie_React_Native_Privacy.bundle",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F2C6ACADFDA0B0D8228A7F07 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -424,60 +514,26 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-GoMeal/expo-configure-project.sh\"\n";
 		};
-		94EC0FF0BB50C8F999833A1E /* [CP] Check Pods Manifest.lock */ = {
+		F396D24C4C9ABEA34DDC833F /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			inputFileListPaths = (
 			);
 			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-GoMeal-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		9FDF0B8046D6F678681C673A /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermesvm.framework/hermesvm",
 			);
 			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermesvm.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		C78C4DCB23B0701A1CF55682 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-GoMeal/Pods-GoMeal-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -488,18 +544,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				DCD1DE6D40EDD80145D3BD82 /* ExpoModulesProvider.swift in Sources */,
+				4AD5516AF354B6F3BF18A52A /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		645F925B2FCD5C8B006D90FC /* Sources */ = {
+		64227EBA30808DA100975D1D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		649813842FC13EA80027BB86 /* Sources */ = {
+		64227ECB30808DFB00975D1D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -509,29 +565,27 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		645F92652FCD5C8B006D90FC /* PBXTargetDependency */ = {
+		64227EC430808DA100975D1D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 645F925E2FCD5C8B006D90FC /* NotificationServiceExtension */;
-			targetProxy = 645F92642FCD5C8B006D90FC /* PBXContainerItemProxy */;
+			target = 64227EBD30808DA100975D1D /* NotificationServiceExtension */;
+			targetProxy = 64227EC330808DA100975D1D /* PBXContainerItemProxy */;
 		};
-		6498139C2FC13EAA0027BB86 /* PBXTargetDependency */ = {
+		64227EE330808DFE00975D1D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 649813872FC13EA80027BB86 /* GoMealLiveActivityExtensionExtension */;
-			targetProxy = 6498139B2FC13EAA0027BB86 /* PBXContainerItemProxy */;
+			target = 64227ECE30808DFB00975D1D /* GoMealLiveActivityExtensionExtension */;
+			targetProxy = 64227EE230808DFE00975D1D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7470987D94D39ED7173FC3E5 /* Pods-GoMeal.debug.xcconfig */;
+			baseConfigurationReference = 07E914B01A6359A4C40AF66E /* Pods-GoMeal.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = GoMeal/GoMeal.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -544,7 +598,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.9;
+				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -552,7 +606,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gomeal.mobile;
-				PRODUCT_NAME = "GoMeal";
+				PRODUCT_NAME = GoMeal;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -560,21 +614,19 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "GoMeal/GoMeal-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 270E422DB645EB10983E8DAB /* Pods-GoMeal.release.xcconfig */;
+			baseConfigurationReference = 5FE7A6AE75E9897FBD381586 /* Pods-GoMeal.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = GoMeal/GoMeal.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				INFOPLIST_FILE = GoMeal/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -582,7 +634,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.9;
+				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -590,19 +642,19 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gomeal.mobile;
-				PRODUCT_NAME = "GoMeal";
+				PRODUCT_NAME = GoMeal;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "GoMeal/GoMeal-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
 		};
-		645F92682FCD5C8B006D90FC /* Debug */ = {
+		64227EC730808DA100975D1D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -613,9 +665,8 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -631,7 +682,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.8;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
@@ -639,17 +690,21 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
-		645F92692FCD5C8B006D90FC /* Release */ = {
+		64227EC830808DA100975D1D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -660,10 +715,9 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -679,23 +733,27 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.8;
+				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gomeal.mobile.NotificationServiceExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
-		6498139F2FC13EAA0027BB86 /* Debug */ = {
+		64227EE730808DFE00975D1D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -708,9 +766,9 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_ENTITLEMENTS = GoMealLiveActivityExtensionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -726,7 +784,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.8;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
@@ -734,17 +792,21 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
-		649813A02FC13EAA0027BB86 /* Release */ = {
+		64227EE830808DFE00975D1D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -757,10 +819,10 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_ENTITLEMENTS = GoMealLiveActivityExtensionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -776,19 +838,23 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.8;
+				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gomeal.mobile.GoMealLiveActivityExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -815,7 +881,6 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -823,7 +888,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
-				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -853,7 +917,6 @@
 				OTHER_CPLUSPLUSFLAGS = "$(inherited)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
@@ -883,7 +946,6 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -891,7 +953,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
-				DEVELOPMENT_TEAM = UGQD4SYSL4;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -913,8 +974,6 @@
 				OTHER_CPLUSPLUSFLAGS = "$(inherited)";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
@@ -933,20 +992,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		645F92672FCD5C8B006D90FC /* Build configuration list for PBXNativeTarget "NotificationServiceExtension" */ = {
+		64227ECA30808DA100975D1D /* Build configuration list for PBXNativeTarget "NotificationServiceExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				645F92682FCD5C8B006D90FC /* Debug */,
-				645F92692FCD5C8B006D90FC /* Release */,
+				64227EC730808DA100975D1D /* Debug */,
+				64227EC830808DA100975D1D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		649813A22FC13EAA0027BB86 /* Build configuration list for PBXNativeTarget "GoMealLiveActivityExtensionExtension" */ = {
+		64227EE630808DFE00975D1D /* Build configuration list for PBXNativeTarget "GoMealLiveActivityExtensionExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				6498139F2FC13EAA0027BB86 /* Debug */,
-				649813A02FC13EAA0027BB86 /* Release */,
+				64227EE730808DFE00975D1D /* Debug */,
+				64227EE830808DFE00975D1D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -49,7 +49,6 @@ export type PostSectionInfoProps = {
   stepIndex?: number; 
   onMediaSelected?: (uri: string, source: MediaSource, stepIndex?: number) => void;
   onEnhanceMediaOpen?: (open: boolean) => void;
-  onCompleteChange?: (complete: boolean) => void;
 };
 
 export const POST_SECTION_COMPONENTS: Record<

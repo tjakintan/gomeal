@@ -21,7 +21,9 @@ type ReportState = {
     loadingReport: boolean;
     reportTarget: (
         target_id: string | number,
-        target_type: ReportTargetType
+        target_type: ReportTargetType,
+        reason?: string,
+        details?: string
     ) => Promise<void>;
 };
 
@@ -29,11 +31,11 @@ export const useReport = create<ReportState>((set) => ({
     
     loadingReport: false,
 
-    reportTarget: async (target_id, target_type) => {
+    reportTarget: async (target_id, target_type, reason, details) => {
         set({ loadingReport: true });
 
         try {
-            await get_report_api(String(target_id), target_type);
+            await get_report_api(String(target_id), target_type, reason, details);
             set({ loadingReport: false });
         } catch (err) {
             console.error("Failed to report:", err);

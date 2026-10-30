@@ -9,11 +9,15 @@ export type GoMealGlassViewProps = {
 
 export type GestureProps = {
     children: React.ReactNode;
-    style?: StyleProp<ViewStyle>;
+    style?: any;
     scaleAmount?: number;
-    duration?: number;
     haptic?: boolean;
-}
+    onPress?: () => void;
+    onLongPress?: () => void;
+    onTouchStart?: () => void;
+    onTouchEnd?: () => void;
+    onTouchCancel?: () => void;
+};
 
 export type InputProps = TextInputProps & {
     label?: string;
@@ -28,8 +32,11 @@ export type InputProps = TextInputProps & {
     leftIcon?: React.ReactNode;
     rightIcon?: React.ReactNode;
     onIconPress?: () => void;
+    iconBackground?: boolean;
     bottomSheet?: boolean;
     maxLength?: number;
+    maxHeight ?: number;
+    growDirection?: "top" | "bottom";
     showCharCount?: boolean;
     containerStyle?: ViewStyle | ViewStyle[];
 };

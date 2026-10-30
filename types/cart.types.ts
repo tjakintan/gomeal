@@ -28,6 +28,13 @@ export type Cart = {
     items?: CartItem[];
 };
 
+export type CartIngredient = {
+    id: number;
+    name: string;
+    quantity?: number;
+    unit?: string | null;
+};
+
 export type CartResponse = {
     cart_id: number;
     ingredient_id: number;

@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { GlassEffectStyleConfig } from 'expo-glass-effect';
 import { GlassStyle } from 'expo-glass-effect';
 import { Dimensions, ImageSourcePropType, StyleProp, ViewStyle, ImageStyle } from "react-native";
-import { DASHBOARD_HEIGHT } from "@/tags/ReelTag";
+import { DASHBOARD_HEIGHT } from "./feed.types";
 import { NAV_SIZE } from "@/sections/Navigate";
 import { ViewProps } from "react-native-svg/lib/typescript/fabric/utils";
 
@@ -43,18 +43,18 @@ export type ThemePalette = {
 //.Don't change order
 export const SECTION_INDEX = {
   feed: 0,
-  leaderboard: 1,
+  inbox: 1,
   chefNex: 2,
   user: 3,
-  settings: 4,
+  leaderboard: 4,
 } as const;
 
 export const INDEX_SECTION: Record<SectionIndex, Sections> = {
   0: "feed",
-  1: "leaderboard",
+  1: "inbox",
   2: "chefNex",
   3: "user",
-  4: "settings",
+  4: "leaderboard",
 };
 
 export function getPrevSectionIndex(i: SectionIndex): SectionIndex {
@@ -68,7 +68,8 @@ export type SectionIndex = typeof SECTION_INDEX[Sections];
 export type SectionIconProps = {
     key: Sections;
     name: string;
-    icon?: (color?: string) => React.ReactNode; 
+    activeIcon?: (color?: string) => React.ReactNode; 
+    inactiveIcon?: (color?: string) => React.ReactNode; 
     img_url?: ImageSourcePropType; 
     imageStyle?: StyleProp<ImageStyle>;
 };
