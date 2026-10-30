@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import threading
 
+
 # Global neuron ID counter (thread-safe)
 _neuron_id_lock = threading.Lock()
 _neuron_id_counter = 0
@@ -15,9 +16,11 @@ def _next_neuron_id() -> int:
     with _neuron_id_lock:
         _neuron_id_counter += 1
         return _neuron_id_counter
+
     
 # Global embedding dimensionality loaded from environment config
 EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "768"))
+
 
 class NeuronType(str, Enum):
     """
