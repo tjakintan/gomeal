@@ -1,8 +1,6 @@
 import json
 from brain.core.config.network import Embeddings
 from routes.post.get_post_embedding import _get_post_embeddings
-from brain.api.subscriber import _set_subscription_brain, _start_thread
-
 
 def initiation(limit: int = 500) -> list[Embeddings]:
 

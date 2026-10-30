@@ -5,7 +5,7 @@ import path from "path";
 import { SendEmailCommand } from "@aws-sdk/client-ses";
 
 const delete_html = fs.readFileSync(
-    path.join(__dirname, "delete.html"),
+    path.join(__dirname, "../html/delete.html"),
     "utf-8"
 );
 

@@ -5,6 +5,7 @@ import { DietaryData, DishInfoData, Ingredient, MediaType, NutritionData, StepDa
 import { Avatar } from "@/types/user.types";
 import { BLOCKED_USER_FILTER } from "../user/block";
 import { parseNutrition } from "@/utils/food";
+import { SHARE_BASE } from "./share";
 
 export const fetch_feed_post = async (limit: number, user_sub: string): Promise<FeedCard[]> => {
     try {
@@ -18,11 +19,15 @@ export const fetch_feed_post = async (limit: number, user_sub: string): Promise<
                 p.image_url,
                 p.dietary,
                 p.media_type,
+                p.media_duration,
                 jsonb_array_length(p.ingredients) AS num_ingredients,
                 u.profile_name,
+                u.profile_img_url AS profile_image_url,
                 u.first_name AS "firstName",
                 u.last_name AS "lastName",
                 u.level,
+                u.xp,
+                u.badge,
                 u.tag_color,
                 u.avatar
             FROM post p
@@ -50,6 +55,7 @@ export const fetch_feed_post = async (limit: number, user_sub: string): Promise<
                         dish_media_file: null,
                         dish_media_url: row.image_url,
                         dish_media_type: row.media_type as MediaType,
+                        dish_media_duration: row.media_duration ?? null,
                         dish_name: row.dish_name,
                         dish_description: row.description,
                         dish_difficulty: row.difficulty as "Easy" | "Medium" | "Hard" | "",
@@ -57,7 +63,10 @@ export const fetch_feed_post = async (limit: number, user_sub: string): Promise<
                     dietary: row.dietary as DietaryData,
                     num_ingredients: Number(row.num_ingredients),
                     profile_name: row.profile_name,
+                    profile_image_url: row.profile_image_url,
                     level: row.level,
+                    xp: row.xp,
+                    badge: row.badge,
                     avatar: row.avatar as Avatar ?? null,
                     action_counts: action_counts as FeedActionCountsTypes,
                     tag_color: row.tag_color,
@@ -88,11 +97,15 @@ export const fetch_feed_post_by_id_feed_card = async (post_id: number, user_sub:
                 p.image_url,
                 p.dietary,
                 p.media_type,
+                p.media_duration,
                 jsonb_array_length(p.ingredients) AS num_ingredients,
                 u.profile_name,
+                u.profile_img_url AS profile_image_url,
                 u.first_name AS "firstName",
                 u.last_name AS "lastName",
                 u.level,
+                u.xp,
+                u.badge,
                 u.tag_color,
                 u.avatar
             FROM post p
@@ -122,6 +135,7 @@ export const fetch_feed_post_by_id_feed_card = async (post_id: number, user_sub:
                 dish_media_file: null,
                 dish_media_url: row.image_url,
                 dish_media_type: row.media_type as MediaType,
+                dish_media_duration: row.media_duration ?? null,
                 dish_name: row.dish_name,
                 dish_description: row.description,
                 dish_difficulty: row.difficulty as "Easy" | "Medium" | "Hard" | "",
@@ -129,7 +143,10 @@ export const fetch_feed_post_by_id_feed_card = async (post_id: number, user_sub:
             dietary: row.dietary as DietaryData,
             num_ingredients: Number(row.num_ingredients),
             profile_name: row.profile_name,
+            profile_image_url: row.profile_image_url,
             level: row.level,
+            xp: row.xp,
+            badge: row.badge,
             avatar: (row.avatar as Avatar) ?? null,
             action_counts: action_counts as FeedActionCountsTypes,
             tag_color: row.tag_color,
@@ -154,15 +171,19 @@ export const fetch_post_by_id_full_post = async (post_id: number, user_sub: stri
             p.difficulty,
             p.image_url,
             p.media_type,
+            p.media_duration,
             p.dietary,
             p.nutrition,
             p.user_sub,
             p.ingredients,
             p.steps,
             u.profile_name,
+            u.profile_img_url AS profile_image_url,
             u.first_name AS "firstName",
             u.last_name AS "lastName",
             u.level,
+            u.xp,
+            u.badge,
             u.avatar
         FROM post p
         JOIN users u ON p.user_sub = u.sub
@@ -174,7 +195,7 @@ export const fetch_post_by_id_full_post = async (post_id: number, user_sub: stri
 
         const row = result.rows[0];
         const action_counts = await getFeedActionCounts(row.id);
-        const user_actions = await getFeedUserAction(row.id, row.user_sub);
+        const user_actions = await getFeedUserAction(row.id, user_sub);
 
         return {
             post_id: row.id,
@@ -185,6 +206,7 @@ export const fetch_post_by_id_full_post = async (post_id: number, user_sub: stri
                 dish_media_file: null,
                 dish_media_url: row.image_url,
                 dish_media_type: row.media_type as MediaType,
+                dish_media_duration: row.media_duration ?? null,
                 dish_name: row.dish_name,
                 dish_description: row.description,
                 dish_difficulty: row.difficulty as "Easy" | "Medium" | "Hard" | "",
@@ -194,7 +216,10 @@ export const fetch_post_by_id_full_post = async (post_id: number, user_sub: stri
             num_ingredients: row.ingredients.length,
             nutrition: [parseNutrition(row.nutrition)],
             profile_name: row.profile_name,
+            profile_image_url: row.profile_image_url,
             level: row.level,
+            xp: row.xp,
+            badge: row.badge,
             avatar: row.avatar as Avatar ?? null,
             action_counts: action_counts as FeedActionCountsTypes,
             user_actions,
@@ -208,11 +233,14 @@ export const fetch_post_by_id_full_post = async (post_id: number, user_sub: stri
     }
 };
 
-export const fetch_post_image_url = async (post_id: number): Promise<string | null> => {
+
+export const fetch_post_image_url = async (
+    post_id: number
+): Promise<string | null> => {
     try {
         const result = await db.query(
             `
-            SELECT image_url
+            SELECT image_url, media_type
             FROM post
             WHERE id = $1
               AND status = 'active'
@@ -225,9 +253,16 @@ export const fetch_post_image_url = async (post_id: number): Promise<string | nu
             return null;
         }
 
-        return result.rows[0].image_url;
+        const post = result.rows[0];
+
+        if (post.media_type === "video") {
+
+            return `${SHARE_BASE}/${post_id}/thumbnail.png`;
+        }
+
+        return post.image_url ?? null;
     } catch (err) {
-        console.error("[fetchPostImageUrl] Database query failed:", err);
+        console.error("[FetchPostImageUrl] Database query failed:", err);
         throw err;
     }
 };

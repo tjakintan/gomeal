@@ -5,6 +5,7 @@ export type DishInfoData = {
     dish_media_file: File | null;
     dish_media_url: string;
     dish_media_type: MediaType | null;
+    dish_media_duration?: number | null;
     dish_name: string;
     dish_description: string;
     dish_difficulty: "Easy" | "Medium" | "Hard" | "";

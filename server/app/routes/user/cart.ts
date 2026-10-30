@@ -331,11 +331,6 @@ export const _insert_ingredient_into_user_cart = async (
 
         const existing = await client.query(
             `
-            WITH target AS (
-                SELECT normalized_name
-                FROM ingredient
-                WHERE id = $2
-            )
             SELECT 
                 uc.cart_id,
                 uc.ingredient_id,
@@ -344,15 +339,12 @@ export const _insert_ingredient_into_user_cart = async (
                 COALESCE(uc.checked, false) AS checked,
                 uc.price
             FROM user_cart uc
-            JOIN ingredient i
-                ON i.id = uc.ingredient_id
-            JOIN target t
-                ON t.normalized_name = i.normalized_name
-            WHERE uc.user_sub = $1 
-                AND uc.ingredient_id IS NOT NULL
+            WHERE uc.user_sub = $1
+            AND uc.cart_id = $2
+            AND uc.ingredient_id = $3
             LIMIT 1;
             `,
-            [user_sub, ingredient_id]
+            [user_sub, cart_id, ingredient_id]
         );
 
         if (existing.rows[0]) {

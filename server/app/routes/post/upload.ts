@@ -1,19 +1,20 @@
 import db from "@/services/db";
 import { _create_ingredient } from "../cook/ingredient";
-import { IngredientInput } from "@/types/food.types";
+import { DietaryData, IngredientInput, NutritionData, StepData } from "@/types/food.types";
 
 const upload = async (
-    user_sub: string, 
-    dish_name: string, 
+    user_sub: string,
+    dish_name: string,
     description: string,
     difficulty: string,
     image_url: string,
     media_type: string,
     ingredients: IngredientInput[],
-    steps: unknown[],
-    nutrition: unknown[],
-    dietary: unknown[]
-): Promise<{post_id: string}[]> => {
+    steps: StepData[],
+    nutrition: NutritionData[],
+    dietary: DietaryData[],
+    media_duration: number | null = null
+): Promise<{ post_id: string }[]> => {
 
     const client = await db.connect();
 
@@ -21,13 +22,7 @@ const upload = async (
 
         await client.query('BEGIN');
 
-        {/** 
-        const _ingredient_id =  await _create_ingredient(client, ingredients);
-        const _ingredients: IngredientInput[] = ingredients.map((ingredient, index) => ({
-            ...ingredient,
-            ingredient_id: _ingredient_id[index]?.ingredient_id ?? ingredient.ingredient_id ?? null,
-        }));
-        */}
+        const _dietary = dietary != null ? JSON.stringify(dietary) : null;
 
         const result = await client.query(`
             INSERT INTO post (
@@ -40,14 +35,16 @@ const upload = async (
                 ingredients,
                 steps,
                 nutrition,
-                dietary
+                dietary,
+                media_duration
             )
             VALUES (
                 $1, $2, $3, $4, $5, $6,
                 $7::jsonb,
                 $8::jsonb,
                 $9::jsonb,
-                $10::jsonb
+                $10::jsonb,
+                $11
             )
             RETURNING id AS post_id;
             `,
@@ -61,7 +58,8 @@ const upload = async (
                 JSON.stringify(ingredients),
                 JSON.stringify(steps),
                 JSON.stringify(nutrition),
-                JSON.stringify(dietary),
+                _dietary,
+                media_duration,
             ]
         );
 

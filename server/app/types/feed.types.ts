@@ -1,18 +1,31 @@
 import { DietaryData, DishInfoData, Ingredient, MediaType, NutritionData, StepData } from "./food.types";
-import { Avatar } from "./user.types";
+import { Avatar, BadgeLevel } from "./user.types";
 
 export type FeedScopeType =
     | "dessert"
     | "soup"
     | "appetizer"
     | "high_protein"
-    | "quick";
+    | "quick"
+    | "breakfast"
+    | "lunch"
+    | "dinner"
+    | "vegetarian"
+    | "vegan"
+    | "low_carb"
+    | "healthy"
+    | "meal_prep"
+    | "comfort_food"
+    | "family_friendly"
+    | "budget"
+    | "high_fiber";
 
 export type FeedActionType =
     | "post_love"
     | "post_cook"
     | "post_star"
-    | "post_share";
+    | "post_share"
+    | "post_view";
  
 export type FeedAction = {
     post_id: number;
@@ -25,16 +38,13 @@ export type FeedActionCountsTypes = {
     post_cook: number;
     post_star: number;
     post_share: number;
+    post_view: number;
 };
 
 export type SearchFeedCard = {
     post_id: number;
 
-    info: {
-        dish_name: string;
-        dish_media_url: string;
-        dish_media_type: MediaType;
-    };
+    info: DishInfoData;
 
     action_counts?: FeedActionCountsTypes;
 
@@ -44,6 +54,9 @@ export type SearchFeedCard = {
     firstName: string;
     lastName: string | null;
     tag_color?: string | null;
+    level: number; 
+    xp: number;
+    badge: BadgeLevel;
 };
 
 export type UserActionedPostsType = {
@@ -63,15 +76,13 @@ export type FeedCard = {
     dietary: DietaryData;
     num_ingredients: number;
     profile_name: string;
+    profile_image_url: string | null;
     level: number;
+    xp: number;
+    badge: BadgeLevel;
     avatar: Avatar;
     user_actions: FeedActionType[];
-    action_counts: {
-        post_love: number;
-        post_cook: number;
-        post_star: number;
-        post_share: number;
-    };
+    action_counts: FeedActionCountsTypes;
     tag_color?: string | null;
 };
 
@@ -91,7 +102,11 @@ export type ReelFeedCard = {
     action_counts: FeedActionCountsTypes;
     avatar: Avatar;
     level: number; 
+    xp: number;
+    badge: BadgeLevel;
     profile_name: string;
+
+    steps: StepData[];
 
     dietary: DietaryData;
     nutrition: NutritionData[];
@@ -99,11 +114,7 @@ export type ReelFeedCard = {
 
 export type MinimumFeedCard = {
     post_id: number;
-    info: {
-        dish_name: string;
-        dish_media_url: string; 
-        dish_media_type: MediaType;
-    };
+    info: DishInfoData;
     action_counts?: FeedActionCountsTypes;
 };
 
@@ -112,6 +123,7 @@ export type FeedProfileCard ={
     post_id: number,
     xp: number;
     level: number; 
+    bread: number;
     firstName: string;
     lastName: string;
     bio?: string | null;
@@ -122,6 +134,8 @@ export type FeedProfileCard ={
     num_of_likes: number;
     num_of_cooks: number;
     num_of_shares: number;
+    avatar: Avatar;
+    badge: BadgeLevel;
     user_posts: UserActionedPostsType;
     profile_img_url?: string | null;
 };
@@ -136,10 +150,14 @@ export type  FeedDBRow = {
     difficulty: "Easy" | "Medium" | "Hard" | "";
     image_url: string;
     media_type: MediaType;
+    media_duration: number | null;
     dietary: DietaryData;
     num_ingredients: number;
     tag_color?: string | null;
+    xp: number;
+    badge: BadgeLevel;
     profile_name: string;
+    profile_image_url: string | null;
     level: number;
     avatar: Avatar | null;
 };
@@ -154,6 +172,7 @@ export type ReelDBRow = {
     difficulty: "Easy" | "Medium" | "Hard" | "";
     image_url: string;
     media_type: MediaType;
+    media_duration: number | null;
     profile_name: string;
     level: number;
     avatar: Avatar | null;
@@ -161,8 +180,12 @@ export type ReelDBRow = {
     post_star: number;
     post_cook: number;
     post_share: number;
+    post_view: number;
     user_actions: FeedActionType[];
+    xp: number;
+    badge: BadgeLevel;
 
+    steps: StepData[];
     dietary: DietaryData; 
     nutrition: {
         servings: number;

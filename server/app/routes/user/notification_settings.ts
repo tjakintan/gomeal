@@ -1,7 +1,24 @@
 import db from "@/services/db";
 import { defaultNotificationSettings, NotificationActionType, NotificationSettings } from "@/types/notification.types";
 import { PoolClient } from "pg";
-import { remove_newsletter_subscriber } from "../web/newsletter";
+
+const SETTINGS_COLUMNS = `
+    likes,
+    stars,
+    messages,
+    cook,
+    cooking_reminder_time,
+    timezone
+`;
+
+const mapSettings = (row: any): NotificationSettings => ({
+    likes: row.likes,
+    stars: row.stars,
+    messages: row.messages,
+    cook: row.cook,
+    cookingReminderTime: row.cooking_reminder_time,
+    timezone: row.timezone,
+});
 
 export const get_notification_settings = async (
     user_sub: string,
@@ -10,30 +27,14 @@ export const get_notification_settings = async (
     const runner = client ?? db;
 
     const result = await runner.query(
-        `SELECT
-            likes,
-            messages,
-            cook,
-            cooking_reminder_time,
-            timezone
-        FROM notification_settings
-        WHERE user_sub = $1`,
+        `SELECT ${SETTINGS_COLUMNS}
+         FROM notification_settings
+         WHERE user_sub = $1`,
         [user_sub]
     );
 
     const row = result.rows[0];
-
-    if (!row) {
-        return defaultNotificationSettings;
-    }
-
-    return {
-        likes: row.likes,
-        messages: row.messages,
-        cook: row.cook,
-        cookingReminderTime: row.cooking_reminder_time,
-        timezone: row.timezone
-    };
+    return row ? mapSettings(row) : defaultNotificationSettings;
 };
 
 export const update_notification_settings = async (
@@ -44,52 +45,35 @@ export const update_notification_settings = async (
     const runner = client ?? db;
     const current = await get_notification_settings(user_sub, client);
 
-    const next: NotificationSettings = {
-        ...current,
-        ...updates,
-    };
+    const next: NotificationSettings = { ...current, ...updates };
 
     const result = await runner.query(
         `INSERT INTO notification_settings (
-            user_sub,
-            likes,
-            messages,
-            cook,
-            cooking_reminder_time,
-            timezone
+            user_sub, likes, stars, messages, cook, cooking_reminder_time, timezone
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (user_sub)
         DO UPDATE SET
             likes = EXCLUDED.likes,
+            stars = EXCLUDED.stars,
             messages = EXCLUDED.messages,
             cook = EXCLUDED.cook,
             cooking_reminder_time = EXCLUDED.cooking_reminder_time,
             timezone = EXCLUDED.timezone,
             updated_at = NOW()
-        RETURNING
-            likes,
-            messages,
-            cook,
-            cooking_reminder_time,
-            timezone`,
+        RETURNING ${SETTINGS_COLUMNS}`,
         [
             user_sub,
             next.likes,
+            next.stars,
             next.messages,
             next.cook,
             next.cookingReminderTime,
-            next.timezone
+            next.timezone,
         ]
     );
-    
-    return {
-        likes: result.rows[0].likes,
-        messages: result.rows[0].messages,
-        cook: result.rows[0].cook,
-        cookingReminderTime: result.rows[0].cooking_reminder_time,
-        timezone: result.rows[0].timezone
-    };
+
+    return mapSettings(result.rows[0]);
 };
 
 export const can_send_notification = async (
@@ -108,6 +92,9 @@ export const can_send_notification = async (
 
         case "cook":
             return settings.cook;
+
+        case "star":
+            return settings.stars;
             
         case "post":
             return true;

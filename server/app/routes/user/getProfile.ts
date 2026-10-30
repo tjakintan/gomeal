@@ -121,3 +121,11 @@ export const get_user_profile_name = async (user_sub: string): Promise<string> =
     );
     return result.rows[0]?.profile_name ?? "Someone";
 };
+
+export const get_user_profile_image = async (user_sub: string): Promise<string | null> => {
+    const result = await db.query(
+        `SELECT profile_img_url FROM users WHERE sub = $1 AND status = 'active'`,
+        [user_sub]
+    );
+    return result.rows[0]?.profile_img_url ?? null;
+};

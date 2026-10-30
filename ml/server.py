@@ -19,7 +19,6 @@ from routes.feed.rank.rank import _set_rank_brain
 from routes.router import router
 
 from services.socket_service import _sockets
-from chefNex.socket import _chefNex_sockets
 
 PORT = int(os.getenv("PORT", 6969))
 
@@ -35,11 +34,13 @@ app.add_middleware(
 
 app.include_router(router)
 
-sio = socketio.AsyncServer(cors_allowed_origins="*")
+sio = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins="*",
+)
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 _sockets(sio)
-_chefNex_sockets(sio)
 
 app.state.ready = False
 _ready = False

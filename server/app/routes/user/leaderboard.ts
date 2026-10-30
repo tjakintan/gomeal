@@ -1,7 +1,5 @@
 import db from "@/services/db";
 import { ActionType, Avatar, BadgeLevel } from "@/types/user.types";
-import log_user_actions from "./log";
-import { ActionWeights } from "@/types/user.types";
 
 export const get_reward_user_action = async (
     user_sub: string,

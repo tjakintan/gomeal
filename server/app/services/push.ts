@@ -1,10 +1,12 @@
+import { Server } from "socket.io";
 import db from "@/services/db";
 import dns from "dns";
 import http2 from "http2";
 import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
-import { PushTokenPlatform, PushTokenRow } from "@/types/notification.types";
+import { PostNotifType, PushTokenPlatform, PushTokenRow } from "@/types/notification.types";
+import { get_unread_notification_count } from "@/routes/user/notification";
 
 const APNS_KEY_ID = process.env.APNS_KEY_ID!;
 const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
@@ -88,33 +90,65 @@ export const get_push_tokens_except_user = async (
     return (result.rows as PushTokenRow[]).map((row) => row.token);
 };
 
+export const count_post_notification_actors = async (
+    receiver_sub: string, type: PostNotifType, post_id: number
+): Promise<number> => {
+    const r = await db.query(
+        `SELECT COUNT(*)::int AS count FROM notifications
+         WHERE receiver_sub = $1 AND action_type = $2 AND post_id = $3 AND status = 'active'`,
+        [receiver_sub, type, post_id]
+    );
+    return r.rows[0]?.count ?? 1;
+};
+
 export const send_apns_notification = ({
     deviceToken,
     title,
     body,
     image_url,
+    image_urls,
+    collapseId,
     data = {},
+    badge,
 }: {
     deviceToken: string;
     title: string;
     body: string;
     image_url?: string;
+    image_urls?: string[];
+    collapseId?: string;
     data?: Record<string, unknown>;
+    badge?: number;
 }): Promise<void> => {
     return new Promise((resolve, reject) => {
         const token = getApnsToken();
         const cleanDeviceToken = deviceToken.replace(/[\s<>]/g, "");
+
+        const images = [
+            ...new Set([
+                ...(image_url ? [image_url] : []),
+                ...(image_urls ?? []),
+            ]),
+        ].filter((url) => /^https?:\/\//i.test(url));
 
         const payload = JSON.stringify({
             aps: {
                 alert: { title, body },
                 sound: "default",
                 "mutable-content": 1,
+                ...(collapseId ? { "thread-id": collapseId } : {}),
+                ...(badge !== undefined ? { badge } : {}),
             },
-            data: {        
+            ...(images.length ? { image_url: images[0] } : {}),
+            data: {
                 ...data,
+                ...(images.length
+                    ? {
+                        image_url: images[0],
+                        image_urls: images,
+                    }
+                    : {}),
             },
-            ...(image_url ? { image: image_url } : {}),
         });
 
         const client = http2.connect(APNS_HOST);
@@ -128,6 +162,7 @@ export const send_apns_notification = ({
             "apns-push-type": "alert",
             "apns-priority": "10",
             "content-type": "application/json",
+            ...(collapseId ? { "apns-collapse-id": collapseId.slice(0, 64) } : {}),
         });
 
         let status: number;
@@ -142,26 +177,28 @@ export const send_apns_notification = ({
         });
 
         req.on("end", () => {
+            clearTimeout(timeout);
             client.close();
+
             if (status === 200) {
                 resolve();
             } else {
-                console.error("[APNS] Failed", { status, body: responseBody, deviceToken: cleanDeviceToken });
-                reject(new Error(`APNS error ${status}: ${responseBody}`));
+                reject(
+                    new Error(`APNS error ${status}: ${responseBody}`)
+                );
             }
         });
 
         req.on("error", (err) => {
+            clearTimeout(timeout);
             client.close();
             reject(err);
         });
 
         const timeout = setTimeout(() => {
             client.destroy();
-            reject(new Error(`APNS timeout for token: ${cleanDeviceToken}`));
+            reject(new Error("APNS notification timed out"));
         }, 10000);
-
-        req.on("end", () => clearTimeout(timeout));
 
         req.write(payload);
         req.end();
@@ -173,18 +210,47 @@ export const send_push_notification = async ({
     title,
     body,
     image_url,
+    image_urls,
+    collapseId,
     data = {},
+    badge,
 }: {
     token: string;
     title: string;
     body: string;
     image_url?: string;
+    image_urls?: string[];
+    collapseId?: string;
     data?: Record<string, unknown>;
+    badge?: number;
 }) => {
+    const images = [
+        ...new Set([
+            ...(image_url ? [image_url] : []),
+            ...(image_urls ?? []),
+        ]),
+    ].filter((url) => /^https?:\/\//i.test(url));
+
+    const primaryImage = images[0];
+    const notificationData = {
+        ...data,
+        ...(primaryImage ? { image_url: primaryImage } : {}),
+        ...(images.length ? { image_urls: images } : {}),
+    };
+
     const isNativeToken = /^[0-9a-f]{64}$/i.test(token);
 
     if (isNativeToken) {
-        return send_apns_notification({ deviceToken: token, title, body, image_url, data });
+        return send_apns_notification({
+            deviceToken: token,
+            title,
+            body,
+            image_url: primaryImage,
+            image_urls: images,
+            data: notificationData,
+            badge,
+            collapseId
+        });
     }
 
     const payload = {
@@ -193,11 +259,9 @@ export const send_push_notification = async ({
         title,
         body,
         mutableContent: true,
-        data: {
-            ...data,
-            ...(image_url ? { image: image_url } : {}),
-        },
-        ...(image_url ? { image: image_url } : {}),
+        data: notificationData,
+        ...(primaryImage ? { image: primaryImage } : {}),
+        ...(badge !== undefined ? { badge } : {}),
     };
 
     const res = await fetch("https://exp.host/--/api/v2/push/send", {
@@ -218,15 +282,23 @@ export const send_push_notification_to_user_devices = async ({
     title,
     body,
     image_url,
+    image_urls,
+    collapse_key,
     data,
 }: {
     receiver_sub: string;
     title: string;
     body: string;
     image_url?: string;
+    image_urls?: string[];
+    collapse_key?: string
     data?: Record<string, unknown>;
 }) => {
-    const tokens = await get_push_tokens(receiver_sub);
+    const [tokens, badge] = await Promise.all([
+        get_push_tokens(receiver_sub),
+        get_unread_notification_count(receiver_sub),
+    ]);
+
     await Promise.all(
         tokens.map((row) =>
             send_push_notification({
@@ -234,8 +306,51 @@ export const send_push_notification_to_user_devices = async ({
                 title,
                 body,
                 image_url,
+                image_urls,
                 data,
+                badge,
+                collapseId: collapse_key,
             })
         )
     );
 };
+
+export async function push_alert_user_device(
+    io: Server,
+    args: {
+        receiver_sub: string;
+        title: string;
+        body: string;           
+        message_type: string;
+        content: string;    
+        count: number;             
+        image_urls: string[];
+        data: Record<string, unknown>;
+    }
+) {
+    const sockets = await io.in(args.receiver_sub).fetchSockets();
+    const activeSockets = sockets.filter((s) => s.data.appState === "active");
+
+    if (activeSockets.length > 0) {
+        activeSockets.forEach((s) =>
+            s.emit("message-sent-in-app", {
+                conversation_id: Number(args.data.conversation_id),
+                title: args.title,
+                message_type: args.message_type,
+                content: args.message_type === "text" ? args.content.slice(0, 80) : "",
+                count: args.count,
+                profile_image_url: args.data.profile_image_url ?? null,
+            })
+        );
+        return;
+    }
+
+    await send_push_notification_to_user_devices({
+        receiver_sub: args.receiver_sub,
+        title: args.title,
+        body: args.body,
+        image_url: args.image_urls[0],
+        image_urls: args.image_urls,
+        data: args.data,
+    });
+}

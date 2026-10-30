@@ -37,13 +37,15 @@ export type MinimumProfile = {
     badge: BadgeLevel;
     avatar: Avatar;
     profile_name: string;
-    bio?: string | null;
-    website?: string | null;
     firstName?: string;
     lastName?: string;
     dob?: string | null;
+    bio?: string | null;
+    website?: string | null;
     profile_img_url?: string | null;
     tag_color?: string | null;
+    level?: number; 
+    xp?: number;
 };
 
 export type UltraMinimumProfile = {

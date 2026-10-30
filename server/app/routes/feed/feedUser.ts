@@ -1,10 +1,12 @@
 import db from "@/services/db";
 import { get_post_user_sub, getUserActionCounts, getUserPosts } from "./actions";
 import { FeedProfileCard } from "@/types/feed.types";
+import { is_user_blocked } from "../user/block";
 
 type FetchFeedProfileParams =
-  | { type: "post_id"; post_id: number; limit?: number }
-  | { type: "user_sub"; user_sub: string; limit?: number };
+    | { type: "post_id"; post_id: number; requester_sub: string; limit?: number }
+    | { type: "user_sub"; user_sub: string; requester_sub: string; limit?: number };
+
 
 export const fetchFeedProfile = async (params: FetchFeedProfileParams): Promise<FeedProfileCard> => {
   try {
@@ -37,11 +39,18 @@ export const fetchFeedProfile = async (params: FetchFeedProfileParams): Promise<
             throw new Error("invalid_fetch_type");
     }
 
+    if (await is_user_blocked(params.requester_sub, userSub)) {
+        throw new Error("user_not_found");
+    }
+
     const userResult = await db.query(
         `SELECT 
             sub,
             xp,
+            avatar,
+            badge,
             level,
+            bread,
             first_name,
             last_name,
             profile_name,
@@ -66,7 +75,10 @@ export const fetchFeedProfile = async (params: FetchFeedProfileParams): Promise<
         sub: user.sub,
         post_id: postId,
         xp: user.xp,
+        avatar: user.avatar,
+        badge: user.badge,
         level: user.level,
+        bread: user.bread,
         firstName: user.first_name,
         lastName: user.last_name,
         profile_name: user.profile_name,
@@ -81,6 +93,7 @@ export const fetchFeedProfile = async (params: FetchFeedProfileParams): Promise<
         profile_img_url: user.profile_img_url || null,
         };
     } catch (err) {
+        if (err instanceof Error && ["post_not_found", "user_not_found"].includes(err.message)) throw err;
         console.error(err);
         throw new Error("failed_to_fetch_feed_profile");
     }

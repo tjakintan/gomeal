@@ -4,7 +4,7 @@ import http from "http";
 import { useRouter, useSocket } from './app/routes/index';
 import { initSocket } from './app/services/socket';
 import { cleanup_notification } from './app/routes/user/notification';
-import { jobs } from './app/jobs/noti';
+import { jobs } from './app/jobs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

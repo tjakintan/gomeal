@@ -4,7 +4,7 @@ import path from 'path';
 import { SendEmailCommand } from '@aws-sdk/client-ses';
 
 const welcome_html = fs.readFileSync(
-    path.join(__dirname, 'welcome.html'),
+    path.join(__dirname, '../html/welcome.html'),
     'utf-8'
 );
 

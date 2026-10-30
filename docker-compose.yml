@@ -5,11 +5,12 @@ services:
       - "3000:3000"
     env_file:
       - config.env
-    depends_on:
-      ml:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - server/.env
+    #depends_on:
+    #  ml:
+    #    condition: service_healthy
+    #  redis:
+    #    condition: service_started
 
   ml:
     build: ./ml
@@ -17,9 +18,9 @@ services:
       - "6969:6969"
     env_file:
       - ml/.env
-    depends_on:
-      redis:
-        condition: service_started
+    #depends_on:
+    #  redis:
+    #    condition: service_started
     healthcheck:
       test:
         [

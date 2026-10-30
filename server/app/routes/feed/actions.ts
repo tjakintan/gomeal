@@ -14,6 +14,7 @@ export const get_post_user_sub = async (post_id: number): Promise<string | null>
 
 };
 
+
 export const getFeedUserAction = async (post_id: number, user_sub: string): Promise<FeedActionType[]> => {
 
     try {
@@ -37,9 +38,21 @@ export const getFeedUserAction = async (post_id: number, user_sub: string): Prom
     }
 };
 
+
 export const setFeedActionCount = async (post_id: number, user_sub: string, action_type: FeedActionType) => {
 
     try {
+
+        if (action_type === "post_view") {
+            await db.query(
+                `INSERT INTO post_actions (post_id, user_sub, action_type)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (post_id, user_sub, action_type) DO NOTHING`,
+                [post_id, user_sub, action_type]
+            );
+
+            return await getFeedActionCounts(post_id);
+        }
 
         // -- optional, front end already ensures it can't be spammed
         const existing = await db.query(
@@ -79,15 +92,16 @@ export const setFeedActionCount = async (post_id: number, user_sub: string, acti
 
 };
 
-export const getFeedActionCounts = async (post_id: number): Promise<FeedActionCountsTypes> => {
 
+export const getFeedActionCounts = async (
+    post_id: number
+): Promise<FeedActionCountsTypes> => {
     try {
-
         const countsResult = await db.query(
-            `SELECT action_type, COUNT(*) AS count
-            FROM post_actions
-            WHERE post_id=$1
-            GROUP BY action_type`,
+            `SELECT action_type, COUNT(*)::int AS count
+             FROM post_actions
+             WHERE post_id = $1
+             GROUP BY action_type`,
             [post_id]
         );
 
@@ -96,34 +110,52 @@ export const getFeedActionCounts = async (post_id: number): Promise<FeedActionCo
             post_cook: 0,
             post_star: 0,
             post_share: 0,
+            post_view: 0,
         };
 
-        countsResult.rows.forEach((row: { action_type: FeedActionType; count: string }) => {
-            switch (row.action_type) {
-                case "post_love":
-                    action_counts.post_love = parseInt(row.count, 10);
-                    break;
-                case "post_cook":
-                    action_counts.post_cook = parseInt(row.count, 10);
-                    break;
-                case "post_star":
-                    action_counts.post_star = parseInt(row.count, 10);
-                    break;
-                case "post_share":
-                    action_counts.post_share = parseInt(row.count, 10);
-                    break;
+        countsResult.rows.forEach(
+            (row: { action_type: FeedActionType; count: number }) => {
+                switch (row.action_type) {
+                    case "post_love":
+                        action_counts.post_love = row.count;
+                        break;
+                    case "post_cook":
+                        action_counts.post_cook = row.count;
+                        break;
+                    case "post_star":
+                        action_counts.post_star = row.count;
+                        break;
+                    case "post_share":
+                        action_counts.post_share = row.count;
+                        break;
+                    case "post_view":
+                        action_counts.post_view = row.count;
+                        break;
+                }
             }
-        });
+        );
 
         return action_counts;
-
     } catch (err) {
-        
         console.error(err);
         throw new Error("failed_to_get_post_counts");
     }
-
 };
+
+
+const toFeedCard = (row: any, action_counts: FeedActionCountsTypes): MinimumFeedCard => ({
+    post_id: row.post_id,
+    info: {
+        dish_media_file: null, 
+        dish_media_url: row.image_url,
+        dish_media_type: row.media_type,
+        dish_name: row.dish_name,
+        dish_description: row.description ?? "",
+        dish_difficulty: row.difficulty ?? "",
+    },
+    action_counts,
+});
+
 
 export const getUserPosts = async (user_sub: string, limit = 100): Promise<UserActionedPostsType> => {
 
@@ -135,9 +167,8 @@ export const getUserPosts = async (user_sub: string, limit = 100): Promise<UserA
         post_share: [],
     };
 
-    // Query 1: posts the user made
     const madeResult = await db.query(
-        `SELECT p.id AS post_id, p.dish_name, p.image_url, p.media_type
+        `SELECT p.id AS post_id, p.dish_name, p.description, p.difficulty, p.image_url, p.media_type
          FROM post p
          WHERE p.user_sub = $1 AND p.status = 'active'
          ORDER BY p.id DESC
@@ -145,9 +176,8 @@ export const getUserPosts = async (user_sub: string, limit = 100): Promise<UserA
         [user_sub, limit]
     );
 
-    // Query 2: posts the user actioned (excluding their own to avoid double-counting)
     const actionedResult = await db.query(
-        `SELECT p.id AS post_id, p.dish_name, p.image_url, p.media_type, pa.action_type
+        `SELECT p.id AS post_id, p.dish_name, p.description, p.difficulty, p.image_url, p.media_type, pa.action_type
          FROM post_actions pa
          JOIN post p ON pa.post_id = p.id
          WHERE pa.user_sub = $1 AND p.status = 'active'
@@ -168,31 +198,20 @@ export const getUserPosts = async (user_sub: string, limit = 100): Promise<UserA
     );
 
     for (const row of madeResult.rows) {
-        grouped.post_made.push({
-            post_id: row.post_id,
-            info: {
-                dish_name: row.dish_name,
-                dish_media_url: row.image_url,
-                dish_media_type: row.media_type,
-            },
-            action_counts: countsMap[row.post_id],
-        });
+        grouped.post_made.push(toFeedCard(row, countsMap[row.post_id]));
     }
 
     for (const row of actionedResult.rows) {
-        grouped[row.action_type as FeedActionType].push({
-            post_id: row.post_id,
-            info: {
-                dish_name: row.dish_name,
-                dish_media_url: row.image_url,
-                dish_media_type: row.media_type,
-            },
-            action_counts: countsMap[row.post_id],
-        });
+        const actionType = row.action_type as FeedActionType;
+
+        if (actionType === "post_view") continue;
+
+        grouped[actionType].push(
+            toFeedCard(row, countsMap[row.post_id])
+        );
     }
 
     return grouped;
-
 };
 
 export const getUserActionCounts = async (user_sub: string) => {
@@ -208,23 +227,29 @@ export const getUserActionCounts = async (user_sub: string) => {
             [user_sub]
         );
 
+
         const actionCounts: Record<FeedActionType, number> = {
             post_love: 0,
             post_cook: 0,
             post_star: 0,
             post_share: 0,
+            post_view: 0,
         };
 
-        result.rows.forEach((row: { action_type: FeedActionType; count: number }) => {
-            actionCounts[row.action_type] = row.count;
-        });
+        result.rows.forEach(
+            (row: { action_type: FeedActionType; count: number }) => {
+                actionCounts[row.action_type] = row.count;
+            }
+        );
 
         return {
             num_of_likes: actionCounts.post_love,
             num_of_cooks: actionCounts.post_cook,
             num_of_stars: actionCounts.post_star,
             num_of_shares: actionCounts.post_share,
+            num_of_views: actionCounts.post_view,
         };
+
 
     } catch (err) {
 
@@ -241,21 +266,12 @@ export const get_post_by_id = async (post_id: number) => {
         const result = await db.query(
             `
             SELECT
-                p.id,
-                p.user_sub,
-                p.dish_name,
-                p.description,
-                p.image_url,
-                p.media_type,
-                p.status,
-                u.profile_name,
-                u.first_name,
-                u.last_name
+                p.id, p.user_sub, p.dish_name, p.description, p.image_url, p.media_type, p.status,
+                u.profile_name, u.first_name, u.last_name,
+                u.profile_img_url
             FROM post p
-            LEFT JOIN users u
-                ON u.sub = p.user_sub
-            WHERE p.id = $1
-              AND p.status = 'active'
+            LEFT JOIN users u ON u.sub = p.user_sub
+            WHERE p.id = $1 AND p.status = 'active'
             LIMIT 1
             `,
             [post_id]
@@ -271,6 +287,7 @@ export const get_post_by_id = async (post_id: number) => {
             dish_name: row.dish_name,
             description: row.description,
             image_url: row.image_url,
+            profile_img_url: row.profile_img_url ?? null,
             media_type: row.media_type as MediaType,
             status: row.status,
             profile_name: row.profile_name,

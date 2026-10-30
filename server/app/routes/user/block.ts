@@ -12,6 +12,17 @@ export const BLOCKED_USER_FILTER = `
     )
 `;
 
+export const blockedFilter = (requesterParam: string, subColumn: string) => `
+    AND NOT EXISTS (
+        SELECT 1
+        FROM user_blocks ub
+        WHERE
+            (ub.blocker_sub = ${requesterParam}::text AND ub.blocked_sub = ${subColumn})
+            OR
+            (ub.blocker_sub = ${subColumn} AND ub.blocked_sub = ${requesterParam}::text)
+    )
+`;
+
 export async function block_user(
     blocker_sub: string,
     blocked_sub: string

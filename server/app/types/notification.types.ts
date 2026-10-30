@@ -1,13 +1,34 @@
-import { FeedActionCountsTypes } from "./feed.types";
 import { MediaType } from "./food.types";
 import { Avatar } from "./user.types";
 
 export type MessageStatus = "active" | "deleted" | "archived";
 
+export const POST_NOTIF_TYPES = [
+    "like",
+    "star",
+    "cook",
+    "trend",
+    "recommendation",
+] as const;
+
+export type NotificationActionType =
+    | "message"
+    | "like"
+    | "cook"
+    | "trend"
+    | "recommendation"
+    | "star"
+    | "post";
+
+export type PostNotifType = (typeof POST_NOTIF_TYPES)[number];
+
+export type GroupedActor = { avatar: Avatar; profile_name: string };
+
 export type NotificationSettings = {
     likes: boolean;
     messages: boolean;
     cook: boolean;
+    stars: boolean; 
     cookingReminderTime: string | null;
     timezone: string;
 };
@@ -16,6 +37,7 @@ export const defaultNotificationSettings: NotificationSettings = {
     likes: true,
     messages: true,
     cook: true,
+    stars: true,
     cookingReminderTime: null,
     timezone: "UTC",
 };
@@ -28,12 +50,16 @@ export interface CreateNotificationParams {
     conversation_id?: number | null;
 };
 
-export type NotificationActionType =
-    | "message"
-    | "like"
-    | "cook"
-    | "trend"
-    | "post";
+export type GroupedPostNotificationCard = {
+    post_id: number;
+    created_at: Date;  
+    is_read: boolean;  
+    actor_count: number;
+    actors: GroupedActor[]; 
+    dish_name: string;
+    dish_media_url: string;
+    dish_media_type: MediaType;
+};
 
 export interface Notification {
     id: number;
@@ -60,23 +86,28 @@ export type TrendNotificationCard = {
     trend_rank: number;
 };
 
+export type RecommendationNotificationCard = {
+    post_id: number;
+    created_at: Date;
+    is_read: boolean;
+    dish_name: string;
+    dish_media_url: string;
+    dish_media_type: MediaType;
+    similarity?: number;
+};
+
 export type NotificationCard = {
     like: LikeNotificationCard[],
     message: MessageNotificationCard[],
     cook: CookNotificationCard[],
     trend: TrendNotificationCard[];
+    star: StarNotificationCard[];
+    recommendation: RecommendationNotificationCard[];
 }
 
-export type LikeNotificationCard = {
-    post_id: number;
-    created_at: Date;
-    is_read: boolean;
-    actor_avatar: Avatar;
-    actor_profile_name: string;
-    dish_name: string;
-    dish_media_url: string; 
-    dish_media_type: MediaType;
-};
+export type LikeNotificationCard = GroupedPostNotificationCard;
+export type CookNotificationCard = GroupedPostNotificationCard;
+export type StarNotificationCard = GroupedPostNotificationCard;
 
 export type MessageNotificationCard = {
     conversation_id: number;
@@ -87,18 +118,6 @@ export type MessageNotificationCard = {
     content: string;
     user_sub: string;
 };
-
-export type CookNotificationCard = {
-    post_id: number;
-    created_at: Date;
-    is_read: boolean;
-    actor_avatar: Avatar;
-    actor_profile_name: string;
-    dish_name: string;
-    dish_media_url: string;
-    dish_media_type: MediaType;
-};
-
 export type PushTokenPlatform = "ios" | "android" | "web";
 
 export interface PushToken {

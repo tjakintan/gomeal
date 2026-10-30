@@ -3,7 +3,7 @@ import { getProfile } from "./getProfile";
 import { Server, Socket } from "socket.io";
 import { report } from "./report";
 import { delete_post } from "../feed/actions";
-import { get_notifications, mark_notifications_read } from "./notification";
+import { delete_notification, get_notifications, mark_notifications_read } from "./notification";
 import { get_reward_user_action, get_leaderboard_rankings } from "./leaderboard";
 import { AuthenticatedRequest, authenticate } from "@/middleware/authenticate";
 import { block_user, get_blocked_users, remove_blocked_user } from "./block";
@@ -267,7 +267,7 @@ export function user_sockets(io: Server) {
                 return callback?.({ error: "request_failed_missing_body" });
             }
 
-            const { likes, messages, cook, cookingReminderTime, timezone } = data ?? {};
+            const { likes, stars, messages, cook, cookingReminderTime, timezone } = data ?? {};
 
             if (
                 likes !== undefined &&
@@ -287,6 +287,10 @@ export function user_sockets(io: Server) {
                 return callback?.({ error: "invalid_cook_setting" });
             }
 
+            if (stars !== undefined && typeof stars !== "boolean") {
+                return callback?.({ error: "invalid_stars_setting" });
+            }
+
             if (
                 cookingReminderTime !== undefined &&
                 cookingReminderTime !== null &&
@@ -303,6 +307,7 @@ export function user_sockets(io: Server) {
 
                 const settings = await update_notification_settings(user_sub, {
                     ...(likes !== undefined ? { likes } : {}),
+                    ...(stars !== undefined ? { stars } : {}),
                     ...(messages !== undefined ? { messages } : {}),
                     ...(cook !== undefined ? { cook } : {}),
                     ...(cookingReminderTime !== undefined ? { cookingReminderTime } : {}),
@@ -327,6 +332,49 @@ export function user_sockets(io: Server) {
                 callback?.({ notifications });
             } catch {
                 callback?.({ error: "failed_to_get_notifications" });
+            }
+        });
+
+        socket.on("delete-notification", async (data, callback) => {
+            if (!user_sub) {
+                return callback?.({ error: "request_failed_missing_body" });
+            }
+
+            const { action_type, post_id, conversation_id } = data ?? {};
+
+            const validTypes = [
+                "message",
+                "like",
+                "cook",
+                "trend",
+                "recommendation",
+                "star",
+                "post",
+            ];
+
+            if (
+                !validTypes.includes(action_type) ||
+                (
+                    action_type === "message"
+                        ? !Number.isInteger(conversation_id) || conversation_id <= 0
+                        : !Number.isInteger(post_id) || post_id <= 0
+                )
+            ) {
+                return callback?.({ error: "invalid_notification_data" });
+            }
+
+            try {
+                const deleted = await delete_notification(
+                    user_sub,
+                    action_type,
+                    post_id ?? null,
+                    conversation_id ?? null,
+                );
+
+                callback?.({ success: deleted });
+            } catch (error) {
+                console.error("[socket:delete-notification]", error);
+                callback?.({ error: "failed_to_delete_notification" });
             }
         });
 

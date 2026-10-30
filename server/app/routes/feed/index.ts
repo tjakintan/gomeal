@@ -61,10 +61,9 @@ feed_router.get("/trend", authenticate, async (req: AuthenticatedRequest, res) =
 
         const { post_ids, user_subs } = await getTrend(user_sub, ML_TREND_LIMIT);
 
-
         const [trending_post, trending_user] = await Promise.all([
-            get_search_posts_by_ids(post_ids || []),
-            get_search_users_by_subs(user_subs || []),
+            get_search_posts_by_ids(post_ids || [], user_sub),
+            get_search_users_by_subs(user_subs || [], user_sub),
         ]);
 
         return res.status(200).json({
@@ -181,23 +180,23 @@ feed_router.post('/fetch-count/:post_id', authenticate, async (req: Authenticate
 });
 
 feed_router.get("/fetch-post-user-profile/:post_id", authenticate, async (req: AuthenticatedRequest, res) => {
-    
+
+    const requester_sub = req.user?.sub;
     const post_id = Number(req.params.post_id);
     const limit = Math.min(Number(req.query.limit ?? 100), 200);
 
+    if (!requester_sub) return res.status(401).json({ error: "unauthorized" });
     if (!post_id || Number.isNaN(post_id)) {
         return res.status(400).json({ error: "request_failed_missing_post_id" });
     }
 
     try {
-        const feed_profile_card = await fetchFeedProfile({
-            type: "post_id",
-            post_id,
-            limit,
-        });
-
-        return res.status(200).json(feed_profile_card);
+        const card = await fetchFeedProfile({ type: "post_id", post_id, requester_sub, limit });
+        return res.status(200).json(card);
     } catch (error) {
+        if (error instanceof Error && ["post_not_found", "user_not_found"].includes(error.message)) {
+            return res.status(404).json({ error: "not_found" });
+        }
         console.error("failed_to_fetch_post_user", error);
         return res.status(500).json({ error: "failed_to_fetch_post_user" });
     }
@@ -206,28 +205,24 @@ feed_router.get("/fetch-post-user-profile/:post_id", authenticate, async (req: A
 
 feed_router.get("/fetch-user-profile/:user_sub", authenticate, async (req: AuthenticatedRequest, res) => {
 
+    const requester_sub = req.user?.sub;
     const user_sub = String(req.params.user_sub ?? "").trim();
     const limit = Math.min(Number(req.query.limit ?? 100), 200);
 
-    if (!user_sub) {
-        return res.status(400).json({ error: "request_failed_missing_user_sub" });
-    }
+    if (!requester_sub) return res.status(401).json({ error: "unauthorized" });
+    if (!user_sub) return res.status(400).json({ error: "request_failed_missing_user_sub" });
 
     try {
-
-        const feed_profile_card = await fetchFeedProfile({
-            type: "user_sub",
-            user_sub,
-            limit,
-        });
-
-        return res.status(200).json(feed_profile_card);
-
+        const card = await fetchFeedProfile({ type: "user_sub", user_sub, requester_sub, limit });
+        return res.status(200).json(card);
     } catch (error) {
+        if (error instanceof Error && error.message === "user_not_found") {
+            return res.status(404).json({ error: "not_found" });
+        }
         console.error("failed_to_fetch_user_profile", error);
         return res.status(500).json({ error: "failed_to_fetch_user_profile" });
     }
-
+    
 });
 
 feed_router.get('/:post_id', authenticate, async (req: AuthenticatedRequest, res) => {

@@ -5,10 +5,7 @@ import { send_push_notification, send_push_notification_to_user_devices } from "
 import { create_notification } from "@/routes/user/notification";
 import { fetch_post_image_url } from "@/routes/feed/feed";
 
-export const jobs = () => {
-    send_push_noti_cooking_reminder();
-    send_push_noti_trending();
-}
+import { get_user_profile_name } from "@/routes/user/getProfile";
 
 /**
  * Cron job that sends each user a daily cooking reminder at their
@@ -26,7 +23,7 @@ export const jobs = () => {
  * query level and never get a reminder (e.g. accounts created before a
  * default reminder time was introduced — needs a backfill).
  */
-const send_push_noti_cooking_reminder = () => {
+export const send_push_noti_cooking_reminder = () => {
     cron.schedule("* * * * *", async () => {
         try {
             const result = await db.query(`
@@ -69,7 +66,7 @@ const send_push_noti_cooking_reminder = () => {
                     nowMinutes >= targetMinutes && nowMinutes < targetMinutes + 5;
 
                 console.log(
-                    `[automated]=>cooking_checked_${row.user_sub}_${hour}:${minute}_target_${remHour}:${remMin}_window_${isWithinReminderWindow}`
+                    `[automated]=>cooking_checked_user_${row.user_sub}_at_time_${hour}:${minute}_with_target_${remHour}:${remMin}_window_${isWithinReminderWindow}`
                 );
 
                 if (!isWithinReminderWindow) continue;
@@ -85,8 +82,8 @@ const send_push_noti_cooking_reminder = () => {
 
                 await send_push_notification_to_user_devices({
                     receiver_sub: row.user_sub,
-                    title: "Let's cook",
-                    body: "Try making something delicious today.",
+                    title: "Let's cook ⏰",
+                    body: "Try making something delicious today. 🍳",
                     data: { type: "cook_reminder" },
                 });
 
@@ -98,7 +95,7 @@ const send_push_noti_cooking_reminder = () => {
                     [row.user_sub]
                 );
 
-                console.log(`[automated]=>cooking_reminder_sent_${row.user_sub}`);
+                console.log(`[automated]=>cooking_reminder_sent_user_${row.user_sub}`);
             }
 
             console.log(`[automated]=>cooking_reminder_finished`);
@@ -108,197 +105,436 @@ const send_push_noti_cooking_reminder = () => {
     });
 };
 
+
+
 /**
- * Cron job that notifies relevant users about currently trending posts.
+ * Independent notification systems:
  *
- * Runs every 30 minutes. For each qualifying trending post:
- *   1. Selects up to `N` trending posts (currently LIMIT 1) that haven't
- *      been notified about in the last 6 hours.
- *   2. Finds up to 500 users whose taste embedding is sufficiently similar
- *      (> 0.55 cosine similarity) to the post's embedding — i.e. users
- *      likely to actually be interested — excluding the post's own author.
- *   3. Filters out users who already got a trend notification within the
- *      last 4 hours (any post), to cap per-user notification frequency.
- *   4. Creates an in-app notification per unique eligible receiver.
- *   5. Sends a personalized push notification per device token.
- *   6. Marks the post as notified so it isn't re-sent within the window.
+ * TREND:
+ * - Selects globally trending posts.
+ * - Does not use user taste embeddings.
+ * - Notifies eligible users regardless of personal relevance.
+ *
  */
 
 const TREND_USER_COOLDOWN_INTERVAL = "4 hours";
+const TREND_POST_COOLDOWN_INTERVAL = "6 hours";
 
-const send_push_noti_trending = () => {
+/**
+ * Notify users about globally trending posts.
+ *
+ * Runs every 30 minutes.
+ * Selects the strongest currently trending post, then fans it out
+ * to eligible users without filtering by taste embedding.
+ */
+export const send_push_noti_trending = () => {
     cron.schedule("*/30 * * * *", async () => {
         try {
-            /**
-             * Candidate trending posts:
-             * - trend_rank <= 10: only top-ranked posts
-             * - trend_score >= 0.08: minimum trend strength threshold
-             * - last_ranked_at within 2h: ranking must be fresh
-             * - last_trending_notification_at NULL or > 6h ago: avoid re-notifying
-             */
+            console.log("[automated] => trending_noti_started");
+
             const result = await db.query(`
-                SELECT p.id, p.dish_name, p.image_url, p.trend_rank, p.trend_velocity, p.user_sub
+                SELECT
+                    p.id,
+                    p.dish_name,
+                    p.trend_rank,
+                    p.trend_score,
+                    p.trend_velocity,
+                    p.user_sub
                 FROM post p
                 WHERE p.trend_rank <= 10
-                    AND p.trend_score >= 0.08
-                    AND p.last_ranked_at > NOW() - INTERVAL '2 hours'
-                    AND (
-                        p.last_trending_notification_at IS NULL
-                        OR p.last_trending_notification_at < NOW() - INTERVAL '6 hours'
-                    )
+                  AND p.trend_score >= 0.08
+                  AND p.last_ranked_at > NOW() - INTERVAL '2 hours'
+                  AND (
+                      p.last_trending_notification_at IS NULL
+                      OR p.last_trending_notification_at
+                          < NOW() - INTERVAL '${TREND_POST_COOLDOWN_INTERVAL}'
+                  )
                 ORDER BY
                     p.trend_score DESC,
                     p.trend_velocity DESC
                 LIMIT 1
             `);
 
-            console.log(`[automated] => trending_noti_started`);
-            console.log(`[automated] => trending_candidates_${result.rows.length}`);
+            if (result.rows.length === 0) {
+                console.log("[automated] => trending_noti_no_candidates");
+                return;
+            }
 
-            for (const post of result.rows) {
+            const post = result.rows[0];
+            const image_url = await fetch_post_image_url(post.id);
 
-                // Resolve the actual displayable image URL (raw post.image_url may
-                // just be a storage key, not a fetchable URL — see fetch_post_image_url).
-                const image_url = await fetch_post_image_url(post.id);
+            /*
+             * All users with registered push tokens are candidates.
+             * No user_embeddings or post_embeddings join here.
+             *
+             * DISTINCT prevents multi-device users from consuming
+             * multiple recipient slots.
+             */
+            const receiversResult = await db.query(`
+                SELECT DISTINCT pt.user_sub
+                FROM push_tokens pt
+                WHERE pt.user_sub <> $1
+            `, [post.user_sub]);
 
-                /**
-                 * Relevance-based fan-out: match this post's embedding against every
-                 * user's taste embedding via pgvector cosine distance (`<=>`).
-                 * - similarity > 0.55: only users likely to care about this post
-                 * - excludes the post's author (ue.user_sub <> post.user_sub)
-                 * - capped at top 500 most-similar users to bound notification volume
-                 * One row per (user, device token) pair — a user with multiple
-                 * devices will appear multiple times here.
-                 */
-                const tokens_result = await db.query(`
-                    SELECT
-                        pt.token,
-                        pt.native_token,
-                        ue.user_sub,
-                        us.first_name,
-                        1 - (ue.embedding <=> pe.embedding) AS similarity
-                    FROM user_embeddings ue
-                    JOIN push_tokens pt ON pt.user_sub = ue.user_sub
-                    JOIN users us ON us.sub = ue.user_sub
-                    JOIN post_embeddings pe ON pe.post_id = $1
-                    WHERE ue.user_sub <> $2
-                    AND 1 - (ue.embedding <=> pe.embedding) > 0.55
-                    ORDER BY ue.embedding <=> pe.embedding
-                    LIMIT 500
-                `, [post.id, post.user_sub]);
-
-                if (tokens_result.rows.length === 0) {
-                    // No candidates at all — still mark notified so we don't
-                    // re-check this post every 30 min for the next 6h window.
-                    await db.query(`
-                        UPDATE post
-                        SET last_trending_notification_at = NOW()
-                        WHERE id = $1
-                    `, [post.id]);
-                    console.log(`[automated] => trending_noti_no_candidates_${post.id}`);
-                    continue;
-                }
-
-                // Dedup by user_sub so a multi-device user only counts once
-                // for the cooldown check and gets one in-app notification row.
-                const candidateReceivers: string[] = Array.from(
-                    new Set<string>(tokens_result.rows.map((r: { user_sub: string }) => r.user_sub))
+            const candidateReceivers: string[] =
+                receiversResult.rows.map(
+                    (row: { user_sub: string }) => row.user_sub
                 );
 
-                /**
-                 * Per-user cooldown: exclude anyone who received a trend
-                 * notification (for ANY post) within the last N hours.
-                 * Without this, a user can be re-notified every 30-minute
-                 * cron cycle as new posts start trending, since the original
-                 * throttle only tracked "last_notified" per post, not per user.
-                 * Backed by idx_notifications_trend_cooldown (receiver_sub, created_at)
-                 * WHERE action_type = 'trend'.
-                 */
-                const cooldownResult = await db.query(`
-                    SELECT DISTINCT receiver_sub
-                    FROM notifications
-                    WHERE receiver_sub = ANY($1::text[])
-                      AND action_type = 'trend'
-                      AND created_at > NOW() - INTERVAL '${TREND_USER_COOLDOWN_INTERVAL}'
-                `, [candidateReceivers]);
-
-                const recentlyNotified = new Set<string>(
-                    cooldownResult.rows.map((r: { receiver_sub: string }) => r.receiver_sub)
-                );
-
-                const eligibleReceivers = candidateReceivers.filter(
-                    (sub) => !recentlyNotified.has(sub)
-                );
-
+            if (candidateReceivers.length === 0) {
                 console.log(
-                    `[automated] => trending_noti_post_${post.id}_candidates_${candidateReceivers.length}_eligible_${eligibleReceivers.length}`
+                    `[automated] => trending_noti_no_receivers_${post.id}`
                 );
+                return;
+            }
 
-                if (eligibleReceivers.length === 0) {
-                    // Everyone who'd otherwise qualify is still in cooldown.
-                    await db.query(`
-                        UPDATE post
-                        SET last_trending_notification_at = NOW()
-                        WHERE id = $1
-                    `, [post.id]);
-                    console.log(`[automated] => trending_noti_all_on_cooldown_${post.id}`);
-                    continue;
-                }
+            // Independent cooldown for global trending notifications.
+            const cooldownResult = await db.query(`
+                SELECT DISTINCT receiver_sub
+                FROM notifications
+                WHERE receiver_sub = ANY($1::text[])
+                  AND action_type = 'trend'
+                  AND created_at > NOW() - INTERVAL '${TREND_USER_COOLDOWN_INTERVAL}'
+            `, [candidateReceivers]);
 
-                const eligibleSet = new Set(eligibleReceivers);
+            const recentlyNotified = new Set<string>(
+                cooldownResult.rows.map(
+                    (row: { receiver_sub: string }) => row.receiver_sub
+                )
+            );
 
-                await Promise.all(eligibleReceivers.map((receiver_sub: string) =>
+            const eligibleReceivers = candidateReceivers.filter(
+                (sub) => !recentlyNotified.has(sub)
+            );
+
+            console.log(
+                `[automated] => trending_post_${post.id}` +
+                `_candidates_${candidateReceivers.length}` +
+                `_eligible_${eligibleReceivers.length}`
+            );
+
+            if (eligibleReceivers.length === 0) {
+                console.log(
+                    `[automated] => trending_noti_all_on_cooldown_${post.id}`
+                );
+                return;
+            }
+
+            // Create one in-app notification per recipient.
+            await Promise.all(
+                eligibleReceivers.map((receiver_sub) =>
                     create_notification({
                         receiver_sub,
                         actor_sub: post.user_sub,
                         action_type: "trend",
                         post_id: post.id,
                     })
-                ));
+                )
+            );
 
-                // Group tokens per eligible user so each receiver's push uses
-                // their own first_name, and skipped users get no push either.
-                const rowsByUser = new Map<string, { token: string; first_name: string }[]>();
-
-                for (const row of tokens_result.rows as { user_sub: string; token: string; native_token: string | null; first_name: string }[]) {
-                    if (!eligibleSet.has(row.user_sub)) continue;
-                    if (!rowsByUser.has(row.user_sub)) rowsByUser.set(row.user_sub, []);
-                    rowsByUser.get(row.user_sub)!.push({ token: row.native_token ?? row.token, first_name: row.first_name });
-                }
-
-                // Send one push per device token, personalized per user.
-                await Promise.all(
-                    Array.from(rowsByUser.entries()).flatMap(([, rows]) =>
-                        rows.map(({ token, first_name }) =>
-                            send_push_notification({
-                                token,
-                                title: `🔥 This is trending${ `, ${first_name}` || " "}`,
-                                body: `${post.dish_name} is trending, tap to cook it!`,
+            // The helper delivers to the receiver's registered devices.
+            await Promise.all(
+                eligibleReceivers.map(async (receiver_sub) => {
+                    try {
+                        await send_push_notification_to_user_devices({
+                            receiver_sub,
+                            title: "🔥 This is trending",
+                            body: `${post.dish_name} is trending on GoMeal. Tap to cook it!`,
+                            image_url: image_url ?? undefined,
+                            data: {
+                                type: "trending_post",
                                 image_url: image_url ?? undefined,
-                                data: {
-                                    type: "trending_post",
-                                    post_id: post.id,
-                                    trend_rank: post.trend_rank,
-                                },
-                            })
-                        )
-                    )
+                                post_id: post.id,
+                                trend_rank: post.trend_rank,
+                            },
+                        });
+                    } catch (error) {
+                        console.error(
+                            `[automated] => trending_push_error_${receiver_sub}`,
+                            error
+                        );
+                    }
+                })
+            );
+
+            // Mark the post after processing its recipients.
+            await db.query(`
+                UPDATE post
+                SET last_trending_notification_at = NOW()
+                WHERE id = $1
+            `, [post.id]);
+
+            console.log(`[automated] => trending_noti_sent_${post.id}`);
+        } catch (error) {
+            console.error("[automated] => trending_noti_error", error);
+        }
+    });
+};
+
+
+/** 
+ * WE THINK YOU'LL LIKE:
+ * - Selects recommendations individually for each user.
+ * - Does not require posts to be globally trending.
+ * - Uses taste embedding similarity and recent content.
+*/
+const RECOMMENDATION_USER_COOLDOWN_INTERVAL = "12 hours";
+const RECOMMENDATION_SIMILARITY_THRESHOLD = 0.55;
+
+/**
+ * "We think you'll like" personalized recommendations.
+ *
+ * Runs every 30 minutes.
+ *
+ * Unlike global trending, candidate posts do NOT need a trend rank
+ * or minimum trend score. Each user receives the best eligible post
+ * matching their taste embedding.
+ *
+ * Rules:
+ * - Similarity must exceed the configured threshold.
+ * - Exclude the post's author.
+ * - Only recommend recent posts (last 7 days).
+ * - Exclude the same user/post recommendation if already sent.
+ * - Maximum one recommendation per user per 12 hours.
+ * - Choose at most one post per user per run.
+ */
+export const send_push_noti_we_think_youll_like = () => {
+    cron.schedule("*/30 * * * *", async () => {
+        try {
+            console.log(
+                "[automated] => recommendation_noti_started"
+            );
+
+            /*
+             * DISTINCT ON chooses each user's highest-similarity
+             * eligible post.
+             *
+             * This query intentionally has no trend_rank or trend_score
+             * condition: recommendations are independent of trending.
+             */
+            const candidatesResult = await db.query(`
+                SELECT DISTINCT ON (ue.user_sub)
+                    ue.user_sub AS receiver_sub,
+                    p.id AS post_id,
+                    p.dish_name,
+                    p.user_sub AS actor_sub,
+                    1 - (ue.embedding <=> pe.embedding) AS similarity
+                FROM user_embeddings ue
+                JOIN post_embeddings pe
+                  ON TRUE
+                JOIN post p
+                  ON p.id = pe.post_id
+                WHERE ue.user_sub <> p.user_sub
+                  AND 1 - (ue.embedding <=> pe.embedding) >
+                      $1::float
+                  AND p.created_at > NOW() - INTERVAL '7 days'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM push_tokens pt
+                      WHERE pt.user_sub = ue.user_sub
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM notifications n
+                      WHERE n.receiver_sub = ue.user_sub
+                        AND n.post_id = p.id
+                        AND n.action_type = 'recommendation'
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM notifications n
+                      WHERE n.receiver_sub = ue.user_sub
+                        AND n.action_type = 'recommendation'
+                        AND n.created_at >
+                            NOW() - INTERVAL '${RECOMMENDATION_USER_COOLDOWN_INTERVAL}'
+                  )
+                ORDER BY
+                    ue.user_sub,
+                    (ue.embedding <=> pe.embedding) ASC,
+                    p.created_at DESC
+            `, [RECOMMENDATION_SIMILARITY_THRESHOLD]);
+
+            if (candidatesResult.rows.length === 0) {
+                console.log(
+                    "[automated] => recommendation_noti_no_candidates"
                 );
-
-                // Mark this post as notified so it's excluded from the
-                // candidate query for the next 6 hours.
-                await db.query(`
-                    UPDATE post
-                    SET last_trending_notification_at = NOW()
-                    WHERE id = $1
-                `, [post.id]);
-
-                console.log(`[automated] => trending_noti_sent_${post.id}`);
+                return;
             }
 
-            console.log(`[automated] => trending_noti_finished`);
+            console.log(
+                `[automated] => recommendation_candidates_${candidatesResult.rows.length}`
+            );
+
+            /*
+             * Each row already represents one receiver and their
+             * highest-similarity candidate.
+             */
+            for (const candidate of candidatesResult.rows) {
+                try {
+                    const image_url = await fetch_post_image_url(
+                        candidate.post_id
+                    );
+
+                    const created = await create_notification({
+                        receiver_sub: candidate.receiver_sub,
+                        actor_sub: candidate.actor_sub,
+                        action_type: "recommendation",
+                        post_id: candidate.post_id,
+                    });
+
+                    if (!created) continue;
+
+                    await send_push_notification_to_user_devices({
+                        receiver_sub: candidate.receiver_sub,
+                        title: "✨ We think you'll like this",
+                        body: `${candidate.dish_name} might be right up your alley. Tap to check it out!`,
+                        image_url: image_url ?? undefined,
+                        data: {
+                            type: "recommended_post",
+                            post_id: candidate.post_id,
+                            image_url: image_url ?? undefined,
+                            similarity: Number(
+                                candidate.similarity
+                            ),
+                        },
+                    });
+
+                    console.log(
+                        `[automated] => recommendation_sent_` +
+                        `${candidate.receiver_sub}_post_${candidate.post_id}` +
+                        `_similarity_${Number(candidate.similarity).toFixed(3)}`
+                    );
+                } catch (error) {
+                    console.error(
+                        `[automated] => recommendation_error_` +
+                        `${candidate.receiver_sub}_post_${candidate.post_id}`,
+                        error
+                    );
+                }
+            }
+
+            console.log(
+                "[automated] => recommendation_noti_finished"
+            );
+        } catch (error) {
+            console.error(
+                "[automated] => recommendation_noti_error",
+                error
+            );
+        }
+    });
+};
+
+/**
+ * How long a message must sit unread before we send a "missed message" nudge.
+ * The real delay is up to 5 minutes longer, since the cron only runs every 5 min.
+ */
+const MISSED_MESSAGE_DELAY = "30 minutes";
+
+/**
+ * Messages older than this are never nudged. Guards against a flood of stale
+ * pushes after server downtime or a long-paused cron.
+ */
+const MISSED_MESSAGE_MAX_AGE = "24 hours";
+
+
+/**
+ * Cron job that sends a one-time "Missed message" push for chat messages
+ * the receiver hasn't read.
+ *
+ * Runs every 5 minutes. On each run:
+ *   1. Claims every message that is unread, active, older than
+ *      MISSED_MESSAGE_DELAY, newer than MISSED_MESSAGE_MAX_AGE, and not yet
+ *      nudged, by stamping `missed_push_sent_at` in a single
+ *      UPDATE ... RETURNING. Claiming before sending guarantees a message
+ *      can never be nudged twice, even if two runs overlap.
+ *   2. Skips messages the receiver has deleted for themselves.
+ *   3. Resolves the receiver as the other participant in the conversation and
+ *      groups claimed messages by (conversation, sender, receiver), so five
+ *      unread messages from one person produce ONE push, not five.
+ *   4. Sends a push to each of the receiver's devices:
+ *        - 1 message:  "<name> messaged you."
+ *        - N messages: "<name> sent you N messages."
+ *
+ * Delivery is at-most-once: a failed APNs send is logged and NOT retried,
+ * because the message was already marked as nudged. A duplicate nudge is
+ * worse than a missed one.
+ *
+ * The push uses `type: "missed_message"` (not "message") on purpose. The iOS
+ * notification extension treats `type == "message"` as a chat message and
+ * builds a sender avatar from the title, which here is the static text
+ * "Missed message". Any other type falls through to a plain notification.
+ *
+ * Requires: messages.missed_push_sent_at (timestamp, nullable) and the partial
+ * index idx_messages_missed_push. Existing unread messages should be
+ * backfilled at migration time so the first run doesn't nudge old history.
+ */
+export const send_push_missed_message = () => {
+    cron.schedule("*/5 * * * *", async () => {
+        try {
+            /**
+             * Claim unread messages in a single UPDATE ... RETURNING so the same
+             * message can never be nudged twice, then group per conversation so
+             * 5 unread messages from one person produce ONE push.
+             * The receiver is the other participant in conversation_participants.
+             */
+            const result = await db.query(`
+                WITH claimed AS (
+                    UPDATE messages m
+                    SET missed_push_sent_at = NOW()
+                    WHERE m.is_read = false
+                      AND m.status = 'active'
+                      AND m.missed_push_sent_at IS NULL
+                      AND m.sent_at < NOW() - INTERVAL '${MISSED_MESSAGE_DELAY}'
+                      AND m.sent_at > NOW() - INTERVAL '${MISSED_MESSAGE_MAX_AGE}'
+                      AND NOT EXISTS (
+                          SELECT 1 FROM message_deletions md
+                          WHERE md.message_id = m.id
+                            AND md.user_sub <> m.sender_sub
+                      )
+                    RETURNING m.id, m.conversation_id, m.sender_sub
+                )
+                SELECT
+                    c.conversation_id,
+                    c.sender_sub,
+                    cp.user_sub AS receiver_sub,
+                    COUNT(*)::int AS missed_count
+                FROM claimed c
+                JOIN conversation_participants cp
+                  ON cp.conversation_id = c.conversation_id
+                 AND cp.user_sub <> c.sender_sub
+                GROUP BY c.conversation_id, c.sender_sub, cp.user_sub
+            `);
+
+            if (result.rows.length === 0) return;
+
+            console.log(`[automated]=>missed_message_started_${result.rows.length}`);
+
+            for (const row of result.rows) {
+                try {
+                    const sender_name = await get_user_profile_name(row.sender_sub);
+
+                    await send_push_notification_to_user_devices({
+                        receiver_sub: row.receiver_sub,
+                        title: "Missed message",
+                        body: row.missed_count > 1
+                            ? `${sender_name} sent you ${row.missed_count} messages.`
+                            : `${sender_name} messaged you.`,
+                        data: {
+                            type: "missed_message", // NOT "message", see below
+                            sender_id: row.sender_sub,
+                            conversation_id: String(row.conversation_id),
+                        },
+                    });
+                } catch (e) {
+                    // one bad token/user shouldn't stop the rest of the batch
+                    console.error(`[automated]=>missed_message_error_${row.receiver_sub}_${e}`);
+                }
+            }
+
+            console.log(`[automated]=>missed_message_finished`);
         } catch (e) {
-            console.error(`[automated] => trending_noti_error_${e}`);
+            console.error(`[automated]=>missed_message_error_${e}`);
         }
     });
 };
