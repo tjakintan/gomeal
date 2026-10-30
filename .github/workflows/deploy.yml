@@ -12,12 +12,16 @@ jobs:
     steps:
       - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
+        timeout-minutes: 45
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 1m
+          command_timeout: 30m
+
           script: |
-            set -e
+            set -eu
 
             echo "========== Changing to project directory =========="
             cd ~/backend
@@ -27,32 +31,62 @@ jobs:
             git fetch origin backend
             git reset --hard origin/backend
 
-            echo "========== Stopping existing containers =========="
-            docker compose down
-
             echo "========== Building and starting containers =========="
             docker compose up -d --build
 
             echo "========== Waiting for ML Health =========="
 
-            until [ "$(docker inspect $(docker compose ps -q ml) --format='{{.State.Health.Status}}')" = "healthy" ]; do
-                echo "[SERVER] => waiting_on_ml"
+            ML_CONTAINER=$(docker compose ps -q ml)
+
+            if [ -z "$ML_CONTAINER" ]; then
+                echo "ERROR: ML container was not created."
+                docker compose ps -a
+                docker compose logs ml --tail=150
+                exit 1
+            fi
+
+            for i in $(seq 1 900); do
+                ML_STATUS=$(docker inspect "$ML_CONTAINER" \
+                  --format='{{.State.Status}}')
+
+                if [ "$ML_STATUS" != "running" ]; then
+                    echo "ERROR: ML container stopped. Status: $ML_STATUS"
+                    docker compose ps -a
+                    docker compose logs ml --tail=150
+                    exit 1
+                fi
+
+                ML_HEALTH=$(docker inspect "$ML_CONTAINER" \
+                  --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')
+
+                if [ "$ML_HEALTH" = "healthy" ]; then
+                    echo "[SERVER] => ml_booted"
+                    break
+                fi
+
+                echo "[SERVER] => waiting_on_ml ($i/900)"
                 sleep 2
             done
 
-            echo "[SERVER] => ml_booted✅"
+            if [ "$ML_HEALTH" != "healthy" ]; then
+                echo "ERROR: ML health check timed out."
+                docker compose ps -a
+                docker compose logs ml --tail=150
+                exit 1
+            fi
 
             echo "========== Container Status =========="
-            docker compose ps
+            docker compose ps -a
 
             echo "========== Docker Stats =========="
             docker stats --no-stream
 
-            echo "========== Docker Health =========="
-            docker inspect $(docker compose ps -q backend) \
+            echo "========== Backend Health =========="
+            docker inspect "$(docker compose ps -q backend)" \
               --format='Status={{.State.Status}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'
 
-            docker inspect $(docker compose ps -q ml) \
+            echo "========== ML Health =========="
+            docker inspect "$ML_CONTAINER" \
               --format='Status={{.State.Status}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'
 
             echo "========== Memory Usage =========="
@@ -76,4 +110,4 @@ jobs:
             echo "========== Docker Disk Usage =========="
             docker system df
 
-            echo "========== Deployment Complete ✅ =========="
+            echo "========== Deployment Complete =========="

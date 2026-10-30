@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MODEL_NAME = os.getenv("MODEL_NAME")
-MODEL_DEVICE = os.getenv("MODEL_DEVICE", "cpu")
+MODEL_NAME = os.getenv("TEXT_MODEL")
+MODEL_DEVICE = os.getenv("TEXT_MODEL_DEVICE", "cpu")
 
 MODEL = SentenceTransformer(
     MODEL_NAME,

@@ -26,7 +26,7 @@ IMAGE_DTYPE = (
 
 
 IMAGE_DEVICE = (
-    "cuda"
+    os.getenv("CLIP_MODEL_DEVICE", "cuda")
     if torch.cuda.is_available()
     else "mps"
     if torch.backends.mps.is_available()
