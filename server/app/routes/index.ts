@@ -47,16 +47,13 @@ useRouter.get('/.well-known/apple-app-site-association', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
 
     res.send({
-        "applinks": {
-            "apps": [],
-            "details": [
-            {
-                "appIDs": ["UGQD4SYSL4.com.gomeal.mobile"],
-                "paths": [
-                    "/share/*",
-                    "/open/*"
-                ]
-            }
+        applinks: {
+            apps: [],
+            details: [
+                {
+                    appIDs: ["UGQD4SYSL4.com.gomeal.mobile"],
+                    paths: ["/share/*", "/open/*"]
+                }
             ]
         }
     });
