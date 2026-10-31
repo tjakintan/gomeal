@@ -9,8 +9,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MODEL_NAME = os.getenv("MODEL_NAME")
-MODEL_DEVICE = os.getenv("MODEL_DEVICE", "cpu")
+MODEL_NAME = os.getenv("TEXT_MODEL")
+
+MODEL_DEVICE = os.getenv(
+    "TEXT_MODEL_DEVICE",
+    (
+        "cuda"
+        if torch.cuda.is_available()
+        else (
+            "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+    ),
+)
 
 MODEL = SentenceTransformer(
     MODEL_NAME,

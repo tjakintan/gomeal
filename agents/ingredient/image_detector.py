@@ -13,9 +13,15 @@ from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
 
 class IngredientImageDetector:
+
     MODEL = os.getenv(
         "VLM_MODEL",
         "Qwen/Qwen3-VL-4B-Instruct",
+    )
+
+    DEVICE = os.getenv(
+        "VLM_MODEL_DEVICE",
+        "cuda",   
     )
 
     MAX_NEW_TOKENS = 500
@@ -41,7 +47,7 @@ Rules:
         print(f"[IngredientDetector] Loading {self.MODEL}...")
 
         self.device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
+            self.DEVICE if torch.cuda.is_available() else "cpu"
         )
 
         self.dtype = (

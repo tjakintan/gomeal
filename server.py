@@ -22,7 +22,7 @@ LLM_HEALTH_URL = settings.llm_health_url
 
 # Native React Native clients send no browser Origin, so [] is fine for them.
 # If the web app (app.gomeal.org) ever opens the ChefNex socket from a browser, set e.g.
-# CORS_ORIGINS=https://app.gomeal.org,https://www.gomeal.org
+# CORS_ORIGINS=https://app.gomeal.org,https://api.gomeal.org,https://www.gomeal.org
 CORS_ORIGINS = list(settings.cors_origins)
 
 # On automatically when DEV=false (needs IMDS access, see the hop-limit note).

@@ -15,18 +15,18 @@ from transformers import (
 class BoxDetector:
 
     MODEL = os.getenv(
-        "IMAGE_MODEL",
+        "BOX_MODEL",
         "google/owlv2-base-patch16-ensemble",
     )
 
     DEVICE = os.getenv(
-        "IMAGE_MODEL_DEVICE",
+        "BOX_MODEL_DEVICE",
         (
-            "mps"
-            if torch.backends.mps.is_available()
+            "cuda"
+            if torch.cuda.is_available()
             else (
-                "cuda"
-                if torch.cuda.is_available()
+                "mps"
+                if torch.backends.mps.is_available()
                 else "cpu"
             )
         ),

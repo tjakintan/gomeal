@@ -12,8 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-IMAGE_MODEL_NAME = os.getenv("CLIP_MODEL")
-
+IMAGE_MODEL_NAME = os.getenv("IMAGE_MODEL")
 
 IMAGE_DTYPE = (
     torch.float16
@@ -25,12 +24,17 @@ IMAGE_DTYPE = (
 )
 
 
-IMAGE_DEVICE = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
+IMAGE_DEVICE = os.getenv(
+    "IMAGE_MODEL_DEVICE",
+    (
+        "cuda"
+        if torch.cuda.is_available()
+        else (
+            "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+    ),
 )
 
 
