@@ -36,7 +36,7 @@ jobs:
             docker stats --no-stream
 
             echo "========== ChefNex Health =========="
-            CONTAINER_ID=$(docker compose ps -q chefNex)
+            CONTAINER_ID=$(docker compose ps -q chefnex)
 
             if [ -z "$CONTAINER_ID" ]; then
               echo "ERROR: ChefNex container was not found."
@@ -54,7 +54,7 @@ jobs:
             df -h
 
             echo "========== ChefNex Logs =========="
-            docker compose logs chefNex --tail=100
+            docker compose logs chefnex --tail=100
 
             echo "========== Cleaning Unused Images =========="
             docker image prune -f
