@@ -36,7 +36,7 @@ useRouter.get('/open', (req, res) => {
         path.resolve(
             process.cwd(),
             'app',
-            'email',
+            'html',
             'open.html'
         )
     );
