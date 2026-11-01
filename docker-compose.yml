@@ -6,15 +6,19 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
-      - config.env   # committed, non-secret defaults (DEV=false)
-      - .env         # secrets and per-machine overrides; later files win
+      - config.env
+      - .env
     environment:
       BACK_END_PORT: "6970"
     ports:
       - "6970:6970"
     extra_hosts:
-      # Linux (EC2) has no host.docker.internal by default; this makes it
-      # resolve to the host so the container can reach vLLM on port 8000.
       - "host.docker.internal:host-gateway"
     init: true
     stop_grace_period: 30s
+    volumes:
+      - ./.env:/.env:ro
+      - ./.env.production:/.env.production:ro
+      - ./.env.development:/.env.development:ro
+      - ./config.env:/config.env:ro
+    gpus: all

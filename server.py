@@ -119,7 +119,7 @@ async def health():
     if not await asyncio.to_thread(_llm_ready):
         return JSONResponse({"status": "llm_not_ready"}, status_code=503)
 
-    return JSONResponse({"status": "ok"}, status_code=200)
+    return {"status":"ok"}
 
 
 if __name__ == "__main__":

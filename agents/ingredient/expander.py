@@ -20,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from dotenv import load_dotenv
-from openai import OpenAI
 
 # I load .env up front so LLM_MODEL, LLM_BASE_URL, LLM_API_KEY and VLM_MODEL
 # are available before any class below reads them from the environment.
@@ -66,7 +65,7 @@ class IngredientExpander:
     # The max number of concurrent requests I send in expand_many(). The
     # inference server batches them, so a handful of parallel calls is much
     # faster than doing them one by one.
-    MAX_WORKERS = 8
+    MAX_WORKERS = 1
 
     # My system prompt. I'm strict about the rules here because I parse the
     # output programmatically: I want only real base ingredients (no
@@ -106,52 +105,30 @@ class IngredientExpander:
 
         Pizza:
         ["flour", "water", "yeast", "salt", "tomato sauce", "mozzarella cheese", "olive oil"]
-    """.strip()
+    """.strip() 
 
     def __init__(
         self,
-        base_url: str | None = None,
-        model: str | None = None,
-        api_key: str | None = None,
-        timeout: float = 30.0,
+        model: Any,
+        processor: Any,
+        device: Any = None,
     ) -> None:
         """
-        I set up the model name, the API client and the cache.
+        Reuse the already-loaded vision-language model and processor.
 
-        Every argument is optional and falls back to an env var, so I can
-        run this unchanged on my laptop or on the GPU box:
-
-        - model: I look at the argument first, then LLM_MODEL, then
-          VLM_MODEL (same model as the detector), and finally default to
-          Qwen/Qwen3-VL-4B-Instruct.
-        - base_url: defaults to LLM_BASE_URL, or LM Studio on the Docker
-          host (host.docker.internal:1234) if that isn't set.
-        - api_key: defaults to LLM_API_KEY. LM Studio ignores the key, but
-          the OpenAI client requires a non-empty one, so I use "lm-studio".
-        - timeout: seconds I'll wait on a single request before giving up.
+        No separate inference server or OpenAI-compatible API is required.
         """
+        self.model = model
+        self.processor = processor
 
-        self.model = (
-            model
-            or os.getenv("VLM_MODEL", "Qwen/Qwen3-VL-4B-Instruct")
-        )
+        if device is not None:
+            self.device = device
+        else:
+            self.device = next(model.parameters()).device
 
-        self.client = OpenAI(
-            base_url=base_url
-            or os.getenv("LLM_BASE_URL", "http://host.docker.internal:1234/v1"),
-            api_key=api_key or os.getenv("LLM_API_KEY", "lm-studio"),
-            timeout=timeout,
-        )
-
-        # My cache is an LRU: an OrderedDict keeps entries in recency order,
-        # so the oldest one is always at the front and easy to evict. I store
-        # tuples rather than lists so a caller can never mutate a cached
-        # result by accident.
         self._cache: OrderedDict[str, tuple[str, ...]] = OrderedDict()
-
-        # expand_many() calls expand() from several threads, so every cache
-        # access goes through this lock to keep the OrderedDict consistent.
         self._cache_lock = threading.Lock()
+
 
     # ------------------------------------------------------------------
     # Cache
@@ -237,21 +214,59 @@ class IngredientExpander:
         start = time.perf_counter()
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=self.MAX_NEW_TOKENS,
-                temperature=0.0,  # deterministic, which is what makes caching safe
-            )
-            # content can be None, so I fall back to an empty string.
-            output_text = response.choices[0].message.content or ""
-        except Exception as e:
-            # Network errors, timeouts, server errors, etc. I log it and
-            # return nothing. I deliberately don't cache failures, so the
-            # next call for this item gets a fresh attempt.
-            print(f"[ComponentExpander] LLM call failed: {e}")
-            return []
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        }
+                    ],
+                }
+            ]
 
+            # Format the prompt using Qwen's chat template.
+            text = self.processor.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+
+            # Tokenize and move inputs to the same device as the model.
+            inputs = self.processor(
+                text=[text],
+                return_tensors="pt",
+                padding=True,
+            ).to(self.device)
+
+            input_length = inputs["input_ids"].shape[1]
+
+            # Deterministic generation.
+            self.model.eval()
+
+            import torch
+
+            with torch.inference_mode():
+                output_ids = self.model.generate(
+                    **inputs,
+                    max_new_tokens=self.MAX_NEW_TOKENS,
+                    do_sample=False,
+                )
+
+            # Decode only newly generated tokens, not the original prompt.
+            generated_ids = output_ids[:, input_length:]
+
+            output_text = self.processor.batch_decode(
+                generated_ids,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )[0]
+
+        except Exception as e:
+            print(f"[ComponentExpander] Model inference failed: {e}")
+            return []
+            
         elapsed = time.perf_counter() - start
 
         # I log timing and the raw output so I can debug prompt/model issues.

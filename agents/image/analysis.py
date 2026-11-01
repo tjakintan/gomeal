@@ -49,7 +49,7 @@ class ImageAnalysis():
             IngredientExpander(
                 model=self.ingredient_detector.model,
                 processor=self.ingredient_detector.processor,
-                config=self.ingredient_detector.config,
+                device=self.ingredient_detector.device,
             )
         )
 
