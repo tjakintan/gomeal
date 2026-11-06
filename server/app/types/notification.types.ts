@@ -1,5 +1,6 @@
 import { MediaType } from "./food.types";
 import { Avatar } from "./user.types";
+import { UltraMinimumProfile } from "./profile.types";
 
 export type MessageStatus = "active" | "deleted" | "archived";
 
@@ -21,8 +22,6 @@ export type NotificationActionType =
     | "post";
 
 export type PostNotifType = (typeof POST_NOTIF_TYPES)[number];
-
-export type GroupedActor = { avatar: Avatar; profile_name: string };
 
 export type NotificationSettings = {
     likes: boolean;
@@ -55,7 +54,7 @@ export type GroupedPostNotificationCard = {
     created_at: Date;  
     is_read: boolean;  
     actor_count: number;
-    actors: GroupedActor[]; 
+    actors: UltraMinimumProfile[]; 
     dish_name: string;
     dish_media_url: string;
     dish_media_type: MediaType;

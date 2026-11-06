@@ -158,7 +158,8 @@ const get_grouped_post_notifications = async (
         `WITH ranked AS (
             SELECT
                 n.post_id, n.is_read, n.created_at,
-                u.avatar, u.profile_name,
+                u.sub, u.badge, u.avatar, u.xp, u.profile_name,
+                u.first_name, u.last_name, u.profile_img_url,
                 ROW_NUMBER() OVER (PARTITION BY n.post_id ORDER BY n.created_at DESC) AS rn
             FROM notifications n
             JOIN users u ON u.sub = n.actor_sub
@@ -174,7 +175,16 @@ const get_grouped_post_notifications = async (
             MAX(r.created_at)            AS created_at,
             BOOL_AND(r.is_read)          AS is_read,
             JSON_AGG(
-                JSON_BUILD_OBJECT('avatar', r.avatar, 'profile_name', r.profile_name)
+                JSON_BUILD_OBJECT(
+                    'sub',             r.sub,
+                    'badge',           r.badge,
+                    'avatar',          r.avatar,
+                    'xp',              r.xp,
+                    'profile_name',    r.profile_name,
+                    'firstName',       r.first_name,
+                    'lastName',        r.last_name,
+                    'profile_img_url', r.profile_img_url
+                )
                 ORDER BY r.rn
             ) FILTER (WHERE r.rn <= 5)   AS actors,
             p.dish_name,

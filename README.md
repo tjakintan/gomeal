@@ -29,7 +29,7 @@ Common settings include:
 | `PORT` | API / ML | Listening port; defaults to `3000` / `6969` |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | API / ML | PostgreSQL connection |
 | `REDIS_HOST`, `REDIS_PORT` | API / ML | Redis connection; Compose service hostname is `redis` |
-| `ML_HOST`, `ML_PORT` | API | ML service address; defaults to `ml:6969` |
+| `ML_HOST`, `ML_PORT`, `HF_HOME` | API | ML service address; defaults to `ml:6969` | Model caching (optional) |
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | API | Token signing secrets |
 | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | API / ML | AWS SDK credentials and region |
 
