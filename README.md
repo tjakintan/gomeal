@@ -112,9 +112,8 @@ IMAGE_MODEL=google/owlv2-base-patch16-ensemble
 # Optional: cpu, mps, or cuda
 IMAGE_MODEL_DEVICE=cpu
 
-# Prepared-dish component expansion
-LLM_BASE_URL=http://host.docker.internal:1234/v1
-LLM_API_KEY=lm-studio
+# Model caching (optionsl)
+HF_HOME=/models/huggingface
 ```
 
 Start the service:
