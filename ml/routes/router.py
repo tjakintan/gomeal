@@ -8,6 +8,8 @@ from routes.feed.rank.rank import _rank
 from routes.embed.embed_user_by_sub import _embed_user_by_sub 
 from routes.embed.embed_post_by_id import _embed_post_by_id
 
+from routes.feed.scopes.types import FeedScope
+
 router = APIRouter()
 
 @router.get("/")
@@ -52,7 +54,7 @@ async def embed_user_route(user_sub: str):
 async def rank_feed(
     user_sub: str,
     limit: int = 20,
-    selectedScope: Literal["dessert", "soup", "appetizer", "high_protein", "quick"] | None = None,
+    selectedScope: FeedScope | None = None,
     markSeen: bool = False,
 ):
     try:
@@ -81,11 +83,11 @@ async def trends_route(user_sub: str, limit: int):
         
         trending_posts_ids = _post_trends(
             user_sub=user_sub,
-            limit=limit,
+            limit=5,
         )
         trending_users_subs = _user_trends(
             user_sub=user_sub,
-            limit=limit,
+            limit=10,
         )
 
         return {

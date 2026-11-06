@@ -24,7 +24,8 @@ export const getProfile = async (user_sub: string): Promise<ProfileResponse> => 
                 xp,
                 badge,
                 bread,
-                created_at AS date_joined
+                created_at AS date_joined,
+                favorite_food
             FROM users
             WHERE sub = $1
             AND status = 'active'
@@ -69,6 +70,7 @@ export const getProfile = async (user_sub: string): Promise<ProfileResponse> => 
                 badge: user.badge,
                 bread: user.bread,
                 date_joined: user.date_joined,
+                favorite_food: user.favorite_food
             },
             stats: {
                 num_posts: postCountResult.rows[0].num_posts,

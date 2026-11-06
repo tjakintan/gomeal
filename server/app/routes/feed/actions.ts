@@ -2,6 +2,7 @@ import db from "@/services/db";
 import { FeedActionCountsTypes, FeedActionType, MinimumFeedCard, UserActionedPostsType } from "@/types/feed.types";
 import log_user_actions from "../user/log";
 import { MediaType } from "@/types/food.types";
+import { pickScope } from "./scope";
 
 export const get_post_user_sub = async (post_id: number): Promise<string | null> => {
 
@@ -154,6 +155,7 @@ const toFeedCard = (row: any, action_counts: FeedActionCountsTypes): MinimumFeed
         dish_difficulty: row.difficulty ?? "",
     },
     action_counts,
+    category: pickScope(row.scope_tags),
 });
 
 
@@ -168,21 +170,25 @@ export const getUserPosts = async (user_sub: string, limit = 100): Promise<UserA
     };
 
     const madeResult = await db.query(
-        `SELECT p.id AS post_id, p.dish_name, p.description, p.difficulty, p.image_url, p.media_type
-         FROM post p
-         WHERE p.user_sub = $1 AND p.status = 'active'
-         ORDER BY p.id DESC
-         LIMIT $2`,
+        `SELECT p.id AS post_id, p.dish_name, p.description, p.difficulty, p.image_url, p.media_type,
+                pe.scope_tags
+        FROM post p
+        LEFT JOIN post_embeddings pe ON pe.post_id = p.id
+        WHERE p.user_sub = $1 AND p.status = 'active'
+        ORDER BY p.id DESC
+        LIMIT $2`,
         [user_sub, limit]
     );
 
     const actionedResult = await db.query(
-        `SELECT p.id AS post_id, p.dish_name, p.description, p.difficulty, p.image_url, p.media_type, pa.action_type
-         FROM post_actions pa
-         JOIN post p ON pa.post_id = p.id
-         WHERE pa.user_sub = $1 AND p.status = 'active'
-         ORDER BY p.id DESC
-         LIMIT $2`,
+        `SELECT p.id AS post_id, p.dish_name, p.description, p.difficulty, p.image_url, p.media_type,
+                pa.action_type, pe.scope_tags
+        FROM post_actions pa
+        JOIN post p ON pa.post_id = p.id
+        LEFT JOIN post_embeddings pe ON pe.post_id = p.id
+        WHERE pa.user_sub = $1 AND p.status = 'active'
+        ORDER BY p.id DESC
+        LIMIT $2`,
         [user_sub, limit]
     );
 

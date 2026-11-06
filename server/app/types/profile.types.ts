@@ -18,6 +18,7 @@ export type Profile = {
     badge: BadgeLevel;
     bread: number;
     date_joined: string;
+    favorite_food?: string;
 };
 
 export type UpdateUserProfile = {
@@ -30,6 +31,7 @@ export type UpdateUserProfile = {
     avatar?: Avatar;
     profile_img_url?: string | null;
     tag_color?: string;
+    favorite_food?: string;
 };
 
 export type MinimumProfile = {
@@ -46,12 +48,14 @@ export type MinimumProfile = {
     tag_color?: string | null;
     level?: number; 
     xp?: number;
+    favorite_food?: string;
 };
 
 export type UltraMinimumProfile = {
     sub: string;
     badge: BadgeLevel;
     avatar: Avatar;
+    xp?: number;
     profile_name: string;
     firstName?: string;
     lastName?: string;

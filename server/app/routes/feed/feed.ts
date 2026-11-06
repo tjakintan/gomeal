@@ -6,6 +6,7 @@ import { Avatar } from "@/types/user.types";
 import { BLOCKED_USER_FILTER } from "../user/block";
 import { parseNutrition } from "@/utils/food";
 import { SHARE_BASE } from "./share";
+import { pickScope } from "./scope";
 
 export const fetch_feed_post = async (limit: number, user_sub: string): Promise<FeedCard[]> => {
     try {
@@ -29,9 +30,11 @@ export const fetch_feed_post = async (limit: number, user_sub: string): Promise<
                 u.xp,
                 u.badge,
                 u.tag_color,
-                u.avatar
+                u.avatar,
+                pe.scope_tags
             FROM post p
             JOIN users u on p.user_sub = u.sub
+            LEFT JOIN post_embeddings pe ON pe.post_id = p.id
             WHERE P.status = 'active'
             ${BLOCKED_USER_FILTER}
             ORDER BY p.created_at DESC
@@ -71,6 +74,7 @@ export const fetch_feed_post = async (limit: number, user_sub: string): Promise<
                     action_counts: action_counts as FeedActionCountsTypes,
                     tag_color: row.tag_color,
                     user_actions,
+                    category: pickScope(row.scope_tags)
                 };
             })
         );
@@ -107,9 +111,11 @@ export const fetch_feed_post_by_id_feed_card = async (post_id: number, user_sub:
                 u.xp,
                 u.badge,
                 u.tag_color,
-                u.avatar
+                u.avatar,
+                pe.scope_tags
             FROM post p
             JOIN users u ON p.user_sub = u.sub
+            LEFT JOIN post_embeddings pe ON pe.post_id = p.id 
             WHERE p.id = $1
                 AND p.status = 'active'
                 ${BLOCKED_USER_FILTER}
@@ -151,6 +157,7 @@ export const fetch_feed_post_by_id_feed_card = async (post_id: number, user_sub:
             action_counts: action_counts as FeedActionCountsTypes,
             tag_color: row.tag_color,
             user_actions,
+            category: pickScope(row.scope_tags),
         };
 
   } catch (err) {
@@ -184,9 +191,11 @@ export const fetch_post_by_id_full_post = async (post_id: number, user_sub: stri
             u.level,
             u.xp,
             u.badge,
-            u.avatar
+            u.avatar,
+            pe.scope_tags  
         FROM post p
         JOIN users u ON p.user_sub = u.sub
+        LEFT JOIN post_embeddings pe ON pe.post_id = p.id
         WHERE p.id = $1 AND p.status = 'active' ${BLOCKED_USER_FILTER}`,
         [post_id, user_sub]
         );
@@ -223,6 +232,7 @@ export const fetch_post_by_id_full_post = async (post_id: number, user_sub: stri
             avatar: row.avatar as Avatar ?? null,
             action_counts: action_counts as FeedActionCountsTypes,
             user_actions,
+            category: pickScope(row.scope_tags),
             ingredients: row.ingredients as Ingredient[],
             steps: row.steps as StepData[],
         };

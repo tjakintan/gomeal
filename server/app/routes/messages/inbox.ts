@@ -54,6 +54,7 @@ export const get_direct_inbox = async (
             u.profile_img_url,
             u.badge,
             u.avatar,
+            u.xp,
 
             lm.id AS last_message_id,
             lm.conversation_id AS last_message_conversation_id,
@@ -133,6 +134,7 @@ export const get_direct_inbox = async (
             u.profile_img_url,
             u.badge,
             u.avatar,
+            u.xp,
             lm.id,
             lm.conversation_id,
             lm.sender_sub,
@@ -167,6 +169,7 @@ export const get_direct_inbox = async (
                 sub: row.other_user_sub,
                 badge: row.badge,
                 avatar: row.avatar,
+                xp: row.xp,
                 profile_name: row.profile_name,
                 firstName: row.first_name,
                 lastName: row.last_name,

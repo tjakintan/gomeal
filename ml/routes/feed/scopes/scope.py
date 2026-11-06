@@ -3,8 +3,9 @@ from __future__ import annotations
 import re
 from typing import TypedDict, Literal
 
-from routes.feed.scopes.types import FeedScopeFamily
+from typing import Literal
 
+from routes.feed.scopes.types import FeedScopeFamily
 
 class ScopeConfig(TypedDict, total=False):
     family: FeedScopeFamily
@@ -12,9 +13,10 @@ class ScopeConfig(TypedDict, total=False):
     weak_keywords: list[str]
     negative_keywords: list[str]
     threshold: int
-
+    
 
 FEED_SCOPE_REGISTRY: dict[str, ScopeConfig] = {
+    # ---------- existing ----------
     "dessert": {
         "family": "intent",
         "strong_keywords": [
@@ -90,6 +92,199 @@ FEED_SCOPE_REGISTRY: dict[str, ScopeConfig] = {
         ],
         "threshold": 2,
     },
+
+    # ---------- meal times ----------
+    "breakfast": {
+        "family": "dish_type",
+        "strong_keywords": [
+            "breakfast", "brunch", "pancake", "waffle", "omelet", "omelette",
+            "french toast", "oatmeal", "granola", "scrambled eggs", "shakshuka"
+        ],
+        "weak_keywords": [
+            "morning", "eggs", "bacon", "toast", "bagel", "smoothie", "yogurt parfait"
+        ],
+        "negative_keywords": [
+            "dinner", "lunch", "supper"
+        ],
+        "threshold": 2,
+    },
+    "lunch": {
+        "family": "dish_type",
+        "strong_keywords": [
+            "lunch", "sandwich", "wrap", "salad", "panini",
+            "burrito bowl", "grain bowl", "quesadilla"
+        ],
+        "weak_keywords": [
+            "bowl", "midday", "packed lunch", "lunchbox", "light meal"
+        ],
+        "negative_keywords": [
+            "breakfast", "dessert", "pancake", "dinner"
+        ],
+        "threshold": 2,
+    },
+    "dinner": {
+        "family": "dish_type",
+        "strong_keywords": [
+            "dinner", "supper", "main course", "entree", "roast",
+            "casserole", "pot roast", "lasagna"
+        ],
+        "weak_keywords": [
+            "steak", "pasta", "curry", "stir fry", "baked chicken", "roasted"
+        ],
+        "negative_keywords": [
+            "breakfast", "dessert", "smoothie", "cookie", "brunch"
+        ],
+        "threshold": 2,
+    },
+
+    # ---------- diet / lifestyle ----------
+    "vegetarian": {
+        "family": "lifestyle",
+        "strong_keywords": [
+            "vegetarian", "meatless", "veggie", "veggie burger",
+            "vegetable curry", "meat-free", "meat free"
+        ],
+        "weak_keywords": [
+            "vegetables", "tofu", "paneer", "eggplant", "mushroom",
+            "halloumi", "chickpea", "lentil", "beans"
+        ],
+        "negative_keywords": [
+            "chicken", "beef", "pork", "bacon", "turkey", "salmon", "shrimp",
+            "tuna", "steak", "sausage", "ham", "lamb", "fish", "anchovy"
+        ],
+        "threshold": 2,
+    },
+    "vegan": {
+        "family": "lifestyle",
+        "strong_keywords": [
+            "vegan", "plant-based", "plant based", "dairy-free", "dairy free"
+        ],
+        "weak_keywords": [
+            "tofu", "tempeh", "chickpea", "nutritional yeast", "coconut milk",
+            "almond milk", "oat milk", "flax egg", "aquafaba", "lentil", "jackfruit"
+        ],
+        "negative_keywords": [
+            "chicken", "beef", "pork", "bacon", "turkey", "salmon", "shrimp",
+            "tuna", "steak", "sausage", "ham", "lamb", "fish",
+            "eggs", "egg yolk", "egg whites", "honey", "ghee",
+            "unsalted butter", "salted butter", "heavy cream", "cream cheese",
+            "parmesan", "cheddar", "mozzarella", "feta"
+        ],
+        "threshold": 2,
+    },
+    "low_carb": {
+        "family": "lifestyle",
+        "strong_keywords": [
+            "low carb", "low-carb", "keto", "no carb", "zucchini noodles",
+            "cauliflower rice", "zoodles"
+        ],
+        "weak_keywords": [
+            "lettuce wrap", "cauliflower", "avocado", "almond flour", "coconut flour"
+        ],
+        "negative_keywords": [
+            "ramen", "spaghetti", "mac and cheese", "white rice",
+            "pizza dough", "pancake", "syrup"
+        ],
+        "threshold": 2,
+    },
+    "healthy": {
+        "family": "lifestyle",
+        "strong_keywords": [
+            "healthy", "nutritious", "wholesome", "clean eating",
+            "low calorie", "low-calorie", "superfood"
+        ],
+        "weak_keywords": [
+            "salad", "grilled", "steamed", "baked", "vegetables", "quinoa",
+            "olive oil", "whole grain", "fresh"
+        ],
+        "negative_keywords": [
+            "deep fried", "deep-fried", "fried chicken", "candy",
+            "frosting", "syrup", "loaded"
+        ],
+        "threshold": 2,
+    },
+    "high_fiber": {
+        "family": "lifestyle",
+        "strong_keywords": [
+            "high fiber", "high-fiber", "fiber-rich", "fiber rich",
+            "whole grain", "whole wheat", "bran", "chia seeds", "flaxseed",
+            "lentils", "black beans", "chickpeas", "oats", "oatmeal"
+        ],
+        "weak_keywords": [
+            "beans", "quinoa", "barley", "broccoli", "raspberries", "avocado",
+            "vegetables", "brown rice", "split peas", "artichoke"
+        ],
+        "negative_keywords": [
+            "white bread", "white rice", "white flour", "refined flour"
+        ],
+        "threshold": 3,
+    },
+
+    # ---------- intent ----------
+    "meal_prep": {
+        "family": "intent",
+        "strong_keywords": [
+            "meal prep", "meal-prep", "batch cook", "make ahead", "make-ahead",
+            "freezer meal", "freezer friendly", "freezer-friendly", "weekly prep"
+        ],
+        "weak_keywords": [
+            "containers", "leftovers", "reheat", "portion", "bulk",
+            "lunchbox", "stores well", "keeps for"
+        ],
+        "negative_keywords": [
+            "serve immediately", "best served fresh", "eat right away"
+        ],
+        "threshold": 2,
+    },
+    "comfort_food": {
+        "family": "intent",
+        "strong_keywords": [
+            "comfort food", "mac and cheese", "mac & cheese", "pot pie",
+            "meatloaf", "mashed potatoes", "grilled cheese", "chicken noodle",
+            "casserole", "fried chicken", "biscuits and gravy"
+        ],
+        "weak_keywords": [
+            "creamy", "cheesy", "hearty", "warm", "gooey", "cozy", "buttery"
+        ],
+        "negative_keywords": [
+            "low calorie", "low-calorie", "diet", "salad", "light"
+        ],
+        "threshold": 2,
+    },
+    "budget": {
+        "family": "intent",
+        "strong_keywords": [
+            "budget", "cheap", "inexpensive", "affordable", "low cost",
+            "low-cost", "frugal", "on a budget", "pantry staples"
+        ],
+        "weak_keywords": [
+            "pantry", "rice and beans", "leftover", "simple ingredients",
+            "few ingredients", "basic", "5 ingredients"
+        ],
+        "negative_keywords": [
+            "saffron", "truffle", "wagyu", "lobster", "caviar",
+            "filet mignon", "foie gras", "champagne"
+        ],
+        "threshold": 2,
+    },
+
+    # ---------- audience ----------
+    "family_friendly": {
+        "family": "audience",
+        "strong_keywords": [
+            "family friendly", "family-friendly", "kid friendly", "kid-friendly",
+            "kids", "picky eaters", "crowd pleaser", "crowd-pleaser",
+            "family dinner", "toddler"
+        ],
+        "weak_keywords": [
+            "mild", "simple", "cheesy", "fun", "pizza", "nuggets",
+            "pasta", "tacos", "mac and cheese"
+        ],
+        "negative_keywords": [
+            "spicy", "habanero", "cocktail", "wine", "bourbon", "alcohol"
+        ],
+        "threshold": 2,
+    },
 }
 
 
@@ -101,7 +296,10 @@ def _keyword_matches(text: str, keyword: str) -> bool:
     if not text or not keyword:
         return False
     normalized_keyword = re.escape(_tokenize(keyword))
-    return re.search(rf"(?<![a-z0-9]){normalized_keyword}(?![a-z0-9])", text) is not None
+    # (?:e?s)? lets "cookie" match "cookies", "dip" match "dips", "sandwich" match "sandwiches"
+    return re.search(
+        rf"(?<![a-z0-9]){normalized_keyword}(?:e?s)?(?![a-z0-9])", text
+    ) is not None
 
 
 def _count_matches(text: str, keywords: list[str]) -> int:

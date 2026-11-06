@@ -14,6 +14,7 @@ const toMinimumProfile = (row: any): MinimumProfile => ({
     dob: row.dob,
     profile_img_url: row.profile_img_url,
     tag_color: row.tag_color,
+    favorite_food: row.favorite_food,
 });
 
 export const _update_user_profile = async (
@@ -69,6 +70,11 @@ export const _update_user_profile = async (
             updates.push(`tag_color = $${values.length}`);
         }
 
+        if (profile.favorite_food !== undefined) {
+            values.push(profile.favorite_food);
+            updates.push(`favorite_food = $${values.length}`);
+        }
+
         if (!updates.length) throw new Error("no_user_profile_fields_to_update");
 
         const result = await db.query(
@@ -91,7 +97,8 @@ export const _update_user_profile = async (
                 bio,
                 website,
                 profile_img_url,
-                tag_color
+                tag_color,
+                favorite_food
             `,
             values
         );

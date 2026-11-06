@@ -1,5 +1,5 @@
 import db from "@/services/db";
-import { MinimumProfile, UltraMinimumProfile } from "@/types/profile.types";
+import { UltraMinimumProfile } from "@/types/profile.types";
 
 export const BLOCKED_USER_FILTER = `
     AND NOT EXISTS (

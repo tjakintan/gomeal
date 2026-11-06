@@ -20,7 +20,8 @@ const getUser = async (sub: string): Promise<{ user: User; accessToken: string; 
             bread,
             xp,
             level,
-            badge
+            badge,
+            favorite_food
         FROM users
         WHERE sub = $1 AND status = 'active'
         `,
@@ -52,6 +53,7 @@ const getUser = async (sub: string): Promise<{ user: User; accessToken: string; 
         xp: row.xp ?? 0,
         level: row.level ?? 1,
         badge: row.badge ?? 1,
+        favorite_food: row.favorite_food ?? null
     };
 
     const accessToken = generateAccessToken(tokenPayload);

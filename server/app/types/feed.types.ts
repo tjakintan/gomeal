@@ -57,6 +57,7 @@ export type SearchFeedCard = {
     level: number; 
     xp: number;
     badge: BadgeLevel;
+    category?: FeedScopeType
 };
 
 export type UserActionedPostsType = {
@@ -84,6 +85,7 @@ export type FeedCard = {
     user_actions: FeedActionType[];
     action_counts: FeedActionCountsTypes;
     tag_color?: string | null;
+    category?: FeedScopeType;
 };
 
 export type FullPost = FeedCard & {
@@ -116,6 +118,7 @@ export type MinimumFeedCard = {
     post_id: number;
     info: DishInfoData;
     action_counts?: FeedActionCountsTypes;
+    category? : FeedScopeType
 };
 
 export type FeedProfileCard ={
@@ -138,6 +141,7 @@ export type FeedProfileCard ={
     badge: BadgeLevel;
     user_posts: UserActionedPostsType;
     profile_img_url?: string | null;
+    favorite_food?: string;
 };
 
 export type  FeedDBRow = {
@@ -160,6 +164,7 @@ export type  FeedDBRow = {
     profile_image_url: string | null;
     level: number;
     avatar: Avatar | null;
+    scope_tags?: unknown;
 };
 
 export type ReelDBRow = {

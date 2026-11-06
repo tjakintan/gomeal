@@ -2,6 +2,7 @@ import db from "@/services/db";
 import { SearchFeedCard } from "@/types/feed.types";
 import { MinimumProfile } from "@/types/profile.types";
 import { blockedFilter } from "../user/block";
+import { pickScope } from "../feed/scope";
 
 export const get_search_post = async (
     query: string,
@@ -29,12 +30,16 @@ export const get_search_post = async (
                 u.last_name,
                 u.level,
                 u.xp,
-                u.badge
+                u.badge,
+                pe.scope_tags 
 
             FROM post p
 
             JOIN users u
                 ON u.sub = p.user_sub
+
+            LEFT JOIN post_embeddings pe                   
+                ON pe.post_id = p.id
 
             WHERE p.status = 'active'
                 AND u.status = 'active'
@@ -71,6 +76,7 @@ export const get_search_post = async (
             level: row.level,
             xp: row.xp,
             badge: row.badge,
+            category: pickScope(row.scope_tags),
         }));
 
     } catch (err) {
@@ -91,7 +97,8 @@ export const get_search_users = async (
             `
             SELECT
                 sub, profile_name, first_name, last_name, profile_img_url,
-                bio, website, badge, avatar, tag_color, level, xp
+                bio, website, badge, avatar, tag_color, level, xp,
+                favorite_food
             FROM users
             WHERE status = 'active'
                 AND sub <> $3::text
@@ -120,6 +127,7 @@ export const get_search_users = async (
             tag_color: row.tag_color,
             level: row.level,
             xp: row.xp,
+            favorite_food: row.favorite_food,
         }));
 
     } catch (err) {
@@ -153,12 +161,16 @@ export const get_search_posts_by_ids = async (
                 u.last_name,
                 u.level,
                 u.xp,
-                u.badge
+                u.badge,
+                pe.scope_tags 
 
             FROM post p
 
             JOIN users u
                 ON u.sub = p.user_sub
+
+            LEFT JOIN post_embeddings pe              
+                ON pe.post_id = p.id
 
             WHERE p.status = 'active'
                 AND u.status = 'active'
@@ -192,6 +204,7 @@ export const get_search_posts_by_ids = async (
                     level: row.level,
                     xp: row.xp,
                     badge: row.badge,
+                    category: pickScope(row.scope_tags),
                 } as SearchFeedCard,
             ])
         );
@@ -227,7 +240,8 @@ export const get_search_users_by_subs = async (
                 avatar,
                 tag_color,
                 level,
-                xp
+                xp,
+                favorite_food
             FROM users
             WHERE status = 'active'
                 AND sub = ANY($1::text[])
@@ -253,6 +267,7 @@ export const get_search_users_by_subs = async (
                     tag_color: row.tag_color,
                     level: row.level,
                     xp: row.xp,
+                    favorite_food: row.favorite_food,
                 } as MinimumProfile,
             ])
         );

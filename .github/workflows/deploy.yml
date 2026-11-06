@@ -81,10 +81,19 @@ jobs:
             echo "========== Docker Stats =========="
             docker stats --no-stream
 
-            echo "========== Backend Health =========="
-            docker inspect "$(docker compose ps -q backend)" \
-              --format='Status={{.State.Status}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'
+            echo "========== Server Health =========="
+            SERVER_CONTAINER=$(docker compose ps -q server)
 
+            if [ -z "$SERVER_CONTAINER" ]; then
+                echo "ERROR: Server container was not created."
+                docker compose ps -a
+                docker compose logs server --tail=150
+                exit 1
+            fi
+
+            docker inspect "$SERVER_CONTAINER" \
+              --format='Status={{.State.Status}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'
+              
             echo "========== ML Health =========="
             docker inspect "$ML_CONTAINER" \
               --format='Status={{.State.Status}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'
@@ -95,8 +104,8 @@ jobs:
             echo "========== Disk Usage =========="
             df -h
 
-            echo "========== Backend Logs =========="
-            docker compose logs backend --tail=100
+            echo "========== Server Logs =========="
+            docker compose logs server --tail=100
 
             echo "========== ML Logs =========="
             docker compose logs ml --tail=100

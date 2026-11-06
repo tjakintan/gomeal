@@ -35,6 +35,7 @@ export type User = {
   level: number;
   badge: BadgeLevel;
   tag_color?: string | null;
+  favorite_food?: string;
 };
 
 export type ActionType =

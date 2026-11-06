@@ -57,7 +57,8 @@ export const fetchFeedProfile = async (params: FetchFeedProfileParams): Promise<
             created_at AS date_joined,
             profile_img_url,
             bio,
-            website
+            website,
+            favorite_food
         FROM users
         WHERE sub = $1`,
         [userSub]
@@ -91,7 +92,9 @@ export const fetchFeedProfile = async (params: FetchFeedProfileParams): Promise<
         num_of_shares: actionCounts.num_of_shares,
         user_posts: userPosts,
         profile_img_url: user.profile_img_url || null,
-        };
+        favorite_food: user.favorite_food || null,
+    };
+
     } catch (err) {
         if (err instanceof Error && ["post_not_found", "user_not_found"].includes(err.message)) throw err;
         console.error(err);
