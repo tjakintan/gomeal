@@ -1,12 +1,10 @@
 import os
 import time
-from dotenv import load_dotenv
 
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 from psycopg2.extras import RealDictCursor
 
-load_dotenv()
 
 DB_HOST = os.getenv("DB_HOST")
 DB_USER = os.getenv("DB_USER")

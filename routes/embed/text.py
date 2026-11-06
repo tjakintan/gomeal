@@ -5,9 +5,6 @@ import torch
 
 from typing import List
 from sentence_transformers import SentenceTransformer
-from dotenv import load_dotenv
-
-load_dotenv()
 
 MODEL_NAME = os.getenv("TEXT_MODEL")
 

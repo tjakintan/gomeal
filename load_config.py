@@ -24,7 +24,6 @@ def load_environment() -> str:
         raise FileNotFoundError(f"Missing environment file: {profile_file}")
 
     load_dotenv(profile_file, override=False)
-    load_dotenv(BASE_DIR / ".env", override=True)
 
     for key, value in config.items():
         if value is not None:

@@ -6,11 +6,6 @@ import torch
 from typing import List
 from PIL import Image as PILImage
 from transformers import CLIPModel, CLIPProcessor
-from dotenv import load_dotenv
-
-
-load_dotenv()
-
 
 IMAGE_MODEL_NAME = os.getenv("IMAGE_MODEL")
 

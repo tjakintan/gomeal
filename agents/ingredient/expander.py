@@ -19,11 +19,8 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from dotenv import load_dotenv
-
 # I load .env up front so LLM_MODEL, LLM_BASE_URL, LLM_API_KEY and VLM_MODEL
 # are available before any class below reads them from the environment.
-load_dotenv()
 
 
 class IngredientExpander:
